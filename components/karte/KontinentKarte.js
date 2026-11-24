@@ -17,6 +17,7 @@
 import { memo, useRef } from 'react';
 import { useKartenZoom } from './useKartenZoom';
 import { Einpassen, Minus, Plus } from '@/components/Symbole';
+import { useT } from '@/lib/sprache';
 
 /** Die Länder als eigene, gemerkte Komponente: Sie zeichnet nur neu, wenn sich Farben ändern. */
 const Laender = memo(function Laender({ laender, zustand, effekt }) {
@@ -53,11 +54,12 @@ const Laender = memo(function Laender({ laender, zustand, effekt }) {
 });
 
 export default function KontinentKarte({ karte, zustand, effekt, offen, namenZeigen, onLand }) {
+  const t = useT();
   const svgRef = useRef(null);
   const tippRef = useRef(null);
   const rahmenRef = useRef(null);
   const zoom = useKartenZoom(svgRef, karte.breite, karte.hoehe);
-  const namen = useRef(new Map(karte.laender.map((l) => [l.id, l.name]))).current;
+  const namen = new Map(karte.laender.map((l) => [l.id, t.ortsname(l)]));
   const ring = effekt?.art === 'puls' ? karte.laender.find((l) => l.id === effekt.id && l.mitte) : null;
 
   function klick(e) {
@@ -87,7 +89,7 @@ export default function KontinentKarte({ karte, zustand, effekt, offen, namenZei
         className={`kontinentkarte${offen ? ' offen' : ''}`}
         viewBox={`0 0 ${karte.breite} ${karte.hoehe}`}
         role="img"
-        aria-label={`Karte ${karte.name}`}
+        aria-label={t('Karte {name}', { name: t.ortsname(karte) })}
         onClick={klick}
         onPointerMove={bewegen}
         onPointerLeave={() => tippRef.current?.classList.remove('sichtbar')}
@@ -107,13 +109,13 @@ export default function KontinentKarte({ karte, zustand, effekt, offen, namenZei
       <div className="kartentipp" ref={tippRef} aria-hidden="true" />
 
       <div className="zoom">
-        <button type="button" onClick={zoom.zoomRein} disabled={zoom.maximal} aria-label="Hineinzoomen" title="Hineinzoomen">
+        <button type="button" onClick={zoom.zoomRein} disabled={zoom.maximal} aria-label={t('Hineinzoomen')} title={t('Hineinzoomen')}>
           <Plus />
         </button>
-        <button type="button" onClick={zoom.zoomRaus} disabled={!zoom.gezoomt} aria-label="Herauszoomen" title="Herauszoomen">
+        <button type="button" onClick={zoom.zoomRaus} disabled={!zoom.gezoomt} aria-label={t('Herauszoomen')} title={t('Herauszoomen')}>
           <Minus />
         </button>
-        <button type="button" onClick={zoom.ganzeKarte} disabled={!zoom.gezoomt} aria-label="Ganze Karte" title="Ganze Karte">
+        <button type="button" onClick={zoom.ganzeKarte} disabled={!zoom.gezoomt} aria-label={t('Ganze Karte')} title={t('Ganze Karte')}>
           <Einpassen />
         </button>
       </div>

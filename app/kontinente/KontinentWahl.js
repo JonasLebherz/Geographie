@@ -13,10 +13,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Chevron } from '@/components/Symbole';
 import { bestwerteLesen } from '@/lib/bestwerte';
+import { useT } from '@/lib/sprache';
 
 const FLUG_DAUER = 520; // ms
 
 export default function KontinentWahl({ welt }) {
+  const t = useT();
   const router = useRouter();
   const [aktiv, setAktiv] = useState(null);
   const [bestwerte, setBestwerte] = useState({});
@@ -80,9 +82,9 @@ export default function KontinentWahl({ welt }) {
             {welt.kontinente.map((k) => (
               <g key={k.slug} className={aktiv === k.slug ? 'aktiv' : undefined}>
                 <text x={k.beschriftung[0]} y={k.beschriftung[1]}>
-                  {k.name}
+                  {t.ortsname(k)}
                   <tspan className="anzahl" x={k.beschriftung[0]} dy="18">
-                    {k.anzahl} Länder
+                    {t('{n} Länder', { n: k.anzahl })}
                   </tspan>
                 </text>
               </g>
@@ -104,10 +106,10 @@ export default function KontinentWahl({ welt }) {
                 onMouseLeave={() => setAktiv(null)}
                 onFocus={() => vorladen(k.slug)}
               >
-                <span className="titel">{k.name}</span>
+                <span className="titel">{t.ortsname(k)}</span>
                 <span className="zusatz">
-                  {k.anzahl} Länder
-                  {bestwert && <small>Bestwert {bestwert.quote} %</small>}
+                  {t('{n} Länder', { n: k.anzahl })}
+                  {bestwert && <small>{t('Bestwert {q} %', { q: bestwert.quote })}</small>}
                 </span>
                 <Chevron />
               </Link>
