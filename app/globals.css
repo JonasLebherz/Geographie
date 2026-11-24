@@ -1,0 +1,103 @@
+/* globals.css – Aussehen der ganzen Seite (hell und dunkel) */
+
+:root {
+  --hintergrund: #f4f6f8;
+  --flaeche: #ffffff;
+  --text: #1c2430;
+  --leise: #5b6675;
+  --rand: #dde2e8;
+  --akzent: #1f6feb;
+  --umriss: #2f7d5b;
+  --richtig: #1a7f37;
+  --richtig-hell: #dafbe1;
+  --falsch: #cf222e;
+  --falsch-hell: #ffebe9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --hintergrund: #0f141a;
+    --flaeche: #1a212b;
+    --text: #e6edf3;
+    --leise: #9aa5b1;
+    --rand: #2d3743;
+    --akzent: #4c8dff;
+    --umriss: #4fb487;
+    --richtig: #3fb950;
+    --richtig-hell: #12361f;
+    --falsch: #f85149;
+    --falsch-hell: #3d1517;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  background: var(--hintergrund);
+  color: var(--text);
+}
+
+a { color: var(--akzent); }
+
+.kopf { padding: 16px; border-bottom: 1px solid var(--rand); background: var(--flaeche); }
+.logo { font-weight: 700; font-size: 1.2rem; text-decoration: none; color: var(--text); }
+
+.inhalt { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: 24px 16px; }
+h1 { font-size: 1.5rem; margin: 0 0 20px; }
+
+.fuss { padding: 16px; text-align: center; font-size: 0.85rem; color: var(--leise); }
+
+/* Startseite */
+.kacheln { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.kachel {
+  display: block; padding: 18px; border: 1px solid var(--rand); border-radius: 12px;
+  background: var(--flaeche); color: var(--text); text-decoration: none;
+  transition: border-color 0.15s, transform 0.15s;
+}
+.kachel:hover { border-color: var(--akzent); transform: translateY(-2px); }
+.kachel h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.kachel p { margin: 0; color: var(--leise); }
+
+/* Quiz */
+.karte { background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 20px; }
+.stand { display: flex; justify-content: space-between; color: var(--leise); font-size: 0.9rem; }
+.frage { font-size: 1.15rem; font-weight: 600; text-align: center; margin: 16px 0 8px; }
+.umriss { display: block; width: 100%; max-width: 320px; margin: 0 auto 16px; aspect-ratio: 1; }
+.umriss path { fill: var(--umriss); stroke: var(--text); stroke-width: 0.6; stroke-linejoin: round; }
+
+.antworten { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 420px) { .antworten { grid-template-columns: 1fr; } }
+
+.antwort, .knopf {
+  font: inherit; padding: 12px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--rand); background: var(--hintergrund); color: var(--text);
+}
+.antwort:hover:not(:disabled) { border-color: var(--akzent); }
+.antwort:disabled { cursor: default; }
+.antwort.richtig { border-color: var(--richtig); background: var(--richtig-hell); font-weight: 600; }
+.antwort.falsch { border-color: var(--falsch); background: var(--falsch-hell); }
+
+.knopf { background: var(--akzent); border-color: var(--akzent); color: #fff; font-weight: 600; }
+.weiter { display: block; width: 100%; margin-top: 14px; }
+
+.ergebnis { text-align: center; }
+.punkte { font-size: 1.6rem; font-weight: 700; margin: 8px 0 20px; }
+.hinweis { color: var(--leise); }
+
+/* Bestenliste */
+.bestenliste { text-align: left; margin: 8px 0 4px; }
+.bestenliste h2 { font-size: 1.1rem; margin: 18px 0 8px; }
+.bestenliste ol { margin: 0; padding-left: 1.6em; }
+.bestenliste li { padding: 6px 0; border-bottom: 1px solid var(--rand); }
+.bestenliste li span:last-child { float: right; color: var(--leise); font-variant-numeric: tabular-nums; }
+.eintragen { display: flex; gap: 8px; flex-wrap: wrap; }
+.eintragen input {
+  flex: 1 1 160px; font: inherit; padding: 12px; border-radius: 10px;
+  border: 1px solid var(--rand); background: var(--hintergrund); color: var(--text);
+}
+.fehler { color: var(--falsch); }
