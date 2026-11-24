@@ -12,6 +12,9 @@ const nextConfig = {
     return [
       { source: '/kontinente', destination: '/karte', permanent: true },
       { source: '/kontinente/:kontinent', destination: '/karte/:kontinent?quiz=laender', permanent: true },
+      // Das Umriss-Quiz gibt es nicht mehr
+      { source: '/quiz/:pfad*', destination: '/', permanent: true },
+      { source: '/karte', destination: '/', permanent: false },
     ];
   },
 

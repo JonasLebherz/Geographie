@@ -3,6 +3,8 @@
 @import "@fontsource/ibm-plex-sans/500.css";
 @import "@fontsource/ibm-plex-sans/600.css";
 @import "@fontsource/ibm-plex-sans/700.css";
+/* Titelschrift für Überschriften, Fragen und Zahlen: markant und verspielt, aber sauber gezeichnet */
+@import "@fontsource-variable/bricolage-grotesque/index.css";
 
 /*
  * app/globals.css – Aussehen der ganzen Seite
@@ -69,11 +71,17 @@
   --gelb: #8a5a00;   --gelb-bg: #fdf3d7;
   --rot: #c4281c;    --rot-bg: #fde8e7;
 
-  /* Karte */
-  --wasser: #d5e3ee;
-  --netz: rgba(40, 90, 140, .09);
-  --land: #fdfcf8;
-  --land-hover: #e4ecf9;
+  /* Karte: Wasser blau, Länder in Pastelltönen wie im politischen Atlas (keine Grün-, Gelb- oder
+     Rottöne – die bleiben den Antworten vorbehalten) */
+  --wasser: #b9d5ea;
+  --netz: rgba(30, 80, 130, .10);
+  --land: #fbf8f1;
+  --land-0: #f1e4c8; --land-1: #f4d9c6; --land-2: #e4d8ef; --land-3: #dde5d0; --land-4: #e7e0d4; --land-5: #f6efd6;
+  --land-hover: #ffffff;
+  --fluss: #6fa8d6;
+  --autobahn: #d9822b;
+  --wz-grund: #ffffff;
+  --wz-linie: #1d1d1f;
   --land-grenze: rgba(60, 60, 67, .34);
   --umland: #e9e7e0;
   --umland-grenze: rgba(255, 255, 255, .9);
@@ -88,8 +96,13 @@
   --logo-oben: #3a6bc9;
   --logo-unten: #1f4a99;
 
+  /* Schrift für Titel, Fragen und Zahlen */
+  --schrift-titel: "Bricolage Grotesque Variable", "IBM Plex Sans", -apple-system, sans-serif;
+  /* Höhenlinien im Hintergrund (sehr zart) */
+  --hoehenlinien: rgba(36, 87, 181, .07);
+
   /* Formen & Bewegung */
-  --radius-karte: 12px;
+  --radius-karte: 16px;
   --radius-feld: 8px;
   --schatten: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(31, 38, 64, .05);
   --schatten-hoch: 0 2px 6px rgba(0, 0, 0, .05), 0 18px 44px rgba(31, 38, 64, .13);
@@ -134,10 +147,15 @@
   --gelb: #ffd60a;   --gelb-bg: rgba(255, 214, 10, .14);
   --rot: #ff6961;    --rot-bg: rgba(255, 69, 58, .17);
 
-  --wasser: #0f1620;
+  --wasser: #0e1a28;
   --netz: rgba(150, 190, 230, .07);
   --land: #2a2d32;
-  --land-hover: #2d3a52;
+  --land-0: #3a352b; --land-1: #3c312b; --land-2: #34303e; --land-3: #303a30; --land-4: #36332e; --land-5: #3b3a2b;
+  --land-hover: #4a4f5a;
+  --fluss: #3d6f9a;
+  --autobahn: #b8702c;
+  --wz-grund: #2c2c2e;
+  --wz-linie: #f5f5f7;
   --land-grenze: rgba(255, 255, 255, .22);
   --umland: #1a1d21;
   --umland-grenze: rgba(255, 255, 255, .07);
@@ -154,6 +172,7 @@
   --schatten: 0 2px 10px rgba(0, 0, 0, .35);
   --schatten-hoch: 0 16px 44px rgba(0, 0, 0, .6);
   --schatten-menue: 0 0 0 .5px rgba(255, 255, 255, .08), 0 16px 48px rgba(0, 0, 0, .6);
+  --hoehenlinien: rgba(122, 167, 255, .06);
   color-scheme: dark;
 }
 
@@ -217,9 +236,10 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
   border-bottom: .5px solid var(--linie);
 }
 .kopf-innen {
-  max-width: 1200px;
+  max-width: 1680px;
   margin: 0 auto;
-  height: 56px;
+  height: 60px;
+  gap: 16px;
   padding: 0 24px;
   display: flex;
   align-items: center;
@@ -404,7 +424,7 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
 .inhalt {
   flex: 1;
   width: 100%;
-  max-width: 1200px;
+  max-width: 1680px;
   margin: 0 auto;
   padding: 40px 24px 56px;
 }
@@ -516,46 +536,6 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
   position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
 }
-
-/* =====================================================================
- * 3. Hauptmenü
- * ================================================================== */
-
-.menue-gruppe + .menue-gruppe { margin-top: 40px; }
-.modi {
-  display: grid;
-  gap: 20px;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
-}
-.karte.modus {
-  display: flex;
-  flex-direction: column;
-  padding: 0;
-  overflow: hidden;
-  color: var(--text);
-  transition: box-shadow var(--uebergang), transform var(--uebergang);
-}
-.modus:hover { color: var(--text); text-decoration: none; transform: translateY(-2px); box-shadow: var(--glas-kante), var(--schatten-hoch); }
-.modus:active { transform: translateY(0) scale(.995); }
-.modus-bild {
-  aspect-ratio: 16 / 8;
-  display: grid;
-  place-items: center;
-  background: var(--wasser);
-  border-bottom: .5px solid var(--linie);
-  overflow: hidden;
-}
-.modus-bild svg { width: 100%; height: 100%; }
-.modus-bild .vorschau-welt path { fill: var(--land); stroke: var(--land-grenze); stroke-width: .6; vector-effect: non-scaling-stroke; }
-.modus-bild .vorschau-welt path.hervor { fill: var(--land-gruen); stroke: var(--land-gefaerbt-grenze); }
-.modus-bild .vorschau-umriss { width: 46%; height: 82%; }
-.modus-bild .vorschau-umriss path { fill: var(--land); stroke: var(--text); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.modus-text { display: flex; align-items: center; gap: 12px; padding: 18px 22px 20px; }
-.modus-text div { flex: 1; min-width: 0; }
-.modus-text h3 { margin: 0 0 2px; font-size: 1.125rem; font-weight: 600; letter-spacing: -.015em; }
-.modus-text p { margin: 0; color: var(--text-leise); font-size: .9375rem; }
-.modus-text .chevron { width: 18px; height: 18px; color: var(--text-leise); flex: none; transition: transform var(--uebergang); }
-.modus:hover .chevron { transform: translateX(2px); }
 
 /* =====================================================================
  * 4. Kontinent-Auswahl
@@ -713,9 +693,16 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
   vector-effect: non-scaling-stroke;
   transition: fill .3s var(--weich);
 }
+/* Pastellfarbe je Fläche (farbe aus lib/gebiete/zeichnen.js: einfaerben) */
+.kontinentkarte .land.f-0 { fill: var(--land-0); }
+.kontinentkarte .land.f-1 { fill: var(--land-1); }
+.kontinentkarte .land.f-2 { fill: var(--land-2); }
+.kontinentkarte .land.f-3 { fill: var(--land-3); }
+.kontinentkarte .land.f-4 { fill: var(--land-4); }
+.kontinentkarte .land.f-5 { fill: var(--land-5); }
 .kontinentkarte.offen .land.frei { cursor: pointer; }
 @media (hover: hover) {
-  .kontinentkarte.offen .land.frei:hover { fill: var(--land-hover); }
+  .kontinentkarte.offen .land.frei:hover { filter: brightness(1.05) saturate(1.3); }
 }
 .kontinentkarte .land.gruen { fill: var(--land-gruen); stroke: var(--land-gefaerbt-grenze); }
 .kontinentkarte .land.gelb { fill: var(--land-gelb); stroke: var(--land-gefaerbt-grenze); }
@@ -724,8 +711,8 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
 .kontinentkarte .land.puls { animation: puls 1.1s ease 2; }
 
 /* Klickpunkte für Kleinstaaten: Größe in Bildschirmpixeln (--px = Karteneinheiten je Pixel) */
-.kontinentkarte .marke-punkt { transform: scale(calc(var(--px, 1) * 7)); fill: var(--land); stroke: var(--land-grenze); stroke-width: 1.2; vector-effect: non-scaling-stroke; transition: fill .3s var(--weich); pointer-events: none; }
-.kontinentkarte .marke-ziel { transform: scale(calc(var(--px, 1) * 16)); fill: transparent; }
+.kontinentkarte .marke-punkt { transform: scale(calc(var(--px, 1) * 4.5)); fill: var(--land); stroke: var(--land-grenze); stroke-width: 1.2; vector-effect: non-scaling-stroke; transition: fill .3s var(--weich); pointer-events: none; }
+.kontinentkarte .marke-ziel { transform: scale(calc(var(--px, 1) * 11)); fill: transparent; }
 .kontinentkarte.offen .marke.frei .marke-ziel { cursor: pointer; }
 @media (hover: hover) {
   .kontinentkarte.offen .marke.frei:hover .marke-punkt { fill: var(--land-hover); stroke: var(--akzent); }
@@ -891,17 +878,69 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
 /* Erkunden: Gebiete mit eigener Karte sind anklickbar, Blätter (z. B. Kreise) nur zum Ansehen */
 .kontinentkarte.erkunden .land.frei { cursor: pointer; }
 @media (hover: hover) {
-  .kontinentkarte.erkunden .land.frei:hover { fill: var(--land-hover); }
+  .kontinentkarte.erkunden .land.frei:hover { filter: brightness(1.06) saturate(1.25); }
 }
-.kontinentkarte .land.hervor { fill: var(--land-hover); }
+.kontinentkarte .land.hervor { filter: brightness(1.06) saturate(1.35); }
 .kontinentkarte .land.blatt { fill: var(--land); }
 /* Hintergrund beim Städte-Quiz: Flächen ohne Klick, leicht zurückgenommen */
 .kontinentkarte .land.kulisse { fill: var(--land); pointer-events: none; }
 .kontinentkarte .nebenkarte { fill: var(--wasser); stroke: var(--land-grenze); stroke-width: 1; vector-effect: non-scaling-stroke; }
 
+/* Orientierung: Seen, Flüsse, Autobahnen (nicht anklickbar) */
+.kontinentkarte .seen { fill: var(--wasser); stroke: var(--fluss); stroke-width: .6; vector-effect: non-scaling-stroke; pointer-events: none; }
+.kontinentkarte .fluesse { fill: none; stroke: var(--fluss); stroke-width: 1.1; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: none; }
+.kontinentkarte .autobahnen { fill: none; stroke: var(--autobahn); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; opacity: .85; pointer-events: none; }
+
+/* Wahrzeichen: runde Plakette mit Symbol, immer gleich groß auf dem Bildschirm */
+.kontinentkarte .wz-bild { transform: scale(var(--px, 1)); }
+.kontinentkarte .wz-grund { fill: var(--wz-grund); stroke: rgba(0, 0, 0, .18); stroke-width: 1; vector-effect: non-scaling-stroke; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .25)); }
+.kontinentkarte .wz-linie { fill: none; stroke: var(--wz-linie); stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.kontinentkarte.erkunden .wahrzeichen [data-wz] { cursor: default; }
+.kontinentkarte.quiz .wahrzeichen { pointer-events: none; opacity: .9; }
+
+/* Satellit: Bild darunter, Flächen nur als Umriss, Ergebnisse halb durchsichtig */
+.kartenebene.mit-satellit { background: #0b1220; }
+.kontinentkarte.satellit .netz { display: none; }
+.kontinentkarte.satellit .umland { fill: transparent; stroke: rgba(255, 255, 255, .35); }
+.kontinentkarte.satellit .land { fill: transparent; stroke: rgba(255, 255, 255, .8); stroke-width: 1; }
+.kontinentkarte.satellit .land.f-0, .kontinentkarte.satellit .land.f-1, .kontinentkarte.satellit .land.f-2,
+.kontinentkarte.satellit .land.f-3, .kontinentkarte.satellit .land.f-4, .kontinentkarte.satellit .land.f-5 { fill: rgba(255, 255, 255, .02); }
+.kontinentkarte.satellit .land.frei:hover, .kontinentkarte.satellit .land.hervor { fill: rgba(255, 255, 255, .22); }
+.kontinentkarte.satellit .land.gruen { fill: rgba(63, 164, 91, .6); }
+.kontinentkarte.satellit .land.gelb { fill: rgba(233, 184, 41, .6); }
+.kontinentkarte.satellit .land.rot { fill: rgba(220, 74, 61, .65); }
+.kontinentkarte.satellit .seen { fill: transparent; stroke: rgba(160, 210, 255, .5); }
+.kontinentkarte.satellit .fluesse { stroke: rgba(160, 210, 255, .55); }
+.kontinentkarte.satellit .nebenkarte { fill: transparent; stroke: rgba(255, 255, 255, .6); }
+.quelle-satellit {
+  position: absolute; left: 10px; bottom: 6px; z-index: 3; margin: 0;
+  font-size: .6875rem; color: rgba(255, 255, 255, .85); text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
+  pointer-events: none;
+}
+
+/* Umschalter Karte | Satellit oben rechts (Glas über der Karte) */
+.ansicht-schalter {
+  position: absolute;
+  top: 12px; right: 12px; z-index: 3;
+  display: flex; gap: 2px; padding: 3px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--glas-licht), transparent 80%), var(--glas);
+  -webkit-backdrop-filter: var(--glas-unschaerfe);
+  backdrop-filter: var(--glas-unschaerfe);
+  border: 1px solid var(--glas-rand);
+  box-shadow: var(--glas-kante), var(--schatten);
+}
+.ansicht-schalter button {
+  min-height: 32px; padding: 4px 12px;
+  border: 0; border-radius: 9px; background: transparent;
+  font-size: .875rem; font-weight: 600; cursor: pointer; color: var(--text);
+}
+.ansicht-schalter button.gewaehlt { background: var(--karte-solid); box-shadow: 0 1px 4px rgba(0, 0, 0, .14); }
+.im-quiz .ansicht-schalter { top: auto; bottom: 12px; right: 64px; }
+
 /* Städte: kleinere Punkte als die Klickpunkte der Kleinstaaten, dunkler Rand */
-.kontinentkarte .marke.stadt .marke-punkt { transform: scale(calc(var(--px, 1) * 5.5)); stroke: var(--text-leise); stroke-width: 1.4; }
-.kontinentkarte .marke.stadt .marke-ziel { transform: scale(calc(var(--px, 1) * 13)); }
+.kontinentkarte .marke.stadt .marke-punkt { transform: scale(calc(var(--px, 1) * 4.5)); stroke: #1d1d1f; stroke-width: 1.6; }
+.kontinentkarte .marke.stadt .marke-ziel { transform: scale(calc(var(--px, 1) * 11)); }
 .kontinentkarte.quiz.offen .marke.frei .marke-ziel { cursor: pointer; }
 
 /* Frage als schwebende Glas-Kapsel oben in der Bühne (Bedien-Ebene über der Karte) */
@@ -976,34 +1015,235 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
 }
 
 /* =====================================================================
- * 6. Umriss-Quiz, Bestenliste
+ * 5c. Spielgefühl: Titelschrift, Navigation, Knöpfe, Begrüßung, Effekte
  * ================================================================== */
 
-.umriss-stand { display: flex; justify-content: space-between; color: var(--text-leise); font-size: .9375rem; font-variant-numeric: tabular-nums; }
-.umriss-frage { font-size: 1.15rem; font-weight: 600; text-align: center; margin: 16px 0 8px; }
-.umriss { display: block; width: 100%; max-width: 300px; margin: 0 auto 20px; aspect-ratio: 1; }
-.umriss path { fill: var(--land); stroke: var(--text); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-
-.antworten { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
-@media (max-width: 420px) { .antworten { grid-template-columns: 1fr; } }
-.antwort {
-  min-height: 48px;
-  padding: 12px 14px;
-  border-radius: var(--radius-feld);
-  border: 1px solid var(--feld-rand);
-  background: var(--feld-bg);
-  cursor: pointer;
-  text-align: center;
-  transition: border-color var(--uebergang), background-color var(--uebergang), transform var(--uebergang);
+h1, .leiste-titel, .frage-name, .ergebnis-zahl, .willkommen-titel, .marke-name, .stand strong, .schritt-nr {
+  font-family: var(--schrift-titel);
+  font-optical-sizing: auto;
 }
-.antwort:hover:not(:disabled) { border-color: var(--akzent); }
-.antwort:active:not(:disabled) { transform: scale(.98); }
-.antwort:disabled { cursor: default; }
-.antwort.richtig { border-color: var(--gruen); background: var(--gruen-bg); color: var(--gruen); font-weight: 600; }
-.antwort.falsch { border-color: var(--rot); background: var(--rot-bg); color: var(--rot); }
-.umriss-weiter { margin-top: 16px; }
-.umriss-ergebnis { text-align: center; }
-.umriss-ergebnis .ergebnis-zahl { margin-top: 0; }
+.leiste-titel, .willkommen-titel { letter-spacing: -.035em; }
+
+/* Höhenlinien als zartes Muster über dem Hintergrund – wie auf einer Wanderkarte */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' fill='none' stroke='%23000' stroke-width='1.2'%3E%3Cpath d='M60 210c0-70 60-130 140-130s150 50 150 130-60 140-150 140S60 280 60 210z'/%3E%3Cpath d='M100 210c0-48 42-92 100-92s108 36 108 92-42 100-108 100-100-48-100-100z'/%3E%3Cpath d='M142 212c0-28 26-54 60-54s64 22 64 54-26 58-64 58-60-28-60-58z'/%3E%3Cpath d='M-40 40c60-30 120 10 160-20s70-60 120-40M300 400c40-40 90-30 130-60'/%3E%3Cpath d='M-20 380c50-10 80 30 130 20'/%3E%3C/svg%3E");
+  background-size: 420px 420px;
+  opacity: 1;
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 85%);
+  mask-image: linear-gradient(180deg, #000, transparent 85%);
+  filter: opacity(.07);
+}
+:root[data-theme="dark"] body::after { filter: invert(1) opacity(.06); }
+
+/* Logo */
+.logo { width: var(--logo-groesse, 34px); height: var(--logo-groesse, 34px); background: none; box-shadow: 0 2px 6px rgba(31, 73, 168, .35); border-radius: 9px; }
+.logo svg { width: 100%; height: 100%; }
+.logo-nadel { transform-box: fill-box; transform-origin: 50% 100%; transition: transform .4s var(--weich); }
+.marke:hover .logo-nadel { transform: translateY(-2px) scale(1.08); }
+.marke-name { font-size: 1.2rem; font-weight: 700; letter-spacing: -.03em; }
+
+/* Hauptnavigation in der Mitte der Kopfleiste */
+.hauptnav {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--fuellung);
+  margin-left: auto;
+  margin-right: auto;
+}
+.hauptnav a {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 38px; padding: 6px 16px;
+  border-radius: 10px;
+  color: var(--text); font-weight: 600;
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+.hauptnav a:hover { text-decoration: none; color: var(--text); background: var(--fuellung); }
+.hauptnav a.aktiv { background: var(--karte-solid); box-shadow: 0 1px 4px rgba(0, 0, 0, .12); color: var(--akzent); }
+.hauptnav svg { width: 18px; height: 18px; }
+@media (max-width: 640px) {
+  .marke-name { display: none; }
+  .hauptnav a { padding: 6px 12px; }
+}
+
+/* Griffige Knöpfe wie in einem Spiel: Hauptknopf mit Unterkante, die beim Drücken nachgibt */
+.knopf-haupt {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22), 0 3px 0 color-mix(in srgb, var(--akzent-flaeche) 62%, #000), 0 6px 14px rgba(36, 87, 181, .25);
+  transform: translateY(0);
+}
+.knopf-haupt:active { transform: translateY(2px); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 1px 0 color-mix(in srgb, var(--akzent-flaeche) 62%, #000); }
+.knopf-zweit { box-shadow: 0 2px 0 var(--linie); }
+.knopf-zweit:active { transform: translateY(1px); box-shadow: none; }
+.knopf-gross { min-height: 52px; padding: 12px 26px; font-size: 1.05rem; font-weight: 700; border-radius: 16px; }
+.knopf svg { width: 20px; height: 20px; }
+
+/* Begrüßung auf der Startseite: Glas-Karte unten auf der Weltkarte */
+.willkommen {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  z-index: 6;
+  width: min(560px, calc(100% - 28px));
+  padding: 24px 26px 22px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, var(--glas-licht), transparent 70%), var(--glas-erhoeht);
+  -webkit-backdrop-filter: var(--glas-unschaerfe);
+  backdrop-filter: var(--glas-unschaerfe);
+  border: 1px solid var(--glas-rand);
+  box-shadow: var(--glas-kante), var(--schatten-menue);
+  animation: willkommen-auf .5s var(--weich) .15s backwards;
+}
+@keyframes willkommen-auf { from { opacity: 0; transform: translate(-50%, 18px) scale(.98); } }
+.willkommen-marke { margin: 0 0 2px; font-weight: 700; color: var(--akzent); font-size: .9rem; letter-spacing: .02em; }
+.willkommen-titel { font-size: 2.6rem; font-weight: 800; line-height: 1; margin: 0 0 16px; }
+.schritte { list-style: none; margin: 0 0 20px; padding: 0; display: grid; gap: 10px; }
+.schritte li { display: flex; align-items: center; gap: 12px; animation: erscheinen .4s var(--weich) backwards; animation-delay: calc(.25s + var(--i) * 70ms); }
+.schritt-nr {
+  flex: none; width: 30px; height: 30px; display: grid; place-items: center;
+  border-radius: 10px; background: var(--akzent-zart); color: var(--akzent); font-weight: 800;
+}
+.willkommen-knoepfe { display: flex; gap: 10px; flex-wrap: wrap; }
+.willkommen-knoepfe .knopf { flex: 1 1 200px; }
+@media (max-width: 640px) {
+  .willkommen { bottom: 10px; padding: 18px; }
+  .willkommen-titel { font-size: 2rem; }
+}
+
+/* Frage-Kapsel: leuchtet bei Treffer grün auf, wackelt bei Fehlversuch */
+.frage-kapsel { min-width: 220px; border-width: 2px; }
+.frage-kapsel .frage-name { font-size: 2rem; font-weight: 800; letter-spacing: -.03em; }
+.frage-kapsel.impuls-richtig { animation: kapsel-treffer .55s var(--weich); }
+.frage-kapsel.impuls-falsch { animation: kapsel-wackeln .4s ease; }
+.frage-kapsel.impuls-aufgedeckt { animation: kapsel-wackeln .5s ease; border-color: var(--rot); }
+@keyframes kapsel-treffer {
+  0% { box-shadow: var(--glas-kante), 0 0 0 0 rgba(63, 164, 91, .55), var(--schatten-menue); transform: translateX(-50%) scale(1); }
+  35% { box-shadow: var(--glas-kante), 0 0 0 10px rgba(63, 164, 91, 0), var(--schatten-menue); transform: translateX(-50%) scale(1.05); border-color: var(--land-gruen); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+@keyframes kapsel-wackeln {
+  0%, 100% { transform: translateX(-50%); }
+  20% { transform: translateX(calc(-50% - 8px)); border-color: var(--rot); }
+  40% { transform: translateX(calc(-50% + 7px)); }
+  60% { transform: translateX(calc(-50% - 4px)); }
+  80% { transform: translateX(calc(-50% + 2px)); }
+}
+.serie {
+  position: absolute; top: -12px; right: -12px;
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 3px 9px 3px 6px; border-radius: 999px;
+  background: linear-gradient(180deg, #ff9f43, #f0582f); color: #fff;
+  font-weight: 800; font-family: var(--schrift-titel); font-size: .95rem;
+  box-shadow: 0 3px 8px rgba(240, 88, 47, .4);
+  animation: serie-pop .35s var(--weich);
+}
+.serie svg { width: 15px; height: 15px; }
+@keyframes serie-pop { from { transform: scale(.4); opacity: 0; } }
+
+/* Sterne im Ergebnis */
+.sterne { display: flex; gap: 6px; margin-bottom: 6px; }
+.stern { width: 40px; height: 40px; color: var(--fuellung-hover); }
+.stern svg { width: 100%; height: 100%; }
+.stern.voll { color: #f5b301; filter: drop-shadow(0 2px 4px rgba(245, 179, 1, .45)); animation: stern-pop .5s var(--weich) backwards; animation-delay: calc(var(--i) * 140ms + .1s); }
+@keyframes stern-pop { 0% { transform: scale(.2) rotate(-30deg); opacity: 0; } 70% { transform: scale(1.2) rotate(6deg); } 100% { transform: scale(1); } }
+
+/* Bühne etwas runder und präsenter */
+.buehne { border-radius: 20px; box-shadow: var(--glas-kante), 0 2px 6px rgba(0, 0, 0, .05), 0 18px 40px rgba(31, 38, 64, .10); }
+.erkundung { grid-template-columns: minmax(0, 1fr) 360px; --buehne-h: clamp(440px, calc(100dvh - 120px), 980px); }
+@media (max-width: 900px) { .erkundung { grid-template-columns: 1fr; --buehne-h: clamp(360px, 62dvh, 640px); } }
+
+/* =====================================================================
+ * 5d. Party (1 gegen 1): Start, Lobby, Duell
+ * ================================================================== */
+
+.party-start { max-width: 980px; margin: 0 auto; }
+.party-wahl { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); }
+.party-karte { display: flex; flex-direction: column; gap: 10px; padding: 28px; }
+.party-karte h2 { font-family: var(--schrift-titel); font-size: 1.6rem; font-weight: 800; letter-spacing: -.03em; margin: 4px 0 0; }
+.party-karte p { margin: 0 0 8px; }
+.party-karte .knopf { margin-top: auto; }
+.party-symbol {
+  width: 52px; height: 52px; display: grid; place-items: center;
+  border-radius: 16px; background: var(--akzent-zart); color: var(--akzent);
+}
+.party-symbol svg { width: 28px; height: 28px; }
+.beitreten, .party-name { display: flex; gap: 10px; flex-wrap: wrap; margin-top: auto; }
+.party-name { padding: 20px; max-width: 560px; }
+.beitreten input, .party-name input {
+  flex: 1 1 200px; min-height: 52px; padding: 10px 16px;
+  font: inherit; font-size: 1.05rem; color: var(--text);
+  border-radius: 14px; border: 1px solid var(--feld-rand); background: var(--feld-bg);
+}
+.beitreten input:focus, .party-name input:focus { outline: none; border-color: var(--akzent); box-shadow: 0 0 0 4px var(--akzent-ring); }
+
+.lobby { display: flex; flex-direction: column; gap: 16px; }
+.lobby-leiste { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 12px 16px; margin-top: -16px; }
+.lobby-code { display: flex; flex-direction: column; line-height: 1.2; margin-right: 4px; }
+.lobby-code .leise { font-size: .8125rem; font-weight: 600; }
+.lobby-code strong { font-family: var(--schrift-titel); font-size: 1.5rem; font-weight: 800; letter-spacing: -.02em; color: var(--akzent); }
+.lobby-spieler { list-style: none; margin: 0 0 0 auto; padding: 0; display: flex; gap: 8px; flex-wrap: wrap; }
+.lobby-spieler li {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 40px; padding: 6px 14px; border-radius: 999px;
+  background: var(--fuellung); font-weight: 600;
+}
+.lobby-spieler li.ich { background: var(--akzent-zart); }
+.lobby-spieler li.frei { color: var(--text-leise); font-weight: 500; }
+.lobby-spieler small { font-weight: 500; color: var(--text-leise); }
+.lobby-spieler .anwesend { width: 9px; height: 9px; border-radius: 50%; background: var(--land-gruen); box-shadow: 0 0 0 3px rgba(63, 164, 91, .2); }
+.lobby-spieler .warten { width: 9px; height: 9px; border-radius: 50%; background: var(--text-leise); animation: warten 1.2s ease-in-out infinite alternate; }
+@keyframes warten { to { opacity: .25; } }
+.lobby .erkundung { margin-top: 0; --buehne-h: clamp(420px, calc(100dvh - 210px), 940px); }
+.buehne-platzhalter { height: var(--buehne-h, 70vh); border-radius: 20px; background: var(--wasser); opacity: .5; }
+
+/* Leiste beim Gast: gesperrt, mit kurzem Vermerk */
+.leiste-felder { border: 0; margin: 0; padding: 0; min-width: 0; }
+.leiste-felder:disabled .listen-zeile, .leiste-felder:disabled .pfad button { cursor: default; opacity: .6; }
+.leiste-felder:disabled .listen-zeile:hover { background: none; }
+.leiste-gesperrt {
+  margin: 0 0 12px; padding: 10px 14px; border-radius: 12px;
+  background: var(--akzent-zart); color: var(--akzent); font-weight: 600;
+}
+
+/* Duell: Punktestand der beiden */
+.duell-stand { list-style: none; margin: 4px 0 8px; padding: 0; display: grid; gap: 8px; }
+.duell-stand li {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 16px; border-radius: 16px;
+  background: var(--karte); border: 1px solid var(--glas-rand); box-shadow: var(--glas-kante), var(--schatten);
+}
+.duell-stand li.ich { border-color: color-mix(in srgb, var(--akzent) 45%, transparent); }
+.duell-name { flex: 1; font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.duell-name small { margin-left: 6px; font-weight: 500; color: var(--text-leise); }
+.duell-punkte { font-family: var(--schrift-titel); font-size: 2rem; font-weight: 800; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+.duell-status { width: 12px; height: 12px; border-radius: 50%; }
+.duell-status.sucht { background: var(--text-leise); animation: warten .8s ease-in-out infinite alternate; }
+.duell-status.gruen { background: var(--land-gruen); }
+.duell-status.gelb { background: var(--land-gelb); }
+.duell-status.rot { background: var(--land-rot); }
+.duell-sieger { font-family: var(--schrift-titel); font-size: 2.2rem; font-weight: 800; letter-spacing: -.03em; margin: 8px 0 0; }
+.duell-sieger.sieg { color: var(--gruen); }
+.duell-sieger.niederlage { color: var(--rot); }
+.duell-ergebnis small { font-size: 2.4rem; }
+
+/* Restzeit: Hinweis und ablaufender Balken unten in der Kapsel */
+.rueckmeldung.frist { background: var(--rot-bg); color: var(--rot); font-variant-numeric: tabular-nums; }
+.frist-balken {
+  position: absolute; left: 14px; right: 14px; bottom: 6px; height: 3px; border-radius: 3px;
+  background: var(--land-rot); transform-origin: left center;
+  animation: frist var(--dauer) linear forwards;
+}
+@keyframes frist { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* =====================================================================
+ * 6. Bestenliste
+ * ================================================================== */
 
 .bestenliste { text-align: left; }
 .bestenliste h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: -.015em; margin: 0 0 12px; }

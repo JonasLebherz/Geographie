@@ -10,6 +10,9 @@
  *    (Ring + 1,5 s Pause), dann geht es weiter.
  *  - Klicks auf schon gelöste Gebiete zählen nicht, zeigen aber deren Namen.
  *  - Wertung: grün voll, gelb halb → Prozent. Bei Gleichstand entscheidet die Zeit.
+ *  - Serie: Treffer beim ersten Versuch am Stück (jeder Fehlversuch beendet sie).
+ *  - impuls: zählt bei jedem Ereignis hoch ({ art: 'richtig' | 'falsch' | 'aufgedeckt', n }) –
+ *    damit die Frage-Kapsel kurz aufleuchtet bzw. wackelt.
  *
  * Bei großen Sätzen (z. B. 4.439 Regionen der Welt) besteht eine Runde aus einer
  * Zufallsauswahl (runde < Anzahl). Gemischt wird erst im Browser (sonst Hydration-Fehler).
@@ -23,7 +26,7 @@ export const VERSUCHE = 3;
 const AUFGEDECKT_PAUSE = 1500;
 const RUECKMELDUNG_DAUER = 1600;
 
-function mischen(liste) {
+export function mischen(liste) {
   const kopie = [...liste];
   for (let i = kopie.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -44,16 +47,24 @@ export function quote(ergebnis, anzahl) {
  * einheiten:   [{ id, name, en, … }] – alles, was auf der Karte anklickbar ist
  * runde:       wie viele davon in einer Runde gefragt werden
  * bestenliste: Schlüssel für Bestwert und Bestenliste
+ * reihenfolge: feste Fragen (Party: beide Spieler dieselben) – sonst zufällig
+ * gesteuert:   Party-Duell – nach jeder Frage wird gewartet (wartet = true), bis von außen
+ *              naechste() kommt (beide fertig oder Zeit um). onFrageFertig({ nummer, farbe })
+ *              meldet, wenn die eigene Frage erledigt ist. zeitUm() wertet die offene Frage als rot.
  */
-export function useQuizRunde({ einheiten, runde, bestenliste }) {
+export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: festeReihenfolge, gesteuert = false, onFrageFertig }) {
   const t = useT();
   const namen = useMemo(() => new Map(einheiten.map((e) => [e.id, t.ortsname(e)])), [einheiten, t]);
   const [spiel, setSpiel] = useState(null);
   const [rueckmeldung, setRueckmeldung] = useState(null); // { art, text, schluessel }
   const [effekt, setEffekt] = useState(null); // { id, art: 'daneben' | 'puls' }
+  const [impuls, setImpuls] = useState(null); // { art, n }
+  const anstossen = useCallback((art) => setImpuls((alt) => ({ art, n: (alt?.n ?? 0) + 1 })), []);
   const timer = useRef({});
   const spielRef = useRef(null);
   spielRef.current = spiel;
+  const fertigRef = useRef(onFrageFertig);
+  fertigRef.current = onFrageFertig;
 
   const spaeter = useCallback((name, fn, ms) => {
     clearTimeout(timer.current[name]);
@@ -62,11 +73,12 @@ export function useQuizRunde({ einheiten, runde, bestenliste }) {
 
   const starten = useCallback(() => {
     Object.values(timer.current).forEach(clearTimeout);
-    const ids = mischen(einheiten.map((e) => e.id)).slice(0, Math.min(runde, einheiten.length));
-    setSpiel({ reihenfolge: ids, nummer: 0, fehl: 0, ergebnis: {}, start: Date.now(), ende: 0, sperre: false });
+    // Feste Reihenfolge (Party: beide Spieler bekommen dieselben Fragen) oder zufällig
+    const ids = festeReihenfolge ?? mischen(einheiten.map((e) => e.id)).slice(0, Math.min(runde, einheiten.length));
+    setSpiel({ reihenfolge: ids, nummer: 0, fehl: 0, ergebnis: {}, start: Date.now(), ende: 0, sperre: false, serie: 0, besteSerie: 0 });
     setRueckmeldung(null);
     setEffekt(null);
-  }, [einheiten, runde]);
+  }, [einheiten, runde, festeReihenfolge]);
 
   useEffect(() => {
     starten();
@@ -89,12 +101,18 @@ export function useQuizRunde({ einheiten, runde, bestenliste }) {
       if (nummer < stand.reihenfolge.length) return { ...stand, nummer, fehl: 0, sperre: false };
       const ende = Date.now();
       const sekunden = Math.max(1, Math.round((ende - stand.start) / 1000));
-      bestwertSpeichern(bestenliste, quote(stand.ergebnis, stand.reihenfolge.length), sekunden);
+      if (!gesteuert) bestwertSpeichern(bestenliste, quote(stand.ergebnis, stand.reihenfolge.length), sekunden);
       setTimeout(() => klang('fertig'), 250);
       return { ...stand, nummer, fehl: 0, sperre: false, ende };
     },
-    [bestenliste],
+    [bestenliste, gesteuert],
   );
+
+  /** Duell: Frage erledigt – warten statt weiter, und melden */
+  const erledigt = useCallback((stand, farbe) => {
+    setSpiel({ ...stand, sperre: true, wartet: true });
+    fertigRef.current?.({ nummer: stand.nummer, farbe });
+  }, []);
 
   const klick = useCallback(
     (id) => {
@@ -106,27 +124,38 @@ export function useQuizRunde({ einheiten, runde, bestenliste }) {
 
       if (id === ziel) {
         klang('richtig');
+        anstossen('richtig');
         setRueckmeldung(null);
         setEffekt(null);
-        setSpiel(weiter({ ...s, ergebnis: { ...s.ergebnis, [ziel]: s.fehl === 0 ? 'gruen' : 'gelb' } }));
+        const serie = s.fehl === 0 ? s.serie + 1 : 0;
+        const farbe = s.fehl === 0 ? 'gruen' : 'gelb';
+        const neu = { ...s, serie, besteSerie: Math.max(s.besteSerie, serie), ergebnis: { ...s.ergebnis, [ziel]: farbe } };
+        if (gesteuert) erledigt(neu, farbe);
+        else setSpiel(weiter(neu));
         return;
       }
 
-      klang('falsch');
       const fehl = s.fehl + 1;
+      if (fehl < VERSUCHE) klang('falsch');
+      anstossen(fehl < VERSUCHE ? 'falsch' : 'aufgedeckt');
       setEffekt({ id, art: 'daneben' });
       spaeter('effekt', () => setEffekt(null), 650);
       if (fehl < VERSUCHE) {
-        setSpiel({ ...s, fehl });
+        setSpiel({ ...s, fehl, serie: 0 });
         melden('falsch', namen.get(id));
         return;
       }
 
       // Dritter Fehlversuch: Gesuchtes rot aufdecken, kurz zeigen, dann weiter
-      setSpiel({ ...s, fehl, sperre: true, ergebnis: { ...s.ergebnis, [ziel]: 'rot' } });
+      const aufgedeckt = { ...s, fehl, serie: 0, sperre: true, ergebnis: { ...s.ergebnis, [ziel]: 'rot' } };
       melden('aufgedeckt', t('Aufgedeckt'));
-      setTimeout(() => klang('aufgedeckt'), 140);
+      klang('aufgedeckt');
       spaeter('effekt', () => setEffekt({ id: ziel, art: 'puls' }), 0);
+      if (gesteuert) {
+        erledigt(aufgedeckt, 'rot');
+        return;
+      }
+      setSpiel(aufgedeckt);
       spaeter(
         'weiter',
         () => {
@@ -137,8 +166,30 @@ export function useQuizRunde({ einheiten, runde, bestenliste }) {
         AUFGEDECKT_PAUSE,
       );
     },
-    [melden, namen, spaeter, t, weiter],
+    [anstossen, erledigt, gesteuert, melden, namen, spaeter, t, weiter],
   );
+
+  /** Duell: nächste Frage (beide fertig oder Zeit um) */
+  const naechste = useCallback(() => {
+    const s = spielRef.current;
+    if (!s || s.ende) return;
+    clearTimeout(timer.current.effekt);
+    setEffekt(null);
+    setRueckmeldung(null);
+    setSpiel(weiter({ ...s, wartet: false }));
+  }, [weiter]);
+
+  /** Duell: Zeit abgelaufen – offene Frage zählt als rot und wird aufgedeckt */
+  const zeitUm = useCallback(() => {
+    const s = spielRef.current;
+    if (!s || s.ende || s.wartet) return;
+    const ziel = s.reihenfolge[s.nummer];
+    klang('aufgedeckt');
+    anstossen('aufgedeckt');
+    melden('aufgedeckt', t('Zeit um'));
+    setEffekt({ id: ziel, art: 'puls' });
+    erledigt({ ...s, serie: 0, ergebnis: { ...s.ergebnis, [ziel]: 'rot' } }, 'rot');
+  }, [anstossen, erledigt, melden, t]);
 
   const ergebnis = spiel?.ergebnis ?? {};
   const fertig = Boolean(spiel?.ende);
@@ -152,6 +203,12 @@ export function useQuizRunde({ einheiten, runde, bestenliste }) {
     klick,
     rueckmeldung,
     effekt,
+    impuls,
+    naechste,
+    zeitUm,
+    wartet: Boolean(spiel?.wartet),
+    serie: spiel?.serie ?? 0,
+    besteSerie: spiel?.besteSerie ?? 0,
     ergebnis,
     fertig,
     anzahl,

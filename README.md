@@ -1,9 +1,8 @@
 # Geo-Quiz
 
-Webseite mit Geografie-Quizzen. Im Hauptmenü wählt man die Spielart:
+Geografie-Spiel im Browser. Die Startseite ist eine Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen (Länder, Hauptstädte, Großstädte, Bundesstaaten/Regionen, Landkreise, Städte) und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild, mit Flüssen, Autobahnen und Wahrzeichen.
 
-- **Karte** – von der Welt über Kontinente und Länder bis zu den Bundesländern und Landkreisen hineinzoomen; in jedem Gebiet stehen rechts die passenden Quizze (Länder, Hauptstädte, Großstädte, Bundesstaaten/Regionen, Landkreise, Städte). Gesuchtes auf der Karte anklicken: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen.
-- **Länder am Umriss** – ein Umriss, vier Antworten.
+**Party:** 1 gegen 1 mit Lobby-Link (z. B. `/party/flinker-pinguin`) – gleiche Fragen, wer zuerst fertig ist, lässt dem anderen noch 10 Sekunden.
 
 **Technik:** Next.js 15 (React 19, JavaScript), Hosting auf **Vercel**, Datenbank **Supabase** (nur für die Bestenliste).
 
@@ -14,7 +13,7 @@ npm install
 npm run dev        # http://localhost:3000
 ```
 
-Die Quizze laufen auch ohne Supabase. Für die Bestenliste `.env.example` nach `.env.local` kopieren und die Werte eintragen.
+Die Quizze laufen auch ohne Supabase. Für Bestenliste und Party über verschiedene Geräte `.env.example` nach `.env.local` kopieren und die Werte eintragen (ohne Supabase funktioniert die Party nur zwischen zwei Tabs im selben Browser).
 
 ## Einrichtung
 
@@ -36,15 +35,12 @@ Die Quizze laufen auch ohne Supabase. Für die Bestenliste `.env.example` nach `
 
 Werden die Variablen später geändert: **Deployments → … → Redeploy**, weil `NEXT_PUBLIC_…`-Werte beim Bauen eingesetzt werden.
 
-## Neues Umriss-Quiz hinzufügen
-
-1. Datei in `lib/geodaten/` mit einer Funktion `laden()` anlegen, die `[{ id, name, pfad }]` liefert (Vorlage: `welt-laender.js`, Umrechnung mit `umrissPfad()` aus `umriss.js`).
-2. Eintrag in `lib/quizze/index.js`. Die Seite `/quiz/<slug>` und die Kachel auf der Startseite entstehen automatisch.
-
 ## Datenquellen
 
 - Länder: [world-atlas](https://github.com/topojson/world-atlas) / Natural Earth (gemeinfrei)
 - Regionen weltweit und Städte: [Natural Earth](https://www.naturalearthdata.com/) 1:10 Mio. (gemeinfrei)
 - Bundesländer und Kreise: Eurostat GISCO, NUTS 2024 (über [Nuts2json](https://github.com/eurostat/Nuts2json)), © EuroGeographics bezüglich der Verwaltungsgrenzen
+- Flüsse, Seen, Autobahnen: Natural Earth (gemeinfrei)
+- Satellitenbild: [Sentinel-2 cloudless 2016](https://s2maps.eu) von EOX IT Services GmbH (CC BY 4.0, enthält veränderte Copernicus-Sentinel-Daten 2016)
 - Aufbereitung: `npm run karten-daten` (schreibt `daten/`)
 - Deutsche Ländernamen: [i18n-iso-countries](https://github.com/michaelwittig/node-i18n-iso-countries)

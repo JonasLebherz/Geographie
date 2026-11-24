@@ -13,6 +13,8 @@
  *                             © EuroGeographics bezüglich der Verwaltungsgrenzen)
  *   daten/orte.json           Städte (Natural Earth, gemeinfrei): Hauptstädte,
  *                             Hauptstädte der Regionen, Großstädte
+ *   daten/gewaesser.topo.json Flüsse und Seen (Natural Earth 1:10 Mio.) mit Rang (0 = groß)
+ *   daten/strassen.topo.json  Autobahnen und Schnellstraßen (Natural Earth, expressway = 1)
  *
  * TopoJSON speichert gemeinsame Grenzen nur einmal – nach dem Vereinfachen passen
  * benachbarte Flächen deshalb weiter lückenlos aneinander.
@@ -34,6 +36,9 @@ const DATEIEN = {
   'orte.geojson': `${NE}/ne_10m_populated_places.geojson`,
   'nuts1.json': `${NUTS}/nutsrg_1.json`,
   'nuts3.json': `${NUTS}/nutsrg_3.json`,
+  'ne-rivers_lake_centerlines.geojson': `${NE}/ne_10m_rivers_lake_centerlines.geojson`,
+  'ne-lakes.geojson': `${NE}/ne_10m_lakes.geojson`,
+  'ne-roads.geojson': `${NE}/ne_10m_roads.geojson`,
 };
 
 // Alle Staaten, die im Quiz vorkommen (Kennungen wie in kontinente.js)
@@ -226,8 +231,35 @@ async function orte(regionenListe, de) {
   schreiben('orte.json', liste, true);
 }
 
+// ---------------------------------------------------------------------------------------
+// 4. Gewässer und Autobahnen (Orientierung auf der Karte)
+// ---------------------------------------------------------------------------------------
+async function gewaesser() {
+  const fluesse = (await laden('ne-rivers_lake_centerlines.geojson')).features
+    .filter((f) => f.geometry && f.properties.featurecla !== 'Lake Centerline')
+    .map((f) => ({ type: 'Feature', geometry: f.geometry, properties: { rang: f.properties.scalerank } }));
+  const seen = (await laden('ne-lakes.geojson')).features
+    .filter((f) => f.geometry && f.properties.scalerank <= 7)
+    .map((f) => ({ type: 'Feature', geometry: fuerD3(f.geometry), properties: { rang: f.properties.scalerank } }));
+  const topo = kompakt(
+    { fluesse: { type: 'FeatureCollection', features: fluesse }, seen: { type: 'FeatureCollection', features: seen } },
+    0.25,
+  );
+  schreiben('gewaesser.topo.json', topo);
+}
+
+async function strassen() {
+  const autobahnen = (await laden('ne-roads.geojson')).features
+    .filter((f) => f.geometry && f.properties.expressway === 1 && f.properties.type !== 'Ferry Route')
+    .map((f) => ({ type: 'Feature', geometry: f.geometry, properties: { rang: f.properties.scalerank } }));
+  const topo = kompakt({ autobahnen: { type: 'FeatureCollection', features: autobahnen } }, 0.25);
+  schreiben('strassen.topo.json', topo);
+}
+
 mkdirSync(QUELLEN, { recursive: true });
 mkdirSync(ZIEL, { recursive: true });
 const regionenListe = await regionen();
 const de = await deutschland();
 await orte(regionenListe, de);
+await gewaesser();
+await strassen();

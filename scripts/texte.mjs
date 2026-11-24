@@ -10,7 +10,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import EN from '../lib/sprache/en.js';
 
-const ZUSAETZLICH = ['{n} Länder · {r} Fragen'];
+const ZUSAETZLICH = [];
 
 const MUSTER = [
   /\bt\(\s*'((?:[^'\\]|\\.)+)'/g,
