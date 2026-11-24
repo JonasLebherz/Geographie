@@ -12,6 +12,7 @@
  * mit dem nächsten Klick. Wertung der Runde in Prozent (Summe / Höchstpunktzahl) – wie bei den
  * anderen Quizzen, damit Bestwerte und Bestenliste gleich funktionieren.
  * Farben für Fortschritt und Marken: grün ab 750 Punkten, gelb ab 350, sonst rot.
+ * „Weiß ich nicht“ (ueberspringen): 0 Punkte, das Ziel wird gezeigt (km = null).
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { mischen } from './useQuizRunde';
@@ -96,6 +97,16 @@ export function useDistanzRunde({ einheiten, runde, skala, projektionen, bestenl
     [einheiten, projektionen, skala, weiter],
   );
 
+  /** „Weiß ich nicht“: 0 Punkte, das Ziel wird gezeigt */
+  const ueberspringen = useCallback(() => {
+    const s = spielRef.current;
+    if (!s || s.ende || s.zeigt) return;
+    const ziel = s.reihenfolge[s.nummer];
+    klang('aufgedeckt');
+    setSpiel({ ...s, zeigt: true, antworten: { ...s.antworten, [ziel]: { km: null, punkte: 0, farbe: 'rot', klick: null } } });
+    timer.current = setTimeout(weiter, PAUSE);
+  }, [weiter]);
+
   const antworten = spiel?.antworten ?? {};
   const fertig = Boolean(spiel?.ende);
   const anzahl = spiel?.reihenfolge.length ?? 0;
@@ -106,6 +117,7 @@ export function useDistanzRunde({ einheiten, runde, skala, projektionen, bestenl
     spiel,
     starten,
     klick,
+    ueberspringen,
     weiter,
     antworten,
     fertig,

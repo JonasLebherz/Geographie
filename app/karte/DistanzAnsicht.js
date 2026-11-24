@@ -8,7 +8,7 @@
  */
 import { useEffect } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
-import Frage from '@/components/karte/Frage';
+import Frage, { WeissNicht } from '@/components/karte/Frage';
 import { HOECHST, useDistanzRunde } from '@/components/karte/useDistanzRunde';
 import { sterneFuer } from '@/components/karte/useQuizRunde';
 import Bestenliste, { dauer } from '@/components/Bestenliste';
@@ -18,6 +18,7 @@ import { useT } from '@/lib/sprache';
 
 /** Entfernung lesbar: 3,4 km bzw. 1.240 km */
 export function km(t, wert) {
+  if (wert === null) return t('Übersprungen');
   if (wert < 0.5) return t('Volltreffer');
   return `${wert < 10 ? wert.toLocaleString(t.sprache, { maximumFractionDigits: 1 }) : t.zahl(Math.round(wert))} km`;
 }
@@ -49,7 +50,7 @@ export default function DistanzAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
   const marken = fertig
     ? spiel.reihenfolge.map((id) => ({ id, ziel: nachId.get(id).punkt, klick: antworten[id]?.klick, farbe: antworten[id]?.farbe, text: t.ortsname(nachId.get(id)) }))
     : letzte && ziel
-      ? [{ id: ziel.id, ziel: ziel.punkt, klick: letzte.klick, farbe: letzte.farbe, text: `${loesung(ziel)} · ${km(t, letzte.km)}` }]
+      ? [{ id: ziel.id, ziel: ziel.punkt, klick: letzte.klick, farbe: letzte.farbe, text: letzte.km === null ? loesung(ziel) : `${loesung(ziel)} · ${km(t, letzte.km)}` }]
       : [];
 
   return (

@@ -9,14 +9,16 @@
 import Link from 'next/link';
 import Logo, { PRODUKTNAME } from '@/components/Logo';
 import ProfilMenue from '@/components/ProfilMenue';
+import Hilfe from '@/components/Hilfe';
 import Hauptnavigation from '@/components/Hauptnavigation';
 import { T } from '@/lib/sprache';
 import { START_SKRIPT } from '@/lib/einstellungen-start';
 import './globals.css';
+import './stile.css';
 
 export const metadata = {
   title: { default: PRODUKTNAME, template: `%s · ${PRODUKTNAME}` },
-  description: 'Geografie-Quizze: Länder auf der Karte finden und an ihren Umrissen erkennen.',
+  description: 'Geografie-Spiel: Länder, Städte, Flüsse und mehr auf der Karte finden – allein oder mit Freunden.',
 };
 
 export const viewport = {
@@ -27,7 +29,7 @@ export const viewport = {
 
 export default function Layout({ children }) {
   return (
-    <html lang="de" data-theme="light" suppressHydrationWarning>
+    <html lang="de" data-theme="light" data-stil="comic" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: START_SKRIPT }} />
       </head>
@@ -39,7 +41,10 @@ export default function Layout({ children }) {
               <span className="marke-name">{PRODUKTNAME}</span>
             </Link>
             <Hauptnavigation />
-            <ProfilMenue />
+            <div className="kopf-rechts">
+              <Hilfe />
+              <ProfilMenue />
+            </div>
           </div>
         </header>
         <main className="inhalt">{children}</main>

@@ -7,7 +7,7 @@ Die vollständigen Regeln stehen in `CLAUDE.md`. Kurz:
 - Startseite = Karte (Welt → Kontinent → Land → Region): `app/karte/`, Daten und Quiz-Sätze in `lib/gebiete/` (Mercator, Satellitenkacheln), Geodaten in `daten/` (neu erzeugen mit `npm run karten-daten`).
 - Quiz-Sätze in drei Gruppen (Quizze, Weitere Quizze, „Am nächsten dran“ = Distanz) in `lib/gebiete/index.js`, Wissensdaten in `daten/wissen/` (`npm run wissen-daten`, `lib/gebiete/wissen.js`), Quiz-Liste links `app/karte/QuizListe.js`.
 - Party 1 gegen 1: `app/party/`, `lib/party/` (Supabase Realtime, lokal BroadcastChannel), Duell in `app/karte/DuellAnsicht.js`.
-- Design angelehnt an Apple HIG, Farbwelt „Atlas“ (Akzent Atlasblau): Farben nur als CSS-Variablen, keine Bedienhinweise oder Emojis in der Oberfläche.
+- Drei Gestaltungen (`app/stile.css`, Einstellung `stil`): Comic Pixel (Standard), Atlas, Seekarte. Farben nur als CSS-Variablen, keine Bedienhinweise oder Emojis in der Oberfläche.
 - Oberfläche zweisprachig: Texte über `t('…')` bzw. `<T>…</T>`, Englisch in `lib/sprache/en.js`; danach `npm run texte`.
 - Vor jedem Push `npm run build` ausführen.
 - Zugangsdaten nur in `.env.local` bzw. bei Vercel, nie im Repository.

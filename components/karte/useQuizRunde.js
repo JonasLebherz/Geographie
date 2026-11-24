@@ -8,6 +8,7 @@
  *  - Ein Fehlversuch zählt (Punkt unter dem Namen wird rot), kurz erscheint der Name des
  *    angeklickten Gebiets. Nach dem dritten Fehlversuch wird das Gesuchte rot aufgedeckt
  *    (Ring + 1,5 s Pause), dann geht es weiter.
+ *  - „Weiß ich nicht“ (ueberspringen) deckt sofort rot auf – statt dreimal zu raten.
  *  - Klicks auf schon gelöste Gebiete zählen nicht, zeigen aber deren Namen.
  *  - Wertung: grün voll, gelb halb → Prozent. Bei Gleichstand entscheidet die Zeit.
  *  - Serie: Treffer beim ersten Versuch am Stück (jeder Fehlversuch beendet sie).
@@ -120,6 +121,40 @@ export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: feste
     fertigRef.current?.({ nummer: stand.nummer, farbe });
   }, []);
 
+  /** Gesuchtes rot aufdecken (nach dem dritten Fehlversuch oder „Weiß ich nicht“), kurz zeigen, dann weiter */
+  const aufdecken = useCallback(
+    (s, text) => {
+      const ziel = s.reihenfolge[s.nummer];
+      const aufgedeckt = { ...s, serie: 0, sperre: true, ergebnis: { ...s.ergebnis, [ziel]: 'rot' } };
+      melden('aufgedeckt', text);
+      klang('aufgedeckt');
+      spaeter('effekt', () => setEffekt({ id: ziel, art: 'puls' }), 0);
+      if (gesteuert) {
+        erledigt(aufgedeckt, 'rot');
+        return;
+      }
+      setSpiel(aufgedeckt);
+      spaeter(
+        'weiter',
+        () => {
+          setEffekt(null);
+          setRueckmeldung(null);
+          setSpiel(weiter(spielRef.current));
+        },
+        AUFGEDECKT_PAUSE,
+      );
+    },
+    [erledigt, gesteuert, melden, spaeter, weiter],
+  );
+
+  /** „Weiß ich nicht“: zählt als falsch (rot), das Gesuchte wird sofort gezeigt */
+  const ueberspringen = useCallback(() => {
+    const s = spielRef.current;
+    if (!s || s.ende || s.sperre) return;
+    anstossen('aufgedeckt');
+    aufdecken(s, t('Übersprungen'));
+  }, [anstossen, aufdecken, t]);
+
   const klick = useCallback(
     (id) => {
       const s = spielRef.current;
@@ -152,27 +187,9 @@ export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: feste
         return;
       }
 
-      // Dritter Fehlversuch: Gesuchtes rot aufdecken, kurz zeigen, dann weiter
-      const aufgedeckt = { ...s, fehl, serie: 0, sperre: true, ergebnis: { ...s.ergebnis, [ziel]: 'rot' } };
-      melden('aufgedeckt', t('Aufgedeckt'));
-      klang('aufgedeckt');
-      spaeter('effekt', () => setEffekt({ id: ziel, art: 'puls' }), 0);
-      if (gesteuert) {
-        erledigt(aufgedeckt, 'rot');
-        return;
-      }
-      setSpiel(aufgedeckt);
-      spaeter(
-        'weiter',
-        () => {
-          setEffekt(null);
-          setRueckmeldung(null);
-          setSpiel(weiter(spielRef.current));
-        },
-        AUFGEDECKT_PAUSE,
-      );
+      aufdecken({ ...s, fehl }, t('Aufgedeckt'));
     },
-    [anstossen, erledigt, gesteuert, melden, namen, spaeter, t, weiter],
+    [anstossen, aufdecken, melden, namen, spaeter, t, weiter, erledigt, gesteuert],
   );
 
   /** Duell: nächste Frage (beide fertig oder Zeit um) */
@@ -207,6 +224,7 @@ export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: feste
     spiel,
     starten,
     klick,
+    ueberspringen,
     rueckmeldung,
     effekt,
     impuls,
