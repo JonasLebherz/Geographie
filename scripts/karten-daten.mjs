@@ -22,7 +22,7 @@ import { join } from 'node:path';
 import { topology } from 'topojson-server';
 import { presimplify, quantile, simplify } from 'topojson-simplify';
 import { quantize } from 'topojson-client';
-import { geoBounds, geoContains } from 'd3-geo';
+import { geoArea, geoBounds, geoContains } from 'd3-geo';
 import { KONTINENTE } from '../lib/geodaten/kontinente.js';
 
 const QUELLEN = '.quellen';
@@ -52,6 +52,20 @@ async function laden(name) {
   return JSON.parse(readFileSync(pfad, 'utf8'));
 }
 
+/**
+ * Umlaufrichtung für d3: Außenringe im Uhrzeigersinn. GeoJSON nach RFC 7946 (NUTS) läuft andersherum –
+ * d3 läse ein solches Polygon als „ganze Erde ohne diese Fläche“ (Fläche > halbe Kugel).
+ */
+function fuerD3(geometrie) {
+  const drehen = (polygon) => {
+    const flaeche = geoArea({ type: 'Polygon', coordinates: polygon });
+    return flaeche > 2 * Math.PI ? polygon.map((ring) => [...ring].reverse()) : polygon;
+  };
+  if (geometrie.type === 'Polygon') return { ...geometrie, coordinates: drehen(geometrie.coordinates) };
+  if (geometrie.type === 'MultiPolygon') return { ...geometrie, coordinates: geometrie.coordinates.map(drehen) };
+  return geometrie;
+}
+
 /** Topologie bauen, vereinfachen (Anteil der Punkte, die bleiben) und quantisieren */
 function kompakt(objekte, behalten, quantisierung = 1e5) {
   let topo = topology(objekte);
@@ -67,8 +81,9 @@ function kompakt(objekte, behalten, quantisierung = 1e5) {
 /** Kürzt Fließkommazahlen beim Schreiben (Längen/Breiten auf 3 Stellen ≈ 100 m) */
 const kurz = (_, wert) => (typeof wert === 'number' && !Number.isInteger(wert) ? Math.round(wert * 1000) / 1000 : wert);
 
-function schreiben(name, daten) {
-  const text = JSON.stringify(daten, kurz);
+function schreiben(name, daten, runden = false) {
+  // Nur Städte runden – die Skalierung einer Topologie (transform) braucht alle Stellen
+  const text = JSON.stringify(daten, runden ? kurz : undefined);
   writeFileSync(join(ZIEL, name), text);
   console.log(`${name}: ${(text.length / 1024).toFixed(0)} KB`);
 }
@@ -85,12 +100,12 @@ async function regionen() {
     if (!STAATEN.has(land) || !f.geometry) continue;
     features.push({
       type: 'Feature',
-      geometry: f.geometry,
+      geometry: fuerD3(f.geometry),
       properties: {
         id: p.adm1_code,
         land,
-        name: p.name_de || p.name,
-        en: p.name_en || p.name,
+        name: p.name_de || p.name || p.name_en || p.name_local || p.adm1_code,
+        en: p.name_en || p.name || p.name_de || p.name_local || p.adm1_code,
         typ: p.type_en || '',
       },
     });
@@ -139,14 +154,14 @@ async function deutschland() {
   const namen = new Map(kreisNamen(n3roh.map((f) => f.properties)).map((k) => [k.id, k]));
   const laender = n1.map((f) => ({
     type: 'Feature',
-    geometry: f.geometry,
+    geometry: fuerD3(f.geometry),
     properties: { id: f.properties.id, name: f.properties.na, en: LAENDER_EN[f.properties.na] ?? f.properties.na },
   }));
   const kreise = n3roh.map((f) => {
     const k = namen.get(f.properties.id);
     return {
       type: 'Feature',
-      geometry: f.geometry,
+      geometry: fuerD3(f.geometry),
       properties: { id: k.id, land: k.id.slice(0, 3), name: k.name, en: k.en, stadt: k.stadt },
     };
   });
@@ -208,7 +223,7 @@ async function orte(regionenListe, de) {
     liste.push(ort);
   }
   liste.sort((a, b) => b.ew - a.ew);
-  schreiben('orte.json', liste);
+  schreiben('orte.json', liste, true);
 }
 
 mkdirSync(QUELLEN, { recursive: true });
