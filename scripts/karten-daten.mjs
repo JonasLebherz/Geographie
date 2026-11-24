@@ -37,6 +37,7 @@ const DATEIEN = {
   'nuts1.json': `${NUTS}/nutsrg_1.json`,
   'nuts3.json': `${NUTS}/nutsrg_3.json`,
   'ne-rivers_lake_centerlines.geojson': `${NE}/ne_10m_rivers_lake_centerlines.geojson`,
+  'ne-rivers_europe.geojson': `${NE}/ne_10m_rivers_europe.geojson`, // Ergänzung: kleinere Flüsse Europas (Isar, Lech …)
   'ne-lakes.geojson': `${NE}/ne_10m_lakes.geojson`,
   'ne-roads.geojson': `${NE}/ne_10m_roads.geojson`,
 };
@@ -112,6 +113,7 @@ async function regionen() {
         name: p.name_de || p.name || p.name_en || p.name_local || p.adm1_code,
         en: p.name_en || p.name || p.name_de || p.name_local || p.adm1_code,
         typ: p.type_en || '',
+        wikidata: p.wikidataid || undefined,
       },
     });
   }
@@ -235,9 +237,26 @@ async function orte(regionenListe, de) {
 // 4. Gewässer und Autobahnen (Orientierung auf der Karte)
 // ---------------------------------------------------------------------------------------
 async function gewaesser() {
-  const fluesse = (await laden('ne-rivers_lake_centerlines.geojson')).features
+  const fluss = (f) => ({
+    type: 'Feature',
+    geometry: f.geometry,
+    // Name englisch (Schlüssel) und deutsch; fehlt name_de, hilft daten/wissen/flussnamen.json (Wikidata)
+    properties: {
+      rang: f.properties.scalerank,
+      name: f.properties.name_en || f.properties.name || undefined,
+      de: f.properties.name_de || undefined,
+    },
+  });
+  const haupt = (await laden('ne-rivers_lake_centerlines.geojson')).features
     .filter((f) => f.geometry && f.properties.featurecla !== 'Lake Centerline')
-    .map((f) => ({ type: 'Feature', geometry: f.geometry, properties: { rang: f.properties.scalerank } }));
+    .map(fluss);
+  // Europa-Ergänzung: nur benannte Flüsse, die es in den Hauptdaten nicht schon gibt (Rang 10–12)
+  const bekannt = new Set(haupt.map((f) => f.properties.name));
+  const europa = (await laden('ne-rivers_europe.geojson')).features
+    .filter((f) => f.geometry && (f.properties.name_en || f.properties.name))
+    .map(fluss)
+    .filter((f) => !bekannt.has(f.properties.name));
+  const fluesse = [...haupt, ...europa];
   const seen = (await laden('ne-lakes.geojson')).features
     .filter((f) => f.geometry && f.properties.scalerank <= 7)
     .map((f) => ({ type: 'Feature', geometry: fuerD3(f.geometry), properties: { rang: f.properties.scalerank } }));
@@ -251,15 +270,20 @@ async function gewaesser() {
 async function strassen() {
   const autobahnen = (await laden('ne-roads.geojson')).features
     .filter((f) => f.geometry && f.properties.expressway === 1 && f.properties.type !== 'Ferry Route')
-    .map((f) => ({ type: 'Feature', geometry: f.geometry, properties: { rang: f.properties.scalerank } }));
+    .map((f) => ({ type: 'Feature', geometry: f.geometry, properties: { rang: f.properties.scalerank, nummer: f.properties.name || undefined } }));
   const topo = kompakt({ autobahnen: { type: 'FeatureCollection', features: autobahnen } }, 0.25);
   schreiben('strassen.topo.json', topo);
 }
 
 mkdirSync(QUELLEN, { recursive: true });
 mkdirSync(ZIEL, { recursive: true });
-const regionenListe = await regionen();
-const de = await deutschland();
-await orte(regionenListe, de);
-await gewaesser();
-await strassen();
+// Einzelne Teile: `npm run karten-daten gewaesser` (ohne Angabe alles)
+const nur = process.argv.slice(2);
+const soll = (name) => nur.length === 0 || nur.includes(name);
+if (soll('regionen') || soll('orte')) {
+  const regionenListe = await regionen();
+  const de = await deutschland();
+  await orte(regionenListe, de);
+}
+if (soll('gewaesser')) await gewaesser();
+if (soll('strassen')) await strassen();

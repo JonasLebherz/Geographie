@@ -35,6 +35,9 @@ export function mischen(liste) {
   return kopie;
 }
 
+/** Sterne nach Ergebnis: ab 50 % einer, ab 75 % zwei, ab 90 % drei */
+export const sterneFuer = (prozent) => (prozent >= 90 ? 3 : prozent >= 75 ? 2 : prozent >= 50 ? 1 : 0);
+
 /** Trefferquote in Prozent: grün voll, gelb halb */
 export function quote(ergebnis, anzahl) {
   const werte = Object.values(ergebnis);
@@ -45,6 +48,8 @@ export function quote(ergebnis, anzahl) {
 
 /**
  * einheiten:   [{ id, name, en, … }] – alles, was auf der Karte anklickbar ist
+ *              (Einheiten mit gefragt === false sind anklickbar, werden aber nicht gefragt,
+ *              z. B. Kreise ohne eigenes Kfz-Kennzeichen)
  * runde:       wie viele davon in einer Runde gefragt werden
  * bestenliste: Schlüssel für Bestwert und Bestenliste
  * reihenfolge: feste Fragen (Party: beide Spieler dieselben) – sonst zufällig
@@ -74,7 +79,8 @@ export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: feste
   const starten = useCallback(() => {
     Object.values(timer.current).forEach(clearTimeout);
     // Feste Reihenfolge (Party: beide Spieler bekommen dieselben Fragen) oder zufällig
-    const ids = festeReihenfolge ?? mischen(einheiten.map((e) => e.id)).slice(0, Math.min(runde, einheiten.length));
+    const fragbar = einheiten.filter((e) => e.gefragt !== false);
+    const ids = festeReihenfolge ?? mischen(fragbar.map((e) => e.id)).slice(0, Math.min(runde, fragbar.length));
     setSpiel({ reihenfolge: ids, nummer: 0, fehl: 0, ergebnis: {}, start: Date.now(), ende: 0, sperre: false, serie: 0, besteSerie: 0 });
     setRueckmeldung(null);
     setEffekt(null);

@@ -14,8 +14,9 @@
  * Hat nur einer richtig, bekommt er den Bonus ohne Schiedsspruch. Verlässt der Gegner die
  * Lobby, wird nicht mehr auf ihn gewartet.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
+import Frage from '@/components/karte/Frage';
 import { useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
 import TonSchalter from '@/components/TonSchalter';
 import { Chevron, Flamme } from '@/components/Symbole';
@@ -71,6 +72,7 @@ export default function DuellAnsicht({ gebiet, quiz, party, onLobby, onRevanche 
     onFrageFertig,
   });
   const { spiel, fertig, naechste, zeitUm } = runde;
+  const einheiten = useMemo(() => new Map(daten.einheiten.map((e) => [e.id, e])), [daten.einheiten]);
   const nummer = spiel?.nummer ?? 0;
   const aktuell = antworten[nummer] ?? {};
   const gegnerDa = Boolean(party.gegner);
@@ -164,9 +166,7 @@ export default function DuellAnsicht({ gebiet, quiz, party, onLobby, onRevanche 
                 {runde.serie}
               </span>
             )}
-            <p className="frage-name" key={runde.ziel ?? 'leer'}>
-              {runde.zielName ?? ' '}
-            </p>
+            <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} />
             <div className="frage-unter">
               <span className="versuche">
                 {Array.from({ length: VERSUCHE }, (_, i) => (

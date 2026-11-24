@@ -79,6 +79,10 @@
   --land-0: #f1e4c8; --land-1: #f4d9c6; --land-2: #e4d8ef; --land-3: #dde5d0; --land-4: #e7e0d4; --land-5: #f6efd6;
   --land-hover: #ffffff;
   --fluss: #6fa8d6;
+  --fluss-quiz: #2f7fc1;            /* Flüsse im Quiz: kräftiger als die Orientierung */
+  --strasse-quiz: #6b7a90;
+  --bild-flaeche: #d6e2f5;           /* Bildsymbole: zart getönte Flächen */
+  --bild-rand: rgba(36, 87, 181, .45);
   --autobahn: #d9822b;
   --wz-grund: #ffffff;
   --wz-linie: #1d1d1f;
@@ -98,6 +102,8 @@
 
   /* Schrift für Titel, Fragen und Zahlen */
   --schrift-titel: "Bricolage Grotesque Variable", "IBM Plex Sans", -apple-system, sans-serif;
+  --schrift: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --schrift-kennzeichen: "Bricolage Grotesque Variable", "Arial Narrow", sans-serif;
   /* Höhenlinien im Hintergrund (sehr zart) */
   --hoehenlinien: rgba(36, 87, 181, .07);
 
@@ -153,6 +159,10 @@
   --land-0: #3a352b; --land-1: #3c312b; --land-2: #34303e; --land-3: #303a30; --land-4: #36332e; --land-5: #3b3a2b;
   --land-hover: #4a4f5a;
   --fluss: #3d6f9a;
+  --fluss-quiz: #5aa2e0;
+  --strasse-quiz: #9aa6b8;
+  --bild-flaeche: #4d6596;
+  --bild-rand: rgba(122, 167, 255, .5);
   --autobahn: #b8702c;
   --wz-grund: #2c2c2e;
   --wz-linie: #f5f5f7;
@@ -1211,6 +1221,11 @@ body::after {
   background: var(--akzent-zart); color: var(--akzent); font-weight: 600;
 }
 
+/* Party: vorgemerktes Quiz des Gastgebers, Start erst mit Mitspieler */
+.vorgemerkt { display: flex; flex-direction: column; gap: 4px; padding: 16px; margin-bottom: 16px; }
+.vorgemerkt strong { font-family: var(--schrift-titel); font-size: 1.25rem; font-weight: 800; letter-spacing: -.02em; margin-bottom: 8px; }
+.vorgemerkt .leise { font-size: .8125rem; font-weight: 600; }
+
 /* Duell: Punktestand der beiden */
 .duell-stand { list-style: none; margin: 4px 0 8px; padding: 0; display: grid; gap: 8px; }
 .duell-stand li {
@@ -1240,6 +1255,197 @@ body::after {
   animation: frist var(--dauer) linear forwards;
 }
 @keyframes frist { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* =====================================================================
+ * 5e. Weitere Quizze: Linien, Bildsymbole, Flaggen, Kennzeichen, Städte-Stufen,
+ *     „Am nächsten dran“ (Distanz)
+ * ================================================================== */
+
+/* Linien (Flüsse, Autobahnen): breite unsichtbare Trefferzone, darüber der Strich */
+.kontinentkarte .linie-treffer { fill: none; stroke: transparent; stroke-width: 16; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: stroke; }
+.kontinentkarte .linie-strich { fill: none; stroke: var(--fluss-quiz); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; pointer-events: none; transition: stroke .25s var(--weich), stroke-width .2s var(--weich); }
+.kontinentkarte.quiz-linie.offen .linie-einheit.frei { cursor: pointer; }
+@media (hover: hover) {
+  .kontinentkarte.quiz-linie.offen .linie-einheit.frei:hover .linie-strich { stroke: var(--akzent); stroke-width: 4; }
+}
+.kontinentkarte.quiz .linie-einheit.gruen .linie-strich { stroke: var(--land-gruen); stroke-width: 3.4; }
+.kontinentkarte.quiz .linie-einheit.gelb .linie-strich { stroke: var(--land-gelb); stroke-width: 3.4; }
+.kontinentkarte.quiz .linie-einheit.rot .linie-strich { stroke: var(--land-rot); stroke-width: 3.4; }
+.kontinentkarte .linie-einheit.daneben .linie-strich { animation: linie-daneben .6s ease; }
+.kontinentkarte .linie-einheit.puls .linie-strich { animation: linie-puls 1.1s ease 2; }
+@keyframes linie-daneben { 30% { stroke: var(--land-rot); stroke-width: 5; } }
+@keyframes linie-puls { 50% { stroke-width: 7; } }
+/* Autobahnen grau-blau, Flüsse blau */
+.kontinentkarte.quiz-linie .linie-strich { stroke: var(--strasse-quiz); }
+.kontinentkarte.quiz-fluesse .linie-strich { stroke: var(--fluss-quiz); }
+
+/* Bildsymbole (Sehenswürdigkeiten, Stadien): runde Plakette in Bildschirmgröße */
+.kontinentkarte .marke.bild .bild-huelle { transform: scale(var(--px, 1)); }
+.kontinentkarte .bild-symbol { animation: bild-auf .45s var(--weich) backwards; animation-delay: calc(var(--i, 0) * 14ms); transform-origin: 0 0; transition: transform .2s var(--weich); }
+.kontinentkarte .bild-grund { fill: var(--wz-grund); stroke: var(--bild-rand); stroke-width: 1.4; vector-effect: non-scaling-stroke; filter: drop-shadow(0 1.5px 2px rgba(0, 0, 0, .22)); transition: fill .3s var(--weich), stroke .3s var(--weich); }
+.kontinentkarte .bild-flaeche { fill: var(--bild-flaeche); stroke: none; transition: fill .3s var(--weich); }
+.kontinentkarte .bild-linie { fill: none; stroke: var(--wz-linie); stroke-width: 1.25; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.kontinentkarte.quiz.offen .marke.bild.frei { cursor: pointer; }
+@media (hover: hover) {
+  .kontinentkarte.quiz.offen .marke.bild.frei:hover .bild-symbol { transform: scale(1.18) translateY(-1.5px); }
+  .kontinentkarte.quiz.offen .marke.bild.frei:hover .bild-grund { stroke: var(--akzent); }
+}
+.kontinentkarte .marke.bild.gruen .bild-grund { fill: var(--land-gruen); stroke: var(--land-gefaerbt-grenze); }
+.kontinentkarte .marke.bild.gelb .bild-grund { fill: var(--land-gelb); stroke: var(--land-gefaerbt-grenze); }
+.kontinentkarte .marke.bild.rot .bild-grund { fill: var(--land-rot); stroke: var(--land-gefaerbt-grenze); }
+.kontinentkarte .marke.bild:is(.gruen, .gelb, .rot) .bild-flaeche { fill: rgba(255, 255, 255, .55); }
+.kontinentkarte .marke.bild:is(.gruen, .gelb, .rot) .bild-linie { stroke: #1d1d1f; }
+.kontinentkarte .marke.bild.gruen .bild-symbol { animation: bild-hupf .5s var(--weich); }
+.kontinentkarte .marke.bild.daneben .bild-symbol { animation: bild-wackeln .45s ease; }
+.kontinentkarte .marke.bild.puls .bild-symbol { animation: bild-hupf .55s var(--weich) 2; }
+/* Kleine Bewegungen in einzelnen Bildern: Wasser fließt, Schnee glitzert */
+.kontinentkarte .sym-wasser .bild-linie { stroke: var(--fluss); stroke-dasharray: 2.2 1.6; animation: fliessen 1.2s linear infinite; }
+.kontinentkarte .sym-schnee .bild-linie { stroke: #8fb4d9; }
+@keyframes bild-auf { from { transform: scale(.2); opacity: 0; } 70% { transform: scale(1.1); } }
+@keyframes bild-hupf { 40% { transform: scale(1.3) translateY(-3px); } }
+@keyframes bild-wackeln { 25% { transform: rotate(-12deg); } 50% { transform: rotate(10deg); } 75% { transform: rotate(-6deg); } }
+@keyframes fliessen { to { stroke-dashoffset: -7.6; } }
+
+/* Frage-Kapsel: Fakten-Zeile, Flagge, Kennzeichen */
+.frage-kapsel .frage-info { margin: 1px 0 0; color: var(--text-leise); font-size: .9375rem; font-variant-numeric: tabular-nums; }
+.frage-kapsel .frage-bild { line-height: 0; padding: 2px 0; }
+.frage-flagge { height: 58px; width: auto; max-width: 100%; border-radius: 5px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .12), 0 3px 10px rgba(0, 0, 0, .16); animation: bild-auf .35s var(--weich) backwards; }
+.kennzeichen {
+  display: inline-flex; align-items: stretch; height: 52px; border-radius: 7px; overflow: hidden;
+  background: #fff; border: 2.5px solid #1d1d1f; box-shadow: 0 3px 10px rgba(0, 0, 0, .16);
+  animation: bild-auf .35s var(--weich) backwards;
+}
+.kz-eu { display: flex; align-items: flex-end; justify-content: center; width: 30px; padding-bottom: 5px; background: #0b3fa8; color: #fff; font: 600 .95rem/1 var(--schrift); letter-spacing: 0; }
+.kz-text { display: flex; align-items: center; padding: 0 18px 0 14px; color: #1d1d1f; font: 700 2.1rem/1 var(--schrift-kennzeichen); letter-spacing: .06em; }
+.frage-hinweis { color: var(--text-leise); font-size: .9375rem; }
+
+/* Städte: Wahl der Größe in der Zeile (die 10, 50, 100 größten) */
+.stufen-zeile { display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 6px 10px 6px 16px; }
+.leiste li + li.stufen-zeile, .leiste li.stufen-zeile + li .listen-zeile { border-top: .5px solid var(--linie); }
+.stufen-zeile .titel { flex: 1; min-width: 0; font-weight: 500; }
+.stufen { display: inline-flex; gap: 2px; padding: 2px; border-radius: 10px; background: var(--fuellung); }
+.stufen button {
+  position: relative; min-width: 46px; min-height: 40px; padding: 0 10px; border: 0; border-radius: 8px;
+  background: transparent; color: var(--text); font: 600 .9375rem var(--schrift-titel); font-variant-numeric: tabular-nums; cursor: pointer;
+  transition: background var(--uebergang), color var(--uebergang), transform .15s var(--weich);
+}
+.stufen button:hover { background: var(--karte-solid); color: var(--akzent); box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.stufen button:active { transform: scale(.94); }
+.stufen button.laedt { color: var(--akzent); }
+.stufe-bestwert { position: absolute; top: 5px; right: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--land-gelb); }
+
+/* Am nächsten dran: Linie vom Klick zum Ziel, Ziel mit Beschriftung */
+.kontinentkarte.quiz-distanz.offen { cursor: crosshair; }
+.kontinentkarte .px-fest { transform: scale(var(--px, 1)); }
+.kontinentkarte .distanz-marke { pointer-events: none; }
+.kontinentkarte .distanz-linie { stroke: var(--text); stroke-width: 1.6; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; animation: linie-zeichnen .45s var(--weich) backwards; }
+.kontinentkarte .distanz-klick { fill: var(--text); stroke: var(--land); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.kontinentkarte .distanz-ziel circle { fill: var(--land-rot); stroke: #fff; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.kontinentkarte .distanz-marke.gruen .distanz-ziel circle { fill: var(--land-gruen); }
+.kontinentkarte .distanz-marke.gelb .distanz-ziel circle { fill: var(--land-gelb); }
+.kontinentkarte .distanz-ziel .kern { fill: #fff; stroke: none; }
+.kontinentkarte .distanz-ziel { animation: bild-auf .4s var(--weich) .15s backwards; }
+.kontinentkarte .distanz-text {
+  font: 600 13px var(--schrift); text-anchor: middle; fill: var(--text);
+  paint-order: stroke; stroke: var(--land); stroke-width: 4px; stroke-linejoin: round;
+  animation: erscheinen .3s var(--weich) .25s backwards;
+}
+@keyframes linie-zeichnen { from { opacity: 0; } }
+.rueckmeldung.distanz.gruen { background: var(--gruen-bg); color: var(--gruen); }
+.rueckmeldung.distanz.gelb { background: var(--gelb-bg); color: var(--gelb); }
+.rueckmeldung.distanz.rot { background: var(--rot-bg); color: var(--rot); }
+.distanz-summe { margin: 4px 0 14px; color: var(--text-leise); }
+.distanz-summe strong { color: var(--text); font: 700 1.35rem var(--schrift-titel); font-variant-numeric: tabular-nums; }
+.distanz-liste { list-style: none; margin: 0 0 16px; padding: 0; text-align: left; }
+.distanz-liste li { display: flex; align-items: center; gap: 10px; padding: 9px 14px; }
+.distanz-liste li + li { border-top: .5px solid var(--linie); }
+.distanz-liste .titel { flex: 1; min-width: 0; font-weight: 500; }
+.distanz-liste .titel small { display: block; color: var(--text-leise); font-weight: 400; font-size: .8125rem; }
+.distanz-liste .zusatz { color: var(--text-leise); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* =====================================================================
+ * 5f. Quiz-Liste links (app/karte/QuizListe.js) – wie die Seitenleiste auf dem iPad
+ * ================================================================== */
+
+.erkundung.mit-liste { grid-template-columns: auto minmax(0, 1fr) 360px; }
+.quizliste {
+  height: var(--buehne-h);
+  width: 56px;
+  transition: width .35s var(--weich);
+  min-width: 0;
+}
+.quizliste.offen {
+  width: clamp(340px, 40vw, 600px);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 14px 0;
+  border-radius: 20px;
+  background: var(--glas-erhoeht);
+  -webkit-backdrop-filter: var(--glas-unschaerfe);
+  backdrop-filter: var(--glas-unschaerfe);
+  border: 1px solid var(--glas-rand);
+  box-shadow: var(--glas-kante), var(--schatten);
+  overflow: hidden;
+  animation: liste-auf .3s var(--weich);
+}
+@keyframes liste-auf { from { opacity: .4; } }
+/* Eingeklappt: schmaler Streifen mit Symbol und senkrechter Beschriftung */
+.quizliste-griff {
+  width: 56px; height: 100%;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  padding: 16px 0;
+  border: 1px solid var(--glas-rand); border-radius: 20px;
+  background: var(--glas-erhoeht); box-shadow: var(--glas-kante), var(--schatten);
+  color: var(--akzent); cursor: pointer;
+  transition: background var(--uebergang), transform .2s var(--weich);
+}
+.quizliste-griff:hover { background: var(--karte-solid); }
+.quizliste-griff:active { transform: scale(.98); }
+.quizliste-griff svg { width: 24px; height: 24px; flex: none; }
+.griff-text { writing-mode: vertical-rl; transform: rotate(180deg); font: 700 .9375rem var(--schrift-titel); letter-spacing: .01em; color: var(--text); }
+.ql-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.ql-kopf h2 { margin: 0 0 0 4px; font: 800 1.5rem var(--schrift-titel); letter-spacing: -.03em; }
+.ql-zu {
+  width: 44px; height: 44px; display: grid; place-items: center; border: 0; border-radius: 12px;
+  background: transparent; color: var(--akzent); cursor: pointer; transition: background var(--uebergang);
+}
+.ql-zu:hover { background: var(--akzent-zart); }
+.ql-zu svg { width: 24px; height: 24px; }
+.ql-suche {
+  display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px;
+  border-radius: 11px; background: var(--fuellung); color: var(--text-leise);
+}
+.ql-suche svg { width: 18px; height: 18px; flex: none; }
+.ql-suche input { flex: 1; min-width: 0; height: 40px; border: 0; background: none; font: inherit; color: var(--text); outline: none; }
+.ql-suche:focus-within { box-shadow: 0 0 0 3px var(--akzent-ring); }
+.ql-filter { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 12px; scrollbar-width: none; }
+.ql-filter button {
+  flex: none; min-height: 34px; padding: 0 14px; border-radius: 999px; border: 0;
+  background: var(--fuellung); color: var(--text); font: 500 .875rem var(--schrift); cursor: pointer;
+  transition: background var(--uebergang), color var(--uebergang);
+}
+.ql-filter button:hover:not(.gewaehlt) { background: var(--akzent-zart); }
+.ql-filter button.gewaehlt { background: var(--akzent-flaeche); color: #fff; }
+.ql-liste { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 -14px; padding: 0 14px 16px; scrollbar-width: thin; position: relative; }
+.ql-gebiet { content-visibility: auto; contain-intrinsic-size: auto 300px; }
+.ql-gebiet + .ql-gebiet { margin-top: 18px; }
+.ql-gebiet h3 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px 4px; font: 700 1.0625rem var(--schrift-titel); letter-spacing: -.015em; }
+.ql-gebiet h3 small { font: 400 .8125rem var(--schrift); color: var(--text-leise); }
+.ql-gebiet.aktuell h3 { color: var(--akzent); }
+.ql-gebiet .liste { margin: 0; }
+.ql-gebiet .listen-zeile { width: 100%; border: 0; background: none; text-align: left; cursor: pointer; font-size: 1rem; }
+.ql-gebiet li + li .listen-zeile, .ql-gebiet li + li.stufen-zeile, .ql-gebiet li.stufen-zeile + li .listen-zeile { border-top: .5px solid var(--linie); }
+.ql-leer { color: var(--text-leise); margin: 12px 4px; }
+.ql-laedt { height: 220px; border-radius: 14px; background: linear-gradient(90deg, var(--fuellung) 30%, var(--akzent-zart) 50%, var(--fuellung) 70%) 0 0 / 200% 100%; animation: laden 1.2s linear infinite; }
+
+/* Handy und Tablet: Liste als Leiste über der Karte */
+@media (max-width: 900px) {
+  .erkundung.mit-liste { grid-template-columns: 1fr; }
+  .quizliste, .quizliste.offen { width: auto; height: auto; }
+  .quizliste.offen { height: min(70dvh, 640px); }
+  .quizliste-griff { width: 100%; height: 48px; flex-direction: row; justify-content: center; padding: 0 16px; }
+  .griff-text { writing-mode: horizontal-tb; transform: none; }
+}
 
 /* =====================================================================
  * 6. Bestenliste

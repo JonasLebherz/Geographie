@@ -125,3 +125,23 @@ export function Kette() {
     </svg>
   );
 }
+
+/** Seitenleiste ein-/ausblenden (wie „sidebar.left“) */
+export function Seitenleiste() {
+  return (
+    <svg {...basis}>
+      <rect x="3" y="4.5" width="18" height="15" rx="3" />
+      <path d="M9.5 4.5v15M5.8 8.5h1.4M5.8 11.5h1.4M5.8 14.5h1.4" />
+    </svg>
+  );
+}
+
+/** Lupe (Suchfeld) */
+export function Lupe() {
+  return (
+    <svg {...basis}>
+      <circle cx="10.5" cy="10.5" r="6" />
+      <path d="m15 15 5 5" />
+    </svg>
+  );
+}
