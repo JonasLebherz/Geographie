@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
 import { mischen, sterneFuer, useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
-import Frage from '@/components/karte/Frage';
+import Frage, { WeissNicht } from '@/components/karte/Frage';
 import SatzZeile from '@/components/karte/SatzZeile';
 import QuizListe from './QuizListe';
 import DistanzAnsicht from './DistanzAnsicht';
@@ -27,7 +27,6 @@ import DuellAnsicht, { DUELL_FRAGEN } from './DuellAnsicht';
 import Bestenliste, { dauer } from '@/components/Bestenliste';
 import TonSchalter from '@/components/TonSchalter';
 import { Chevron, Flamme, Stern } from '@/components/Symbole';
-import Willkommen, { WILLKOMMEN_GESEHEN } from './Willkommen';
 import { useT } from '@/lib/sprache';
 import { klang } from '@/lib/ton';
 import { bestwerteLesen } from '@/lib/bestwerte';
@@ -83,7 +82,7 @@ const adresseVon = (daten) => {
  *   { rolle: 'host' | 'gast', ich, gegner, senden(typ, daten), abonnieren(fn) }
  * Der Gastgeber steuert (Gebiet, Quiz), der Gast fliegt mit; die Adresse bleibt die der Lobby.
  */
-export default function Erkundung({ start, willkommen: mitWillkommen = false, party = null }) {
+export default function Erkundung({ start, party = null }) {
   const partyRef = useRef(party);
   partyRef.current = party;
   const gast = party?.rolle === 'gast';
@@ -91,23 +90,6 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
   const [vorgemerkt, setVorgemerkt] = useState(null);
   const mitspielerDa = Boolean(party?.gegner);
   const t = useT();
-  // Begrüßung (nur Startseite): bis „Solo spielen“ – danach in dieser Sitzung nicht mehr
-  const [willkommen, setWillkommen] = useState(mitWillkommen);
-  useEffect(() => {
-    try {
-      if (sessionStorage.getItem(WILLKOMMEN_GESEHEN)) setWillkommen(false);
-    } catch {
-      /* ohne Speicher eben jedes Mal */
-    }
-  }, []);
-  const soloStarten = useCallback(() => {
-    setWillkommen(false);
-    try {
-      sessionStorage.setItem(WILLKOMMEN_GESEHEN, '1');
-    } catch {
-      /* egal */
-    }
-  }, []);
   const [gebiet, setGebiet] = useState(start);
   const [uebergang, setUebergang] = useState(null); // { von: Gebietsdaten, richtung: 'rein' | 'raus' | 'blende' }
   const [quiz, setQuiz] = useState(null); // { satz, daten, nr }
@@ -454,7 +436,6 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
           </div>
         ))}
         {laedt && <div className="buehne-laedt" aria-hidden="true" />}
-        {willkommen && !party && gebiet.knoten.ebene === 'welt' && !uebergang && <Willkommen onSolo={soloStarten} />}
       </div>
 
       <Leiste
@@ -647,10 +628,12 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
                   <i key={i} className={i < (spiel?.fehl ?? 0) ? 'verbraucht' : undefined} />
                 ))}
               </span>
-              {runde.rueckmeldung && (
+              {runde.rueckmeldung ? (
                 <span key={runde.rueckmeldung.schluessel} className={`rueckmeldung ${runde.rueckmeldung.art}`}>
                   {runde.rueckmeldung.text}
                 </span>
+              ) : (
+                <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
               )}
             </div>
           </div>

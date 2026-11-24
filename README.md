@@ -1,6 +1,6 @@
 # Geo-Quiz
 
-Geografie-Spiel im Browser. Die Startseite ist eine Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild.
+Geografie-Spiel im Browser. Die Startseite ist eine Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
 
 - **Quizze:** Länder, Hauptstädte, Kontinente, größte Städte (Top 10/50/100), Bundesstaaten/Regionen, Landkreise
 - **Weitere Quizze:** Flüsse, Sehenswürdigkeiten, Autobahnen, Inseln, Flaggen, Fußballstadien, Autokennzeichen (Deutschland)
@@ -49,6 +49,7 @@ Werden die Variablen später geändert: **Deployments → … → Redeploy**, we
 - Städte: [GeoNames](https://www.geonames.org/) cities15000 (CC BY 4.0), deutsche Namen über Wikidata
 - Sehenswürdigkeiten, Stadien, Inseln, höchste/tiefste Punkte, Einwohner, Geburtsorte, Kfz-Kennzeichen, Flussnamen: [Wikidata](https://www.wikidata.org/) (CC0)
 - Flaggen: [flag-icons](https://github.com/lipis/flag-icons) (MIT)
+- Schriften (SIL OFL, über @fontsource): IBM Plex Sans, Bricolage Grotesque, Pixelify Sans, Press Start 2P, VT323, IM Fell English
 - Essen und Rekorde der Kontinente: handverlesen (`lib/gebiete/kuratiert.js`)
 - Satellitenbild: [Sentinel-2 cloudless 2016](https://s2maps.eu) von EOX IT Services GmbH (CC BY 4.0, enthält veränderte Copernicus-Sentinel-Daten 2016)
 - Aufbereitung: `npm run karten-daten` (schreibt `daten/`) und `npm run wissen-daten` (schreibt `daten/wissen/`, Flaggen nach `public/flaggen/`; braucht Netz zu Wikidata und GeoNames – hinter einem Proxy mit `NODE_USE_ENV_PROXY=1`)

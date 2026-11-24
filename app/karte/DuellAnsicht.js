@@ -16,7 +16,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
-import Frage from '@/components/karte/Frage';
+import Frage, { WeissNicht } from '@/components/karte/Frage';
 import { useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
 import TonSchalter from '@/components/TonSchalter';
 import { Chevron, Flamme } from '@/components/Symbole';
@@ -177,12 +177,12 @@ export default function DuellAnsicht({ gebiet, quiz, party, onLobby, onRevanche 
                 <span className="rueckmeldung frist">{t('noch {s} s', { s: rest })}</span>
               ) : aktuell.ich && gegnerDa && !aktuell.gegner ? (
                 <span className="rueckmeldung info">{t('Warte auf {name} …', { name: gegnerName })}</span>
+              ) : runde.rueckmeldung ? (
+                <span key={runde.rueckmeldung.schluessel} className={`rueckmeldung ${runde.rueckmeldung.art}`}>
+                  {runde.rueckmeldung.text}
+                </span>
               ) : (
-                runde.rueckmeldung && (
-                  <span key={runde.rueckmeldung.schluessel} className={`rueckmeldung ${runde.rueckmeldung.art}`}>
-                    {runde.rueckmeldung.text}
-                  </span>
-                )
+                !aktuell.ich && <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
               )}
             </div>
             {rest !== null && <span className="frist-balken" style={{ '--dauer': `${RESTZEIT}ms` }} key={`frist-${nummer}`} />}

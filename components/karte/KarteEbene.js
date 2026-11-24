@@ -67,7 +67,7 @@ function Bild({ symbol }) {
 }
 
 /** Flächen und Punkte als eigene, gemerkte Komponente: zeichnet nur neu, wenn sich Farben ändern */
-const Einheiten = memo(function Einheiten({ flaechen, punkte, linien, zustand, effekt, hervor, kulisse }) {
+const Einheiten = memo(function Einheiten({ flaechen, punkte, linien, zustand, effekt, hervor, kulisse, idPraefix = '' }) {
   const klasse = (id, grund) => {
     let k = zustand?.[id] ?? grund;
     if (effekt?.id === id) k += ` ${effekt.art}`;
@@ -101,7 +101,7 @@ const Einheiten = memo(function Einheiten({ flaechen, punkte, linien, zustand, e
         </g>
       )}
       <g>
-        {[...(kulisse ? [] : flaechen.filter((f) => f.punkt)), ...(punkte ?? [])].map((f, i) =>
+        {[...(kulisse ? [] : flaechen.filter((f) => f.punkt && !f.lupe)), ...(punkte ?? [])].map((f, i) =>
           f.symbol ? (
             <g
               key={f.id}
@@ -127,6 +127,37 @@ const Einheiten = memo(function Einheiten({ flaechen, punkte, linien, zustand, e
           ),
         )}
       </g>
+      {!kulisse && (
+        <g className="lupen">
+          {flaechen
+            .filter((f) => f.lupe)
+            .map((f) => {
+              const { x, y, r, k, m } = f.lupe;
+              const zustandKlasse = klasse(f.id, f.ziel === null ? 'blatt' : 'frei');
+              const laenge = Math.hypot(x - f.punkt[0], y - f.punkt[1]) || 1;
+              const ende = [x - ((x - f.punkt[0]) / laenge) * r, y - ((y - f.punkt[1]) / laenge) * r];
+              const clip = `lupe-${idPraefix}-${f.id}`;
+              return (
+                <g key={f.id} data-id={f.id} className={`lupe ${zustandKlasse}`}>
+                  <clipPath id={clip}>
+                    <circle cx={x} cy={y} r={r} />
+                  </clipPath>
+                  <line className="lupe-strich" x1={f.punkt[0]} y1={f.punkt[1]} x2={ende[0]} y2={ende[1]} />
+                  <circle className="lupe-ort" cx={f.punkt[0]} cy={f.punkt[1]} r="4.5" />
+                  <circle className="lupe-grund" cx={x} cy={y} r={r} />
+                  <g clipPath={`url(#${clip})`}>
+                    <path
+                      className={`land f-${f.farbe ?? 0} ${zustandKlasse}`}
+                      d={f.pfad}
+                      transform={`translate(${x} ${y}) scale(${k}) translate(${-m[0]} ${-m[1]})`}
+                    />
+                  </g>
+                  <circle className="lupe-rand" cx={x} cy={y} r={r} />
+                </g>
+              );
+            })}
+        </g>
+      )}
     </>
   );
 });
@@ -221,7 +252,7 @@ export default function KarteEbene({
           <rect key={`${n.x}-${n.y}`} className="nebenkarte" x={n.x} y={n.y} width={n.b} height={n.h} rx="6" />
         ))}
         {mitKulisse && <Einheiten flaechen={daten.flaechen} kulisse />}
-        <Einheiten flaechen={flaechen} punkte={null} zustand={zustand} effekt={effekt} hervor={hervor} />
+        <Einheiten flaechen={flaechen} punkte={null} zustand={zustand} effekt={effekt} hervor={hervor} idPraefix={idPraefix} />
         {karte.seen && <path className="seen" d={karte.seen} />}
         {karte.fluesse && !quiz?.ohneFluesse && <path className="fluesse" d={karte.fluesse} />}
         {(punkte || linien) && <Einheiten flaechen={[]} punkte={punkte} linien={linien} zustand={zustand} effekt={effekt} />}

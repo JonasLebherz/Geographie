@@ -145,3 +145,13 @@ export function Lupe() {
     </svg>
   );
 }
+
+/** Fragezeichen im Kreis (Hilfe) */
+export function Fragezeichen() {
+  return (
+    <svg {...basis}>
+      <path d="M9.2 9.3a2.9 2.9 0 0 1 5.6 1c0 2-2.8 2.4-2.8 4.2" />
+      <circle cx="12" cy="17.6" r=".6" fill="currentColor" />
+    </svg>
+  );
+}

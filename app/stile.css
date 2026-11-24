@@ -1,0 +1,331 @@
+/*
+ * app/stile.css – Gestaltungen zum Umschalten (Profil-Menü → Stil, Einstellung `stil`)
+ *
+ *  comic    Comic Pixel (Standard): gelber Punkte-Hintergrund, dicke schwarze Konturen, harte
+ *           Schatten, Pixelschrift. Länder in gedämpften Pastelltönen – kräftige Farben gehören
+ *           den Antworten (grün/gelb/rot).
+ *  atlas    die frühere ruhige Gestaltung (globals.css, ohne Überschreibungen hier)
+ *  seekarte alte Seekarte: Pergament, Kurslinien und Windrosen über dem Meer, Grenzen als
+ *           gepunktete Tusche, Kupferstich-Schrift. Gibt es nur hell.
+ *
+ * Gesetzt wird <html data-stil="…"> (Start-Skript in lib/einstellungen-start.js, danach
+ * lib/einstellungen.js). Hier werden vor allem die Farb- und Schrift-Variablen aus globals.css
+ * überschrieben, dazu Formen (Konturen, Schatten, Radien).
+ * Schriften liegen im Projekt (@fontsource), keine Anfrage an Google:
+ *  Pixelify Sans (Fließtext, gut lesbar) und Press Start 2P (Titel, nur kurze Wörter).
+ */
+@import "@fontsource/pixelify-sans/400.css";
+@import "@fontsource/pixelify-sans/500.css";
+@import "@fontsource/pixelify-sans/600.css";
+@import "@fontsource/pixelify-sans/700.css";
+@import "@fontsource/press-start-2p/400.css";
+@import "@fontsource/im-fell-english/400.css";
+@import "@fontsource/im-fell-english/400-italic.css";
+@import "@fontsource/im-fell-english-sc/400.css";
+
+/* Ziffern für Comic Pixel: In Pixelify Sans sieht die 3 aus wie eine 8 – Ziffern daher aus VT323
+   (SIL OFL, Datei aus @fontsource/vt323 nach public/schriften/), etwas größer, damit sie passen */
+@font-face {
+  font-family: "Pixel Ziffern";
+  src: url("/schriften/vt323-ziffern.woff2") format("woff2");
+  unicode-range: U+0030-0039;
+  size-adjust: 125%;
+  font-display: swap;
+}
+
+/* =====================================================================
+ * Comic Pixel
+ * ================================================================== */
+
+html[data-stil="comic"] {
+  --hintergrund: #ffe9a8;
+  --karte-solid: #fffdf7;
+  --text: #1b1b1b;
+  --text-leise: #4f4a42;           /* 7,6:1 auf --karte */
+  --linie: rgba(27, 27, 27, .14);
+  --feld-rand: #1b1b1b;
+  --feld-bg: #fffdf7;
+  --fuellung: rgba(27, 27, 27, .06);
+  --fuellung-hover: rgba(27, 27, 27, .1);
+  --karte: #fffdf7;
+  --glas: #fffdf7;
+  --glas-erhoeht: #fffdf7;
+  --glas-licht: transparent;
+  --glas-rand: #1b1b1b;
+  --glas-kante: none;
+  --glas-unschaerfe: none;
+  --schatten: 5px 5px 0 #1b1b1b;
+  --umgebung-licht: transparent;
+  --umgebung-kuehl: transparent;
+  --umgebung-dunst: transparent;
+  --umgebung-verlauf: radial-gradient(circle at 1px 1px, rgba(27, 27, 27, .16) 1.2px, transparent 1.6px) 0 0 / 14px 14px, #ffe9a8;
+
+  --akzent: #4f3d9e;               /* Pflaume: 8,1:1 auf --karte */
+  --akzent-hover: #3d2f80;
+  --akzent-flaeche: #5b47a8;       /* weiße Schrift 6,9:1 */
+  --akzent-zart: rgba(91, 71, 168, .11);
+  --akzent-ring: rgba(91, 71, 168, .3);
+
+  --wasser: #b3d6e6;
+  --netz: rgba(27, 27, 27, .07);
+  --land: #fffdf7;
+  --land-0: #e9bfd2; --land-1: #ecc8a4; --land-2: #cfc2e6; --land-3: #eed6c2; --land-4: #f1d9e3; --land-5: #dccbe5;
+  --land-hover: #ffffff;
+  --land-grenze: #1b1b1b;
+  --land-gefaerbt-grenze: #1b1b1b;
+  --umland: #efe9dc;
+  --umland-grenze: rgba(27, 27, 27, .28);
+  --fluss: #6aa6c8;
+  --fluss-quiz: #2f7fb5;
+  --bild-flaeche: #e7dcf5;
+  --bild-rand: #1b1b1b;
+  --wz-grund: #fffdf7;
+  --wz-linie: #1b1b1b;
+  --hoehenlinien: transparent;
+
+  --schrift: "Pixel Ziffern", "Pixelify Sans", "Courier New", monospace;
+  --schrift-titel: "Press Start 2P", "Pixelify Sans", monospace;
+  --schrift-kennzeichen: "Pixel Ziffern", "Pixelify Sans", monospace;
+  --radius-karte: 12px;
+  --kontur: 3px solid #1b1b1b;
+}
+html[data-stil="comic"][data-theme="dark"] {
+  --hintergrund: #24203a;
+  --karte-solid: #2e2a45;
+  --text: #f6f1e7;
+  --text-leise: #c9c1d8;           /* 8:1 auf --karte */
+  --linie: rgba(246, 241, 231, .14);
+  --feld-bg: #2e2a45;
+  --fuellung: rgba(246, 241, 231, .08);
+  --fuellung-hover: rgba(246, 241, 231, .13);
+  --karte: #2e2a45;
+  --glas: #2e2a45;
+  --glas-erhoeht: #2e2a45;
+  --glas-rand: #0d0b16;
+  --schatten: 5px 5px 0 #0d0b16;
+  --umgebung-verlauf: radial-gradient(circle at 1px 1px, rgba(255, 233, 168, .14) 1.2px, transparent 1.6px) 0 0 / 14px 14px, #24203a;
+  --akzent: #c9b8ff;
+  --akzent-hover: #ddd2ff;
+  --akzent-flaeche: #6b56c4;
+  --akzent-zart: rgba(201, 184, 255, .13);
+  --wasser: #2d4a5c;
+  --land: #3a3550;
+  --land-0: #8a6577; --land-1: #8d6e52; --land-2: #6f6690; --land-3: #8b7462; --land-4: #8f7083; --land-5: #7a6a8c;
+  --land-grenze: #0d0b16;
+  --land-gefaerbt-grenze: #0d0b16;
+  --umland: #312c44;
+  --fluss: #5f9cc0;
+  --bild-flaeche: #4d4470;
+  --wz-grund: #2e2a45;
+  --wz-linie: #f6f1e7;
+  --kontur: 3px solid #0d0b16;
+}
+
+html[data-stil="comic"] body { font-size: 17px; letter-spacing: 0; -webkit-font-smoothing: auto; }
+html[data-stil="comic"] body::after { display: none; }
+
+/* Titelschrift: Press Start 2P ist breit – kleiner setzen, kein enges Laufweiten-Tuning */
+html[data-stil="comic"] :is(h1, .leiste-titel, .frage-name, .ergebnis-zahl, .hilfe-titel, .marke-name, .stand strong, .schritt-nr, .ql-kopf h2, .party-karte h2, .lobby-code strong, .vorgemerkt strong, .duell-punkte, .duell-sieger) {
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1.4;
+}
+html[data-stil="comic"] .leiste-titel { font-size: 1.75rem; text-shadow: 3px 3px 0 #f2b632; }
+html[data-stil="comic"][data-theme="dark"] .leiste-titel { text-shadow: 3px 3px 0 #6b56c4; }
+html[data-stil="comic"] .leiste-abschnitt h2 { font-family: var(--schrift-titel); font-weight: 400; font-size: .66rem; color: var(--text); margin-bottom: 12px; }
+html[data-stil="comic"] .leiste-fakten { font-size: 1.02rem; }
+html[data-stil="comic"] .listen-zeile .titel { font-weight: 500; font-size: 1.06rem; }
+html[data-stil="comic"] .frage-kapsel .frage-name { font-size: 1.3rem; }
+html[data-stil="comic"] .ergebnis-zahl { font-size: 2.6rem; }
+html[data-stil="comic"] .stand strong { font-size: 1.05rem; }
+html[data-stil="comic"] .hilfe-titel { font-size: 1rem; }
+html[data-stil="comic"] .schritt-nr { font-size: .7rem; border: 2px solid var(--glas-rand); background: #f2b632; color: #1b1b1b; }
+html[data-stil="comic"] :is(.party-karte h2, .ql-kopf h2) { font-size: 1.05rem; }
+html[data-stil="comic"] :is(.lobby-code strong, .duell-sieger) { font-size: 1rem; }
+html[data-stil="comic"] .duell-punkte { font-size: 1.4rem; }
+
+/* Comic-Kästen: dicke Kontur, harter Schatten, kein Glas */
+html[data-stil="comic"] :is(.karte, .quizliste-griff, .quizliste.offen, .frage-kapsel, .profil-menue, .hilfe-karte) {
+  border: var(--kontur);
+  box-shadow: var(--schatten);
+  border-radius: 12px;
+  background: var(--karte);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-stil="comic"] .buehne { border: var(--kontur); box-shadow: var(--schatten); border-radius: 12px; }
+html[data-stil="comic"] :is(.ansicht-schalter, .zoom) {
+  border: var(--kontur);
+  box-shadow: 3px 3px 0 var(--glas-rand);
+  border-radius: 10px;
+  background: var(--karte);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html[data-stil="comic"] .kontinentkarte .land { stroke-width: 1.7px; }
+html[data-stil="comic"] .kontinentkarte .marke-punkt { stroke: #1b1b1b; stroke-width: 2; }
+
+/* Knöpfe: flach, Kontur, Unterkante zum Draufdrücken */
+html[data-stil="comic"] .knopf { border-radius: 10px; font-weight: 600; }
+html[data-stil="comic"] .knopf-haupt { border: var(--kontur); box-shadow: 0 4px 0 var(--glas-rand); }
+html[data-stil="comic"] .knopf-haupt:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--glas-rand); }
+html[data-stil="comic"] .knopf-zweit { border: var(--kontur); background: var(--karte); box-shadow: 0 4px 0 var(--glas-rand); }
+html[data-stil="comic"] .knopf-zweit:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--glas-rand); }
+html[data-stil="comic"] .stufen button { font-family: var(--schrift-titel); font-size: .66rem; }
+
+/* Kopfleiste: helle Leiste mit Kontur unten; „Spielen“ und „Party“ als zwei eigene Comic-Knöpfe */
+html[data-stil="comic"] .kopf {
+  background: var(--karte);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  border-bottom: var(--kontur);
+}
+html[data-stil="comic"] .kopf-innen { height: 66px; }
+html[data-stil="comic"] .marke-name { font-size: .92rem; }
+html[data-stil="comic"] .hauptnav { background: none; padding: 0; gap: 12px; }
+html[data-stil="comic"] .hauptnav a {
+  min-height: 42px;
+  padding: 6px 16px;
+  border: var(--kontur);
+  border-radius: 10px;
+  background: var(--karte);
+  color: var(--text);
+  font-weight: 600;
+  box-shadow: 0 4px 0 var(--glas-rand);
+  transition: transform .12s ease, box-shadow .12s ease, background-color .15s ease;
+}
+html[data-stil="comic"] .hauptnav a:hover { background: var(--akzent-zart); color: var(--text); }
+html[data-stil="comic"] .hauptnav a:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--glas-rand); }
+html[data-stil="comic"] .hauptnav a.aktiv { background: var(--akzent-flaeche); color: #fff; box-shadow: 0 4px 0 var(--glas-rand); }
+html[data-stil="comic"] .profil-knopf { width: 42px; height: 42px; border: var(--kontur); background: var(--karte); box-shadow: 0 3px 0 var(--glas-rand); }
+html[data-stil="comic"] .profil-knopf[aria-expanded="true"] { box-shadow: 0 1px 0 var(--glas-rand); transform: translateY(2px); }
+html[data-stil="comic"] .segment-schalter { border: 2px solid var(--glas-rand); border-radius: 10px; }
+html[data-stil="comic"] .segment-schalter button.gewaehlt { background: var(--akzent-flaeche); color: #fff; box-shadow: none; }
+
+/* =====================================================================
+ * Alte Seekarte (nur hell – überschreibt auch die dunklen Werte)
+ * ================================================================== */
+
+html[data-stil="seekarte"],
+html[data-stil="seekarte"][data-theme="dark"] {
+  color-scheme: light;
+  --hintergrund: #d8c49a;
+  --karte-solid: #efe2c2;
+  --text: #2e1d0e;
+  --text-leise: #5e4528;           /* 7,1:1 auf Pergament */
+  --linie: rgba(74, 47, 23, .28);
+  --feld-rand: rgba(74, 47, 23, .5);
+  --feld-bg: #f6ecd2;
+  --fuellung: rgba(74, 47, 23, .08);
+  --fuellung-hover: rgba(74, 47, 23, .13);
+  --karte: rgba(239, 226, 194, .96);
+  --glas: rgba(232, 214, 170, .94);
+  --glas-erhoeht: #efe2c2;
+  --glas-licht: transparent;
+  --glas-rand: rgba(74, 47, 23, .5);
+  --glas-kante: none;
+  --glas-unschaerfe: none;
+  --schatten: 0 10px 24px rgba(60, 35, 10, .25);
+  --umgebung-licht: transparent;
+  --umgebung-kuehl: transparent;
+  --umgebung-dunst: transparent;
+  --umgebung-verlauf: url("/stile/seekarte-papier.svg") 0 0 / 600px 600px, radial-gradient(120% 90% at 50% 40%, #e6d3a6, #b8915a);
+
+  --akzent: #7a2e1a;               /* Rötel: 7,6:1 auf Pergament */
+  --akzent-hover: #5e2213;
+  --akzent-flaeche: #7a2e1a;
+  --akzent-zart: rgba(122, 46, 26, .1);
+  --akzent-ring: rgba(122, 46, 26, .3);
+  --akzent-text: #fbf3df;
+
+  --wasser: #cbd0b4;
+  --netz: rgba(74, 47, 23, .25);
+  --land: #ead9b0;
+  --land-0: #e2c48f; --land-1: #dcb3a0; --land-2: #cbbcc6; --land-3: #d8bf9a; --land-4: #e8d6a6; --land-5: #d6b48c;
+  --land-hover: #f6ecd2;
+  --land-grenze: rgba(74, 40, 15, .75);
+  --land-gefaerbt-grenze: rgba(74, 40, 15, .75);
+  --umland: #dccfaa;
+  --umland-grenze: rgba(74, 40, 15, .45);
+  --fluss: #6f8a86;
+  --fluss-quiz: #3f6b73;
+  --bild-flaeche: #e8d6a6;
+  --bild-rand: rgba(74, 40, 15, .7);
+  --wz-grund: #f6ecd2;
+  --wz-linie: #3a2412;
+  --hoehenlinien: transparent;
+
+  --schrift: "IM Fell English", Georgia, serif;
+  --schrift-titel: "IM Fell English", Georgia, serif;
+  --schrift-kennzeichen: Georgia, serif;
+  --radius-karte: 3px;
+}
+html[data-stil="seekarte"] body { font-size: 17px; letter-spacing: 0; }
+html[data-stil="seekarte"] body::after { display: none; }
+html[data-stil="seekarte"] :is(h1, .leiste-titel, .frage-name, .ergebnis-zahl, .hilfe-titel, .stand strong, .ql-kopf h2, .party-karte h2) { font-weight: 400; letter-spacing: 0; }
+html[data-stil="seekarte"] .leiste-titel { font-style: italic; font-size: 2.7rem; }
+html[data-stil="seekarte"] .leiste-titel::after {
+  content: "";
+  display: block;
+  width: 180px;
+  height: 12px;
+  margin-top: 4px;
+  background: no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 12'%3E%3Cpath d='M2 6h70M108 6h70M80 6c4-6 8-6 10 0s6 6 10 0' fill='none' stroke='%234a2f17' stroke-width='1.2'/%3E%3Ccircle cx='76' cy='6' r='2' fill='%234a2f17'/%3E%3Ccircle cx='104' cy='6' r='2' fill='%234a2f17'/%3E%3C/svg%3E");
+}
+html[data-stil="seekarte"] :is(.leiste-abschnitt h2, .marke-name, .griff-text) { font-family: "IM Fell English SC", Georgia, serif; font-weight: 400; letter-spacing: .05em; }
+html[data-stil="seekarte"] .leiste-abschnitt h2 { font-size: 1.12rem; color: var(--akzent); }
+html[data-stil="seekarte"] .leiste-fakten { font-style: italic; }
+html[data-stil="seekarte"] .listen-zeile .titel { font-weight: 400; font-size: 1.06rem; }
+html[data-stil="seekarte"] .frage-kapsel .frage-name { font-style: italic; }
+
+/* Bühne als gerahmter Kupferstich: Kurslinien, Windrosen, Körnung und dunkler Rand darüber */
+html[data-stil="seekarte"] .buehne {
+  border: 2px solid #4a2f17;
+  border-radius: 3px;
+  outline: 1px solid #4a2f17;
+  outline-offset: 5px;
+  box-shadow: 0 0 0 9px #e3cf9f, 0 0 0 10px #4a2f17, 0 14px 30px rgba(60, 35, 10, .35);
+  margin: 10px;
+}
+html[data-stil="seekarte"] .buehne::before,
+html[data-stil="seekarte"] .buehne::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+html[data-stil="seekarte"] .buehne::before { background: url("/stile/seekarte-kurse.svg") center / cover no-repeat; opacity: .9; }
+html[data-stil="seekarte"] .buehne::after {
+  background: url("/stile/seekarte-korn.svg") 0 0 / 300px 300px, radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(110, 70, 25, .45));
+}
+html[data-stil="seekarte"] .kontinentkarte .land { stroke-dasharray: 2 2.5; stroke-width: 1.1px; }
+html[data-stil="seekarte"] .kontinentkarte .netz { stroke-dasharray: 6 4; }
+html[data-stil="seekarte"] :is(.karte, .quizliste-griff, .quizliste.offen, .profil-menue, .hilfe-karte) {
+  border: 1.5px solid #4a2f17;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 4px #efe2c2, inset 0 0 0 5px rgba(74, 47, 23, .5), var(--schatten);
+  background: url("/stile/seekarte-papier.svg") 0 0 / 600px 600px, #efe2c2;
+}
+html[data-stil="seekarte"] .frage-kapsel { background: #efe2c2; border: 1.5px solid #4a2f17; border-radius: 3px; box-shadow: inset 0 0 0 4px #efe2c2, inset 0 0 0 5px rgba(74, 47, 23, .5), var(--schatten); }
+html[data-stil="seekarte"] .knopf { border-radius: 3px; }
+
+/* Kopfleiste aus dunklem Leder mit goldener Doppellinie */
+html[data-stil="seekarte"] .kopf { background: linear-gradient(#3a2412, #2a190b); border-bottom: 3px double #c9a25e; }
+html[data-stil="seekarte"] :is(.kopf .marke, .kopf .marke-name) { color: #f0dfb8; }
+html[data-stil="seekarte"] .marke-name { font-size: 1.4rem; }
+html[data-stil="seekarte"] .kopf .hauptnav { background: rgba(240, 223, 184, .12); }
+html[data-stil="seekarte"] .kopf .hauptnav a { color: #f0dfb8; }
+html[data-stil="seekarte"] .kopf .hauptnav a:hover { background: rgba(240, 223, 184, .14); color: #fff6dd; }
+html[data-stil="seekarte"] .kopf .hauptnav a.aktiv { background: #efe2c2; color: #2e1d0e; }
+html[data-stil="seekarte"] .kopf .profil-knopf { color: #f0dfb8; background: rgba(240, 223, 184, .14); border-color: rgba(240, 223, 184, .35); }
+/* Ein Segelschiff als Zierde unten in der Leiste */
+html[data-stil="seekarte"] .leiste::after {
+  content: "";
+  display: block;
+  height: 90px;
+  margin-top: 24px;
+  background: url("/stile/seekarte-schiff.svg") center / contain no-repeat;
+  opacity: .8;
+}

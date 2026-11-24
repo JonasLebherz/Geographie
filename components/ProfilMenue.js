@@ -5,7 +5,8 @@
  * Oben das Profil: Anmelden gibt es noch nicht (Knopf gesperrt, kurzer Vermerk).
  * Darunter die Einstellungen – sie gelten sofort und bleiben in diesem Browser gespeichert
  * (lib/einstellungen.js):
- *   Darstellung (Hell, Dunkel, Automatisch), Töne an/aus, Lautstärke, Sprache.
+ *   Stil (Comic, Atlas, Seekarte), Darstellung (Hell, Dunkel, Automatisch – die Seekarte gibt es
+ *   nur hell), Töne an/aus, Lautstärke, Sprache.
  *
  * Bedienung wie ein Menü: Klick daneben oder Esc schließt es, der Fokus geht zurück auf den Knopf.
  * Beim Loslassen des Lautstärke-Reglers erklingt ein Probeton.
@@ -43,6 +44,7 @@ export default function ProfilMenue() {
   const [ton, setTon] = useEinstellung('ton');
   const [lautstaerke, setLautstaerke] = useEinstellung('lautstaerke');
   const [sprache, setSprache] = useEinstellung('sprache');
+  const [stil, setStil] = useEinstellung('stil');
   const huelle = useRef(null);
   const knopf = useRef(null);
   const menueId = useId();
@@ -103,6 +105,20 @@ export default function ProfilMenue() {
 
           <div className="einstellungen">
             <div className="einstellung">
+              <span className="einstellung-titel">{t('Stil')}</span>
+              <Segmente
+                titel={t('Stil')}
+                wert={stil}
+                onWahl={setStil}
+                optionen={[
+                  { wert: 'comic', text: t('Comic') },
+                  { wert: 'atlas', text: t('Atlas') },
+                  { wert: 'seekarte', text: t('Seekarte') },
+                ]}
+              />
+            </div>
+
+            <div className={`einstellung${stil === 'seekarte' ? ' gesperrt' : ''}`}>
               <span className="einstellung-titel">{t('Darstellung')}</span>
               <Segmente
                 titel={t('Darstellung')}

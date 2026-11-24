@@ -48,3 +48,13 @@ export default function Frage({ satz, einheit }) {
     </>
   );
 }
+
+/** „Weiß ich nicht“: überspringt die Frage – zählt als falsch, das Gesuchte wird gezeigt */
+export function WeissNicht({ onKlick, gesperrt = false }) {
+  const t = useT();
+  return (
+    <button type="button" className="weiss-nicht" onClick={onKlick} disabled={gesperrt}>
+      {t('Weiß ich nicht')}
+    </button>
+  );
+}
