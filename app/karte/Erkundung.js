@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
 import { mischen, sterneFuer, useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
-import Frage, { WeissNicht } from '@/components/karte/Frage';
+import Frage, { JokerKnopf, WeissNicht } from '@/components/karte/Frage';
 import SatzZeile from '@/components/karte/SatzZeile';
 import QuizListe from './QuizListe';
 import DistanzAnsicht from './DistanzAnsicht';
@@ -69,6 +69,30 @@ function kamerafahrt(A, B, rein, schritte = 32) {
     gegen.push({ offset: zeit, transform: `translate(${B.x * (1 - 1 / m)}px, ${B.y * (1 - 1 / m)}px) scale(${1 / m})` });
   }
   return { kind, eltern, huelle, gegen };
+}
+
+/**
+ * Lage der Kindkarte in der Elternkarte, in Bildschirmpunkten der Bühne (Mitte x/y, Breite w, Höhe h).
+ * Beide Karten sind Mercator: x = tx + k·(λ − l0), y = ty − k·ln tan(π/4 + φ/2). Daraus folgt für
+ * denselben Ort: x_e = tx_e + (k_e/k_k)·(x_k − tx_k) + k_e·(l0_k − l0_e), y_e = ty_e + (k_e/k_k)·(y_k − ty_k).
+ * Die SVGs sind „meet“ eingepasst und mittig – das ergibt den Weg von Karten- zu Bildschirmpunkten.
+ */
+function kartenLage(eltern, kind, buehne) {
+  const pe = eltern.projektionen?.[0];
+  const pk = kind.projektionen?.[0];
+  if (!pe || !pk) return null;
+  const s = pe.k / pk.k;
+  let dl = pk.l0 - pe.l0;
+  dl = ((dl + 540) % 360) - 180;
+  const x0 = pe.tx + s * (0 - pk.tx) + pe.k * ((dl * Math.PI) / 180);
+  const y0 = pe.ty + s * (0 - pk.ty);
+  const se = Math.min(buehne.width / eltern.breite, buehne.height / eltern.hoehe);
+  const ox = (buehne.width - eltern.breite * se) / 2;
+  const oy = (buehne.height - eltern.hoehe * se) / 2;
+  const w = kind.breite * s * se;
+  const h = kind.hoehe * s * se;
+  if (!(w > 0 && h > 0)) return null;
+  return { x: ox + se * x0 + w / 2, y: oy + se * y0 + h / 2, w, h };
 }
 
 /** Adresse eines Gebiets: /karte/europa/deutschland – die Welt ist die Startseite (/) */
@@ -208,19 +232,22 @@ export default function Erkundung({ start, party = null }) {
       const rein = uebergang.richtung === 'rein';
       const [elternEbene, kindEbene] = rein ? [alt, neu] : [neu, alt];
       const [elternDaten, kindDaten] = rein ? [uebergang.von, gebiet] : [gebiet, uebergang.von];
-      // Fläche in der Elternebene: das Untergebiet auf dem Weg zum Kind (auch über mehrere Stufen)
-      const stufe = kindDaten.ahnen.findIndex((a) => a.id === elternDaten.knoten.id);
-      const fokusId = kindDaten.ahnen[stufe + 1]?.id ?? kindDaten.knoten.id;
-      const fokus = elternEbene.querySelector(`[data-id="${fokusId}"]`);
       const b = buehne.getBoundingClientRect();
-      const A = fokus && (() => {
-        const r = fokus.getBoundingClientRect();
-        return { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2, w: r.width, h: r.height };
-      })();
       // Karte der Kindebene: Das SVG zeigt sie eingepasst („meet“) mittig in der Bühne
       const { breite, hoehe } = kindDaten.karte;
       const massstab = Math.min(b.width / breite, b.height / hoehe);
       const B = { x: b.width / 2, y: b.height / 2, w: breite * massstab, h: hoehe * massstab };
+      // A: wo die Kindkarte geografisch genau in der Elternkarte liegt (aus beiden Mercator-
+      // Projektionen) – so passen beide Ebenen während der ganzen Fahrt aufeinander, ohne Sprung
+      // am Ende. Ersatz: Rahmen der angeklickten Fläche.
+      const A = kartenLage(elternDaten.karte, kindDaten.karte, b) ?? (() => {
+        const stufe = kindDaten.ahnen.findIndex((a) => a.id === elternDaten.knoten.id);
+        const fokusId = kindDaten.ahnen[stufe + 1]?.id ?? kindDaten.knoten.id;
+        const fokus = elternEbene.querySelector(`[data-id="${fokusId}"]`);
+        if (!fokus) return null;
+        const r = fokus.getBoundingClientRect();
+        return { x: r.left - b.left + r.width / 2, y: r.top - b.top + r.height / 2, w: r.width, h: r.height };
+      })();
 
       if (A && A.w > 0 && A.h > 0) {
         const fahrt = kamerafahrt(A, B, rein);
@@ -328,7 +355,10 @@ export default function Erkundung({ start, party = null }) {
     if (!startNach || uebergang || laedt === startNach.gebietId || gebiet.knoten.id !== startNach.gebietId) return;
     const satz = gebiet.saetze.find((s) => s.id === startNach.satzId);
     setStartNach(null);
-    if (satz) quizStarten(satz, startNach.stufe);
+    if (!satz) return;
+    // Party ohne Mitspieler: nur vormerken, gestartet wird über „Starten“
+    if (partyRef.current?.rolle === 'host' && !partyRef.current.gegner) setVorgemerkt({ satz, stufe: startNach.stufe, gebiet: gebiet.knoten.id });
+    else quizStarten(satz, startNach.stufe);
   }, [startNach, uebergang, laedt, gebiet, quizStarten]);
 
   // Direkt mit einem Quiz starten (?quiz=laender, z. B. von alten Adressen /kontinente/europa)
@@ -356,15 +386,16 @@ export default function Erkundung({ start, party = null }) {
       ]
     : [{ daten: gebiet, rolle: 'neu' }];
 
-  // Die Quiz-Liste links bleibt in allen Ansichten dieselbe (außer in der Party)
+  // Die Quiz-Liste links bleibt in allen Ansichten dieselbe (in der Party nur beim Gastgeber)
   const mitListe = (inhalt, imQuiz) => (
-    <div className={`erkundung${imQuiz ? ' im-quiz' : ''}${party ? '' : ' mit-liste'}${listeOffen ? ' liste-offen' : ''}`}>
-      {!party && (
+    <div className={`erkundung${imQuiz ? ' im-quiz' : ''}${party?.rolle === 'gast' ? '' : ' mit-liste'}${listeOffen ? ' liste-offen' : ''}`}>
+      {(!party || party.rolle === 'host') && (
         <QuizListe
           offen={listeOffen}
           onOffen={setListeOffen}
           aktuell={gebiet.knoten.id}
           bestwerte={bestwerte}
+          mitDistanz={!party}
           onWahl={(gebietId, satz, stufe) => {
             setListeOffen(false);
             setStartNach({ gebietId, satzId: satz.id, stufe });
@@ -580,6 +611,7 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
   const runde = useQuizRunde({ einheiten: daten.einheiten, runde: satz.runde, bestenliste: satz.bestenliste });
   const einheiten = useMemo(() => new Map(daten.einheiten.map((e) => [e.id, e])), [daten.einheiten]);
   const { spiel, fertig, zahlen, anzahl } = runde;
+  const zielHatBild = Boolean(runde.ziel && einheiten.get(runde.ziel)?.bild);
   const titel = t.ortsname({ name: satz.titel, en: satz.titelEn });
   const namenZeigen = useCallback((id) => fertig || Boolean(runde.ergebnis[id]), [fertig, runde.ergebnis]);
   const erledigt = zahlen.gruen + zahlen.gelb + zahlen.rot;
@@ -621,7 +653,7 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
                 {runde.serie}
               </span>
             )}
-            <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} />
+            <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} joker={runde.jokerAktiv} />
             <div className="frage-unter">
               <span className="versuche" aria-label={t('{n} von {m} Versuchen übrig', { n: VERSUCHE - (spiel?.fehl ?? 0), m: VERSUCHE })}>
                 {Array.from({ length: VERSUCHE }, (_, i) => (
@@ -633,7 +665,12 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
                   {runde.rueckmeldung.text}
                 </span>
               ) : (
-                <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
+                <>
+                  {zielHatBild && !runde.jokerAktiv && satz.bilder !== 'frage' && (
+                    <JokerKnopf rest={runde.jokerRest} onKlick={runde.jokerZiehen} gesperrt={Boolean(spiel?.sperre)} />
+                  )}
+                  <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
+                </>
               )}
             </div>
           </div>

@@ -16,7 +16,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
-import Frage, { WeissNicht } from '@/components/karte/Frage';
+import Frage, { JokerKnopf, WeissNicht } from '@/components/karte/Frage';
 import { useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
 import TonSchalter from '@/components/TonSchalter';
 import { Chevron, Flamme } from '@/components/Symbole';
@@ -70,9 +70,11 @@ export default function DuellAnsicht({ gebiet, quiz, party, onLobby, onRevanche 
     reihenfolge,
     gesteuert: true,
     onFrageFertig,
+    joker: quiz.joker ?? 3,
   });
   const { spiel, fertig, naechste, zeitUm } = runde;
   const einheiten = useMemo(() => new Map(daten.einheiten.map((e) => [e.id, e])), [daten.einheiten]);
+  const zielHatBild = Boolean(runde.ziel && einheiten.get(runde.ziel)?.bild);
   const nummer = spiel?.nummer ?? 0;
   const aktuell = antworten[nummer] ?? {};
   const gegnerDa = Boolean(party.gegner);
@@ -166,7 +168,7 @@ export default function DuellAnsicht({ gebiet, quiz, party, onLobby, onRevanche 
                 {runde.serie}
               </span>
             )}
-            <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} />
+            <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} joker={runde.jokerAktiv} />
             <div className="frage-unter">
               <span className="versuche">
                 {Array.from({ length: VERSUCHE }, (_, i) => (
@@ -182,7 +184,14 @@ export default function DuellAnsicht({ gebiet, quiz, party, onLobby, onRevanche 
                   {runde.rueckmeldung.text}
                 </span>
               ) : (
-                !aktuell.ich && <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
+                !aktuell.ich && (
+                  <>
+                    {zielHatBild && !runde.jokerAktiv && satz.bilder !== 'frage' && runde.jokerRest > 0 && (
+                      <JokerKnopf rest={runde.jokerRest} onKlick={runde.jokerZiehen} gesperrt={Boolean(spiel?.sperre)} />
+                    )}
+                    <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
+                  </>
+                )
               )}
             </div>
             {rest !== null && <span className="frist-balken" style={{ '--dauer': `${RESTZEIT}ms` }} key={`frist-${nummer}`} />}

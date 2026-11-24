@@ -10,6 +10,8 @@
  *    Fußballvereine der ersten Liga mit Stadion, höchster/tiefster Punkt je Staat und Region,
  *    Inseln, Geburtsorte bekannter Personen, Kfz-Kennzeichen der deutschen Kreise
  *  - Flaggen: Paket „flag-icons“ (MIT), nach public/flaggen/ kopiert
+ *  - Bilder: Wikidata P18 → Wikimedia Commons (nur freie Lizenzen; Urheber und Lizenz werden
+ *    mitgespeichert und unter dem Bild genannt). Die Bilder selbst lädt der Browser von Commons.
  * Bekanntheit = Zahl der Wikipedia-Sprachversionen (sitelinks) – danach wird ausgewählt.
  *
  * Ergebnis: daten/wissen/*.json (im Repository; beim Bauen gelesen).
@@ -458,6 +460,129 @@ function flaggen() {
   console.log(`Flaggen: ${n} von ${STAATEN.size}`);
 }
 
+
+// ---------------------------------------------------------------------------------------
+// Bilder (Wikidata P18 → Wikimedia Commons) mit Urheber und Lizenz
+// ---------------------------------------------------------------------------------------
+const bildDatei = (url) => decodeURIComponent((url ?? '').split('/Special:FilePath/')[1] ?? '').replace(/_/g, ' ');
+
+/** Abfrage in Päckchen: werte = Liste, baue(teil) liefert SPARQL, je Zeile verarbeiten */
+async function paeckchen(werte, groesse, baue, je) {
+  for (let i = 0; i < werte.length; i += groesse) {
+    const zeilen = await sparql(baue(werte.slice(i, i + groesse)));
+    zeilen.forEach(je);
+    process.stdout.write(`\r  ${Math.min(i + groesse, werte.length)}/${werte.length}`);
+    await warten(300);
+  }
+  console.log();
+}
+
+/** Freie Lizenzen, deren Bilder wir mit Namensnennung zeigen dürfen */
+const FREI = /^(CC0|Public domain|PD|CC BY(-SA)? \d|CC BY(-SA)?$|GFDL|Attribution|FAL)/i;
+const ohneHtml = (text) => (text ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+
+async function bilder() {
+  const zuordnung = {}; // Schlüssel → Dateiname
+  // Keine Karten, Flaggen, Wappen oder Grafiken – die verraten die Lösung oder sind keine Fotos
+  const ungeeignet = /\.svg$|map|karte|location|locator|lage|flag|flagge|coat of arms|wappen|logo|emblem|seal/i;
+  const setze = (schluessel, url) => {
+    const datei = bildDatei(url);
+    if (datei && !ungeeignet.test(datei) && !zuordnung[schluessel]) zuordnung[schluessel] = datei;
+  };
+  const lies = (name) => JSON.parse(readFileSync(join(ZIEL, name), 'utf8'));
+
+  console.log('Bilder: Sehenswürdigkeiten, Personen, Inseln');
+  const qids = [...lies('sehenswuerdigkeiten.json'), ...lies('geburtsorte.json'), ...lies('inseln.json')].map((e) => e.id).filter((id) => /^Q\d+$/.test(id));
+  await paeckchen([...new Set(qids)], 250, (teil) => `SELECT ?item ?bild WHERE { VALUES ?item { ${teil.map((q) => `wd:${q}`).join(' ')} } ?item wdt:P18 ?bild }`,
+    (z) => setze(`q:${qid(z.item)}`, z.bild));
+
+  console.log('Bilder: Stadien');
+  const vereine = lies('stadien.json').map((e) => e.id);
+  await paeckchen(vereine, 250, (teil) => `SELECT ?verein ?bild WHERE { VALUES ?verein { ${teil.map((q) => `wd:${q}`).join(' ')} } ?verein wdt:P115 ?stadion. ?stadion wdt:P18 ?bild }`,
+    (z) => setze(`q:${qid(z.verein)}`, z.bild));
+
+  console.log('Bilder: Staaten, Hauptstädte, höchste Punkte');
+  const staaten = await sparql(`SELECT ?iso ?bild ?hsbild ?gipfelbild WHERE { ?land wdt:P297 ?iso.
+    OPTIONAL { ?land wdt:P18 ?bild } OPTIONAL { ?land wdt:P36 ?hs. ?hs wdt:P18 ?hsbild }
+    OPTIONAL { ?land wdt:P610 ?punkt. ?punkt wdt:P18 ?gipfelbild } }`);
+  for (const z of staaten) {
+    if (z.bild) setze(`land:${z.iso}`, z.bild);
+    if (z.hsbild) setze(`hauptstadt:${z.iso}`, z.hsbild);
+    if (z.gipfelbild) setze(`gipfel:${z.iso}`, z.gipfelbild);
+  }
+
+  console.log('Bilder: Regionen weltweit');
+  const regionNach = new Map(regionen.filter((r) => r.properties.wikidata).map((r) => [r.properties.wikidata, r.properties.id]));
+  await paeckchen([...regionNach.keys()], 200, (teil) => `SELECT ?r ?bild ?hsbild ?gipfelbild WHERE { VALUES ?r { ${teil.map((q) => `wd:${q}`).join(' ')} }
+      OPTIONAL { ?r wdt:P18 ?bild } OPTIONAL { ?r wdt:P36 ?hs. ?hs wdt:P18 ?hsbild } OPTIONAL { ?r wdt:P610 ?p. ?p wdt:P18 ?gipfelbild } }`,
+    (z) => {
+      const id = regionNach.get(qid(z.r));
+      if (z.bild) setze(`region:${id}`, z.bild);
+      if (z.hsbild) setze(`regionshauptstadt:${id}`, z.hsbild);
+      if (z.gipfelbild) setze(`gipfel:${id}`, z.gipfelbild);
+    });
+
+  console.log('Bilder: Bundesländer und Kreise');
+  const de = await sparql(`SELECT ?nuts ?bild ?hsbild ?gipfelbild WHERE { ?x wdt:P605 ?nuts. FILTER(STRSTARTS(?nuts, "DE") && STRLEN(?nuts) IN (3, 5))
+    OPTIONAL { ?x wdt:P18 ?bild } OPTIONAL { ?x wdt:P36 ?hs. ?hs wdt:P18 ?hsbild } OPTIONAL { ?x wdt:P610 ?p. ?p wdt:P18 ?gipfelbild } }`);
+  for (const z of de) {
+    const art = z.nuts.length === 3 ? 'region' : 'kreis';
+    if (z.bild) setze(`${art}:${z.nuts}`, z.bild);
+    if (z.hsbild && art === 'region') setze(`regionshauptstadt:${z.nuts}`, z.hsbild);
+    if (z.gipfelbild && art === 'region') setze(`gipfel:${z.nuts}`, z.gipfelbild);
+  }
+
+  console.log('Bilder: Essen (nach englischem Namen)');
+  const { ESSEN } = await import('../lib/gebiete/kuratiert.js');
+  await paeckchen(ESSEN, 40, (teil) => `SELECT ?en ?bild ?links WHERE { VALUES ?en { ${teil.map((e) => `"${e.en.replace(/"/g, '')}"@en`).join(' ')} }
+      ?item rdfs:label ?en; wdt:P18 ?bild; wikibase:sitelinks ?links. FILTER NOT EXISTS { ?item wdt:P31 wd:Q5 } } ORDER BY DESC(?links)`,
+    (z) => {
+      const gericht = ESSEN.find((e) => e.en === z.en);
+      if (gericht) setze(`essen:${gericht.id}`, z.bild);
+    });
+
+  // Urheber und Lizenz von Wikimedia Commons (50 Dateien je Anfrage)
+  console.log('Lizenzen von Commons');
+  const dateien = [...new Set(Object.values(zuordnung))];
+  const info = new Map();
+  for (let i = 0; i < dateien.length; i += 50) {
+    const titel = dateien.slice(i, i + 50).map((d) => `File:${d}`).join('|');
+    // POST: 50 lange Dateinamen sprengen sonst die Adresslänge. Commons drosselt schnelle Anfragen –
+    // bei einer Ablehnung warten und bis zu fünfmal neu versuchen
+    let antwort = { ok: false };
+    for (let versuch = 1; versuch <= 5 && !antwort.ok; versuch += 1) {
+      antwort = await fetch('https://commons.wikimedia.org/w/api.php', {
+        method: 'POST',
+        headers: { 'User-Agent': KENNUNG, 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ action: 'query', format: 'json', prop: 'imageinfo', iiprop: 'extmetadata', iiextmetadatafilter: 'Artist|LicenseShortName', titles: titel }),
+      }).catch(() => ({ ok: false }));
+      if (!antwort.ok) await warten(4000 * versuch);
+    }
+    if (!antwort.ok) console.log(`\n  Commons: Päckchen ${i / 50 + 1} fehlgeschlagen`);
+    if (antwort.ok) {
+      const daten = await antwort.json();
+      const normal = new Map((daten.query?.normalized ?? []).map((n) => [n.to, n.from]));
+      for (const seite of Object.values(daten.query?.pages ?? {})) {
+        const meta = seite.imageinfo?.[0]?.extmetadata;
+        if (!meta) continue;
+        const name = (normal.get(seite.title) ?? seite.title).replace(/^File:/, '');
+        info.set(name, { autor: ohneHtml(meta.Artist?.value).slice(0, 80), lizenz: ohneHtml(meta.LicenseShortName?.value) });
+      }
+    }
+    process.stdout.write(`\r  ${Math.min(i + 50, dateien.length)}/${dateien.length}`);
+    await warten(700);
+  }
+  console.log();
+
+  const ergebnis = {};
+  for (const [schluessel, datei] of Object.entries(zuordnung)) {
+    const i = info.get(datei);
+    if (!i || !FREI.test(i.lizenz)) continue;
+    ergebnis[schluessel] = { d: datei, a: i.autor || 'Wikimedia Commons', l: i.lizenz };
+  }
+  schreiben('bilder.json', ergebnis);
+}
+
 // ---------------------------------------------------------------------------------------
 mkdirSync(QUELLEN, { recursive: true });
 mkdirSync(ZIEL, { recursive: true });
@@ -480,3 +605,4 @@ if (soll('inseln')) await inseln(kuerzel);
 if (soll('geburtsorte')) await geburtsorte();
 if (soll('kennzeichen')) await kennzeichen();
 if (soll('flussnamen')) await flussnamen();
+if (soll('bilder')) await bilder();
