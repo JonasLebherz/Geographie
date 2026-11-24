@@ -1,9 +1,13 @@
 'use client';
 /**
- * Bestenliste.js – Ergebnis eintragen und die besten 10 anzeigen
+ * components/Bestenliste.js – Ergebnis eintragen und die besten 10 anzeigen
  *
  * Gespeichert wird in der Supabase-Tabelle „bestenliste“ (supabase/schema.sql).
  * Ist Supabase noch nicht eingerichtet (keine Zugangsdaten), erscheint nur ein Hinweis.
+ *
+ * quiz:     Name in der Tabelle, z. B. "laender" oder "kontinent-europa"
+ * punkte, fragen, sekunden: das eigene Ergebnis
+ * wertText: wie ein Eintrag angezeigt wird, z. B. (e) => `${e.punkte} %` (Standard: „7/10“)
  */
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
@@ -11,12 +15,22 @@ import { supabase } from '@/lib/supabase/client';
 const PLAETZE = 10;
 const NAME_SPEICHER = 'geo-quiz-name';
 
-export default function Bestenliste({ quiz, punkte, fragen, sekunden }) {
+const standardText = (e) => `${e.punkte}/${e.fragen}`;
+
+/** Sekunden als „0:42“ bzw. „12:05“ */
+export function dauer(sekunden) {
+  const m = Math.floor(sekunden / 60);
+  const s = String(sekunden % 60).padStart(2, '0');
+  return `${m}:${s}`;
+}
+
+export default function Bestenliste({ quiz, punkte, fragen, sekunden, wertText = standardText }) {
   const db = supabase();
   const [eintraege, setEintraege] = useState(null);
   const [name, setName] = useState('');
-  const [gespeichert, setGespeichert] = useState(false);
+  const [eigeneId, setEigeneId] = useState(null);
   const [fehler, setFehler] = useState('');
+  const [sendet, setSendet] = useState(false);
 
   const laden = useCallback(async () => {
     if (!db) return;
@@ -42,16 +56,22 @@ export default function Bestenliste({ quiz, punkte, fragen, sekunden }) {
   }, [laden]);
 
   if (!db) {
-    return <p className="hinweis">Die Bestenliste ist noch nicht eingerichtet (Supabase fehlt).</p>;
+    return <p className="hinweis">Bestenliste nicht eingerichtet.</p>;
   }
 
   async function eintragen(e) {
     e.preventDefault();
     const sauber = name.trim();
-    if (!sauber) return setFehler('Bitte gib einen Namen ein.');
+    if (!sauber) return setFehler('Bitte einen Namen eingeben.');
     if (sauber.length > 20) return setFehler('Der Name darf höchstens 20 Zeichen lang sein.');
 
-    const { error } = await db.from('bestenliste').insert({ quiz, name: sauber, punkte, fragen, sekunden });
+    setSendet(true);
+    const { data, error } = await db
+      .from('bestenliste')
+      .insert({ quiz, name: sauber, punkte, fragen, sekunden })
+      .select('id')
+      .single();
+    setSendet(false);
     if (error) return setFehler('Speichern hat nicht geklappt. Bitte später noch einmal versuchen.');
 
     try {
@@ -60,39 +80,43 @@ export default function Bestenliste({ quiz, punkte, fragen, sekunden }) {
       /* egal */
     }
     setFehler('');
-    setGespeichert(true);
+    setEigeneId(data.id);
     laden();
   }
 
   return (
     <div className="bestenliste">
-      {!gespeichert && (
+      <h2>Bestenliste</h2>
+      {eigeneId ? (
+        <p className="eingetragen">Eingetragen.</p>
+      ) : (
         <form onSubmit={eintragen} className="eintragen" noValidate>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Dein Name"
+            placeholder="Name"
             maxLength={20}
-            aria-label="Dein Name"
+            aria-label="Name für die Bestenliste"
+            autoComplete="nickname"
           />
-          <button className="knopf">In Bestenliste eintragen</button>
+          <button className="knopf knopf-zweit" disabled={sendet}>
+            Eintragen
+          </button>
         </form>
       )}
       {fehler && <p className="fehler">{fehler}</p>}
 
-      <h2>Bestenliste</h2>
       {eintraege === null ? (
         <p className="hinweis">Wird geladen …</p>
       ) : eintraege.length === 0 ? (
-        <p className="hinweis">Noch keine Einträge. Sei die erste Person!</p>
+        <p className="hinweis">Noch keine Einträge.</p>
       ) : (
         <ol>
           {eintraege.map((e) => (
-            <li key={e.id}>
-              <span>{e.name}</span>
-              <span>
-                {e.punkte}/{e.fragen} · {e.sekunden} s
-              </span>
+            <li key={e.id} className={e.id === eigeneId ? 'eigener' : undefined}>
+              <span className="name">{e.name}</span>
+              <span className="wert">{wertText(e)}</span>
+              <span className="dauer">{dauer(e.sekunden)}</span>
             </li>
           ))}
         </ol>

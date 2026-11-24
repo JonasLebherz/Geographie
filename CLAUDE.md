@@ -15,15 +15,31 @@ npm run build   # vor jedem Push, muss fehlerfrei sein
 
 ## Aufbau
 
-- `lib/quizze/index.js` – Liste aller Quizze. Jeder Eintrag verweist per `import()` auf seine Geodaten.
-- `lib/geodaten/*.js` – je Quiz eine Datei mit `laden()` → `[{ id, name, pfad }]`. `umriss.js` rechnet GeoJSON in kompakte SVG-Pfade (300×300, ganze Pixel, flächentreue Azimutalprojektion auf das Gebiet zentriert).
-- `app/quiz/[slug]/page.js` – wird beim Build statisch erzeugt (`generateStaticParams`), Geodaten werden also nur beim Bauen gelesen, nie zur Laufzeit.
-- `app/quiz/[slug]/QuizSpiel.js` – Spiel im Browser (Client-Komponente). Fragen werden erst in `useEffect` gezogen (sonst Hydration-Fehler).
-- `app/quiz/[slug]/Bestenliste.js` + `supabase/schema.sql` – Bestenliste über den öffentlichen anon-Key, abgesichert per RLS (nur lesen und einfügen). Ohne Env-Variablen nur ein Hinweis.
-- `lib/supabase/client.js` – liefert `null`, wenn Supabase nicht eingerichtet ist.
+- `app/page.js` – Hauptmenü: je Spielart eine Karte mit Vorschaubild, gruppiert nach Gebiet („Welt“). Keine lange Quiz-Liste.
+- **Modus „Länder eines Kontinents“**
+  - `app/kontinente/page.js` + `KontinentWahl.js` – Weltkarte und Liste der Kontinente (gekoppeltes Hervorheben, Kamerafahrt beim Klick, eigener Bestwert aus `lib/bestwerte.js`).
+  - `app/kontinente/[kontinent]/page.js` – statisch je Kontinent; `KontinentSpiel.js` – Spiel-Logik: grün = 1. Versuch, gelb = 2./3. Versuch, rot = nach 3 Fehlversuchen aufgedeckt (Ring + 1,5 s Pause). Wertung in Prozent (grün voll, gelb halb), Bestenliste als `quiz = kontinent-<slug>`, `punkte` = Prozent, `fragen` = 100.
+  - `lib/geodaten/kontinente.js` – welche Staaten zu welchem Kontinent gehören (UN-Mitglieder + Vatikanstadt, Kosovo, Palästina, Taiwan; Russland und Zypern bei Europa), Umgebung, Einpassung, Ersatzpunkte (Tuvalu fehlt in den Daten).
+  - `lib/geodaten/karte.js` – `kontinentKarte(slug)` und `weltKarte()`: Pfade fürs SVG (1000 px breit, eine Nachkommastelle). Kleinstaaten (< 70 px²) bekommen einen Klickpunkt (`punkt`), jedes Land einen Mittelpunkt (`mitte`) für den Aufdeck-Ring.
+  - `components/karte/KontinentKarte.js` (Darstellung, Namensschild nur über gelösten Ländern/nach dem Spiel) und `useKartenZoom.js` (Mausrad, Ziehen, zwei Finger, Knöpfe; viewBox direkt am Element; nach Ziehen kein Klick).
+  - Ländernamen stehen bewusst nicht im SVG (kein `title`/`aria-label`), sonst wären sie ablesbar.
+- **Umriss-Quiz**: `lib/quizze/index.js` (Liste), `lib/geodaten/*.js` mit `laden()` → `[{ id, name, pfad }]`, `umriss.js` (Pfade 300×300, flächentreu), `app/quiz/[slug]/` (Seite + `QuizSpiel.js`). Fragen werden erst in `useEffect` gezogen (sonst Hydration-Fehler).
+- `lib/geodaten/namen.js` – Kennung (ISO-Alpha-2) und deutsche Kurzform („Russland“ statt „Russische Föderation“). Neue Korrekturen dort in `KURZFORM`.
+- `components/Bestenliste.js` + `supabase/schema.sql` – Bestenliste über den öffentlichen Schlüssel, abgesichert per RLS (nur lesen und einfügen). Ohne Env-Variablen nur ein Hinweis. `lib/supabase/client.js` liest `NEXT_PUBLIC_SUPABASE_ANON_KEY` oder `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` und liefert `null`, wenn nichts eingerichtet ist.
+- `lib/ton.js` – Töne per Web Audio (keine Dateien): `klang('richtig' | 'falsch' | 'aufgedeckt' | 'fertig')`, stumm über `components/TonSchalter.js` (localStorage `geo-quiz-ton`).
+
+## Design
+
+Wie im Schwesterprojekt Instandhaltung (PitStop 01), angelehnt an Apples Human Interface Guidelines:
+
+- Schrift IBM Plex Sans (`@fontsource`, keine Anfrage an Google). Akzent Petrol `#1b7076` nur für Bedienbares, gefüllte Knöpfe `--akzent-flaeche`. Hintergrund „Morgendunst“ (`body::before`), Inhalte auf `.karte` (fast deckend), Glas mit Unschärfe nur auf Kopfzeile und Zoom-Knöpfen.
+- Alle Farben als CSS-Variablen in `app/globals.css`, hell und dunkel (folgt dem Betriebssystem). Text ≥ 4,5:1 Kontrast, Schrift ≥ 11 px, Trefferflächen ≥ 44 px.
+- **Keine Bedien- oder Erklärhinweise** in der Oberfläche („Klicke auf …“), keine Fragen als Untertitel – nur Fakten („46 Länder“). Keine Emojis, keine bunten Symbol-Kacheln. Symbole als feine Linien-SVGs (`components/Symbole.js`).
+- Bewegung kurz (0,2–0,5 s), bei „Bewegung reduzieren“ aus. Töne dezent und abschaltbar.
 
 ## Hinweise
 
-- Datenmenge: Alle Umrisse eines Quiz gehen mit der Seite an den Browser (Länder: ca. 500 KB, gzip ca. 180 KB). Für Landkreise (ca. 400, detailliert) die Daten vorher vereinfachen (z. B. `topojson-simplify`) oder pro Frage nachladen.
+- Datenmenge: Alle Umrisse eines Quiz gehen mit der Seite an den Browser (Kontinente gezippt ca. 70–190 KB, Umriss-Quiz ca. 180 KB). Für Landkreise (ca. 400, detailliert) die Daten vorher vereinfachen (z. B. `topojson-simplify`) oder pro Frage nachladen.
+- Kartenausschnitte prüfen: Nach Änderungen an `kontinente.js` die Seiten ansehen – Inseln weit draußen (Hawaii, Französisch-Guayana) steuern die `teile`-Kästen.
 - Bestenliste ist nicht fälschungssicher (Punkte kommen vom Browser). Für ernsthafte Wertung später serverseitig prüfen.
 - `AGENTS.md` (für Codex) verweist auf diese Datei. Bei neuen Konventionen beide aktualisieren.
