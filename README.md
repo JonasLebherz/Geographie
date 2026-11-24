@@ -2,7 +2,7 @@
 
 Webseite mit Geografie-Quizzen. Im Hauptmenü wählt man die Spielart:
 
-- **Länder eines Kontinents** – Kontinent auf der Weltkarte wählen, dann das genannte Land auf der Karte anklicken (grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen).
+- **Karte** – von der Welt über Kontinente und Länder bis zu den Bundesländern und Landkreisen hineinzoomen; in jedem Gebiet stehen rechts die passenden Quizze (Länder, Hauptstädte, Großstädte, Bundesstaaten/Regionen, Landkreise, Städte). Gesuchtes auf der Karte anklicken: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen.
 - **Länder am Umriss** – ein Umriss, vier Antworten.
 
 **Technik:** Next.js 15 (React 19, JavaScript), Hosting auf **Vercel**, Datenbank **Supabase** (nur für die Bestenliste).
@@ -44,4 +44,7 @@ Werden die Variablen später geändert: **Deployments → … → Redeploy**, we
 ## Datenquellen
 
 - Länder: [world-atlas](https://github.com/topojson/world-atlas) / Natural Earth (gemeinfrei)
+- Regionen weltweit und Städte: [Natural Earth](https://www.naturalearthdata.com/) 1:10 Mio. (gemeinfrei)
+- Bundesländer und Kreise: Eurostat GISCO, NUTS 2024 (über [Nuts2json](https://github.com/eurostat/Nuts2json)), © EuroGeographics bezüglich der Verwaltungsgrenzen
+- Aufbereitung: `npm run karten-daten` (schreibt `daten/`)
 - Deutsche Ländernamen: [i18n-iso-countries](https://github.com/michaelwittig/node-i18n-iso-countries)

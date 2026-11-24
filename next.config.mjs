@@ -7,6 +7,14 @@ const nextConfig = {
   // Kein "X-Powered-By: Next.js"-Header nach außen
   poweredByHeader: false,
 
+  // Der frühere Modus „Länder eines Kontinents“ ist in der Karten-Erkundung aufgegangen
+  async redirects() {
+    return [
+      { source: '/kontinente', destination: '/karte', permanent: true },
+      { source: '/kontinente/:kontinent', destination: '/karte/:kontinent?quiz=laender', permanent: true },
+    ];
+  },
+
   // Zusätzliche Sicherheits-Header für alle Seiten
   async headers() {
     return [

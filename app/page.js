@@ -10,7 +10,8 @@
 import Link from 'next/link';
 import { QUIZZE } from '@/lib/quizze';
 import { KONTINENTE } from '@/lib/geodaten/kontinente';
-import { weltKarte } from '@/lib/geodaten/karte';
+import { weltVorschau } from '@/lib/gebiete';
+import { deKreise, regionen } from '@/lib/gebiete/quellen';
 import { GROESSE } from '@/lib/geodaten/umriss';
 import { Chevron } from '@/components/Symbole';
 import { T } from '@/lib/sprache';
@@ -39,9 +40,8 @@ function ModusKarte({ href, titel, fakten, bild, i }) {
 }
 
 export default async function Hauptmenue() {
-  const welt = weltKarte({ grob: true });
-  const anzahlen = KONTINENTE.map((k) => k.laender.length);
-  const laender = anzahlen.reduce((a, b) => a + b, 0);
+  const welt = weltVorschau();
+  const laender = KONTINENTE.reduce((n, k) => n + k.laender.length, 0);
 
   // Umriss-Quizze: Anzahl der Gebiete und ein Vorschau-Umriss (nur beim Bauen berechnet)
   const umrissQuizze = await Promise.all(
@@ -72,17 +72,17 @@ export default async function Hauptmenue() {
         </h2>
         <div className="modi">
           <ModusKarte
-            href="/kontinente"
-            titel="Länder eines Kontinents"
+            href="/karte"
+            titel="Karte"
             fakten={{
-              text: '{k} Kontinente · {von} bis {bis} Länder',
-              werte: { k: KONTINENTE.length, von: Math.min(...anzahlen), bis: Math.max(...anzahlen) },
+              text: '{n} Länder · {r} Regionen · {k} Landkreise',
+              werte: { n: laender, r: regionen().length.toLocaleString('de-DE'), k: deKreise().length },
             }}
             i={1}
             bild={
               <svg className="vorschau-welt" viewBox={`-20 -20 ${welt.breite + 40} ${welt.hoehe + 40}`}>
-                {welt.kontinente.map((k) => (
-                  <path key={k.slug} d={k.pfad} />
+                {welt.pfade.map((pfad, i) => (
+                  <path key={i} d={pfad} />
                 ))}
               </svg>
             }

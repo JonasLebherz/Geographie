@@ -845,6 +845,137 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
 }
 
 /* =====================================================================
+ * 5b. Karten-Erkundung (app/karte/Erkundung.js)
+ * ================================================================== */
+
+/* Links die Bühne, rechts die Leiste; beide so hoch wie das Fenster (ohne Kopf) */
+.erkundung {
+  --buehne-h: clamp(440px, calc(100dvh - 128px), 920px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 20px;
+  margin-top: -16px;
+}
+.buehne {
+  position: relative;
+  height: var(--buehne-h);
+  border-radius: var(--radius-karte);
+  overflow: hidden;
+  background: var(--wasser);
+  border: 1px solid var(--glas-rand);
+  box-shadow: var(--glas-kante), var(--schatten);
+  isolation: isolate;
+}
+/* Jede Ebene liegt in einer Hülle (trägt beim Hineinzoomen die weiche Maske, siehe kamerafahrt) */
+.ebene-huelle { position: absolute; inset: 0; pointer-events: none; }
+.huelle-alt { z-index: 1; }
+.huelle-neu { z-index: 2; }
+.ebene { position: absolute; inset: 0; }
+.huelle-neu > .ebene { pointer-events: auto; }
+.kartenebene { position: absolute; inset: 0; }
+.kartenebene .kontinentkarte { width: 100%; height: 100%; overflow: visible; }
+/* Im Quiz liegt die Karte unter der Frage-Kapsel, nicht dahinter */
+.im-quiz .kartenebene .kontinentkarte { position: absolute; inset: 86px 0 0; height: calc(100% - 86px); }
+@media (max-width: 900px) { .im-quiz .kartenebene .kontinentkarte { inset: 74px 0 0; height: calc(100% - 74px); } }
+
+/* Ladeanzeige: feiner Balken oben in der Bühne */
+.buehne-laedt {
+  position: absolute; left: 0; right: 0; top: 0; z-index: 5; height: 3px;
+  background: linear-gradient(90deg, transparent, var(--akzent), transparent);
+  background-size: 40% 100%;
+  background-repeat: no-repeat;
+  animation: laden 1s linear infinite;
+}
+@keyframes laden { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+
+/* Erkunden: Gebiete mit eigener Karte sind anklickbar, Blätter (z. B. Kreise) nur zum Ansehen */
+.kontinentkarte.erkunden .land.frei { cursor: pointer; }
+@media (hover: hover) {
+  .kontinentkarte.erkunden .land.frei:hover { fill: var(--land-hover); }
+}
+.kontinentkarte .land.hervor { fill: var(--land-hover); }
+.kontinentkarte .land.blatt { fill: var(--land); }
+/* Hintergrund beim Städte-Quiz: Flächen ohne Klick, leicht zurückgenommen */
+.kontinentkarte .land.kulisse { fill: var(--land); pointer-events: none; }
+.kontinentkarte .nebenkarte { fill: var(--wasser); stroke: var(--land-grenze); stroke-width: 1; vector-effect: non-scaling-stroke; }
+
+/* Städte: kleinere Punkte als die Klickpunkte der Kleinstaaten, dunkler Rand */
+.kontinentkarte .marke.stadt .marke-punkt { transform: scale(calc(var(--px, 1) * 5.5)); stroke: var(--text-leise); stroke-width: 1.4; }
+.kontinentkarte .marke.stadt .marke-ziel { transform: scale(calc(var(--px, 1) * 13)); }
+.kontinentkarte.quiz.offen .marke.frei .marke-ziel { cursor: pointer; }
+
+/* Frage als schwebende Glas-Kapsel oben in der Bühne (Bedien-Ebene über der Karte) */
+.frage-kapsel {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 4;
+  max-width: calc(100% - 28px);
+  padding: 10px 26px 10px;
+  text-align: center;
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--glas-licht), transparent 80%), var(--glas-erhoeht);
+  -webkit-backdrop-filter: var(--glas-unschaerfe);
+  backdrop-filter: var(--glas-unschaerfe);
+  border: 1px solid var(--glas-rand);
+  box-shadow: var(--glas-kante), var(--schatten-menue);
+}
+.frage-kapsel .frage-name { font-size: 1.7rem; font-weight: 700; letter-spacing: -.025em; line-height: 1.15; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.frage-kapsel .frage-unter { margin-top: 4px; min-height: 24px; }
+
+/* Rechte Leiste */
+.leiste {
+  height: var(--buehne-h);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 4px 2px 12px;
+  scrollbar-width: thin;
+}
+.pfad { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; min-height: 28px; margin-bottom: 2px; }
+.pfad span { display: inline-flex; align-items: center; }
+.pfad button {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 4px 2px; border: 0; background: none; cursor: pointer;
+  color: var(--akzent); font-weight: 500; font-size: .9375rem;
+}
+.pfad button:hover { color: var(--akzent-hover); text-decoration: underline; }
+.pfad .pfad-trenner { width: 14px; height: 14px; color: var(--text-leise); margin: 0 2px; }
+.pfad .pfad-zurueck { width: 16px; height: 16px; margin-left: -4px; }
+.leiste-titel { font-size: 2rem; font-weight: 700; letter-spacing: -.03em; line-height: 1.1; margin: 0 0 4px; animation: name-wechsel .25s var(--weich) backwards; }
+.leiste-fakten { color: var(--text-leise); margin: 0 0 20px; }
+.leiste-abschnitt + .leiste-abschnitt { margin-top: 22px; }
+.leiste-abschnitt h2 { font-size: .9375rem; font-weight: 600; color: var(--text-leise); margin: 0 0 8px 2px; }
+.leiste .liste { margin: 0; }
+.leiste .listen-zeile {
+  width: 100%;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.leiste li + li .listen-zeile { border-top: .5px solid var(--linie); }
+.listen-zeile.kompakt { min-height: 44px; padding-top: 6px; padding-bottom: 6px; }
+.listen-zeile.laedt { background: var(--akzent-zart); }
+.quiz-stand { display: flex; align-items: center; justify-content: space-between; margin: 8px 0 10px; }
+.quiz-stand .stand { font-size: 1.1rem; }
+.leiste .fortschritt { margin-bottom: 18px; }
+.bilanz.klein { font-size: .9375rem; color: var(--text-leise); }
+.bilanz.klein b { color: var(--text); }
+.quiz-ergebnis .ergebnis-zahl { margin-top: 0; }
+.quiz-ergebnis .zeit { color: var(--text-leise); margin: 0 0 16px; }
+.leiste-bestenliste { margin-top: 22px; padding: 18px; }
+
+/* Tablet und Handy: Leiste unter die Bühne */
+@media (max-width: 900px) {
+  .erkundung { grid-template-columns: 1fr; --buehne-h: clamp(360px, 62dvh, 640px); margin-top: -8px; }
+  .leiste { height: auto; overflow: visible; }
+  .frage-kapsel { top: 10px; padding: 8px 18px; }
+  .frage-kapsel .frage-name { font-size: 1.35rem; }
+}
+
+/* =====================================================================
  * 6. Umriss-Quiz, Bestenliste
  * ================================================================== */
 
