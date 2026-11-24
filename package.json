@@ -7,7 +7,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "texte": "node --no-warnings scripts/texte.mjs"
+    "texte": "node --no-warnings scripts/texte.mjs",
+    "karten-daten": "node --no-warnings scripts/karten-daten.mjs"
   },
   "engines": {
     "node": ">=20"
@@ -26,5 +27,9 @@
   },
   "overrides": {
     "postcss": "8.5.32"
+  },
+  "devDependencies": {
+    "topojson-server": "3.0.1",
+    "topojson-simplify": "3.0.3"
   }
 }
