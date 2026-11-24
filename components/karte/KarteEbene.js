@@ -229,7 +229,7 @@ export default function KarteEbene({
     tipp.classList.add('sichtbar');
   }
 
-  const modus = quiz ? `quiz quiz-${art}${quiz.ohneFluesse ? ' quiz-fluesse' : ''}` : 'erkunden';
+  const modus = quiz ? `quiz quiz-${art}${quiz.ohneFluesse ? ' quiz-fluesse' : ''}${art === 'flaeche' && quiz.kulisse ? ' kulisse-ruhig' : ''}` : 'erkunden';
   return (
     <div className={`kartenebene ${modus}${aktiv ? ' aktiv' : ''}${satellit ? ' mit-satellit' : ''}`} ref={rahmenRef}>
       <svg

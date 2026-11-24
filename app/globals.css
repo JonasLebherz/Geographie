@@ -1396,23 +1396,58 @@ body::after {
 .ql-suche svg { width: 18px; height: 18px; flex: none; }
 .ql-suche input { flex: 1; min-width: 0; height: 40px; border: 0; background: none; font: inherit; color: var(--text); outline: none; }
 .ql-suche:focus-within { box-shadow: 0 0 0 3px var(--akzent-ring); }
-.ql-filter { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 12px; scrollbar-width: none; }
-.ql-filter button {
-  flex: none; min-height: 34px; padding: 0 14px; border-radius: 999px; border: 0;
+.ql-filter { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 0 12px; }
+.ql-chips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; max-width: 100%; }
+.ql-chips button {
+  flex: none; min-height: 34px; padding: 0 12px; border-radius: 999px; border: 0;
   background: var(--fuellung); color: var(--text); font: 500 .875rem var(--schrift); cursor: pointer;
   transition: background var(--uebergang), color var(--uebergang);
 }
-.ql-filter button:hover:not(.gewaehlt) { background: var(--akzent-zart); }
-.ql-filter button.gewaehlt { background: var(--akzent-flaeche); color: #fff; }
+.ql-chips button:hover:not(.gewaehlt) { background: var(--akzent-zart); }
+.ql-chips button.gewaehlt { background: var(--akzent-flaeche); color: #fff; }
+.ql-land select {
+  min-height: 34px; max-width: 190px; padding: 0 28px 0 12px; border-radius: 999px; border: 0;
+  background: var(--fuellung) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5 6 7.5 9 4.5' fill='none' stroke='%23777' stroke-width='1.5'/%3E%3C/svg%3E") right 10px center / 12px no-repeat;
+  color: var(--text); font: 500 .875rem var(--schrift); cursor: pointer; appearance: none;
+}
+.ql-land.gewaehlt select { background-color: var(--akzent-flaeche); color: #fff; }
 .ql-liste { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin: 0 -14px; padding: 0 14px 16px; scrollbar-width: thin; position: relative; }
-.ql-gebiet { content-visibility: auto; contain-intrinsic-size: auto 300px; }
-.ql-gebiet + .ql-gebiet { margin-top: 18px; }
-.ql-gebiet h3 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px 4px; font: 700 1.0625rem var(--schrift-titel); letter-spacing: -.015em; }
-.ql-gebiet h3 small { font: 400 .8125rem var(--schrift); color: var(--text-leise); }
-.ql-gebiet.aktuell h3 { color: var(--akzent); }
-.ql-gebiet .liste { margin: 0; }
-.ql-gebiet .listen-zeile { width: 100%; border: 0; background: none; text-align: left; cursor: pointer; font-size: 1rem; }
-.ql-gebiet li + li .listen-zeile, .ql-gebiet li + li.stufen-zeile, .ql-gebiet li.stufen-zeile + li .listen-zeile { border-top: .5px solid var(--linie); }
+.ql-gebiet { border-bottom: .5px solid var(--linie); }
+.ql-gebiet-kopf {
+  width: 100%; min-height: 44px; display: flex; align-items: center; gap: 10px;
+  padding: 4px 6px; border: 0; border-radius: 10px; background: none; color: var(--text);
+  font: inherit; text-align: left; cursor: pointer;
+}
+.ql-gebiet-kopf:hover { background: var(--akzent-zart); }
+.ql-gebiet-kopf .chevron { width: 14px; height: 14px; color: var(--text-leise); transition: transform .2s var(--weich); }
+.ql-gebiet.auf .ql-gebiet-kopf .chevron { transform: rotate(90deg); }
+.ql-gebiet.ebene-welt .ql-name, .ql-gebiet.ebene-kontinent .ql-name { font-weight: 700; }
+.ql-gebiet.ebene-region .ql-gebiet-kopf { padding-left: 22px; }
+.ql-gebiet.aktuell .ql-name { color: var(--akzent); }
+.ql-name { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+.ql-name small { color: var(--text-leise); font-weight: 400; font-size: .8125rem; }
+.ql-zahl { color: var(--text-leise); font-size: .8125rem; font-variant-numeric: tabular-nums; }
+.ql-zeichen { flex: none; width: 26px; height: 20px; }
+.ql-zeichen.flagge { object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .12); }
+.ql-zeichen.umriss path { fill: var(--land-1); stroke: var(--text); stroke-width: .8; stroke-linejoin: round; }
+.ql-zeichen.globus { fill: none; stroke: var(--akzent); stroke-width: 1.6; stroke-linecap: round; }
+.ql-quizze { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 6px 12px 42px; }
+.ql-gebiet.ebene-region .ql-quizze { padding-left: 58px; }
+.ql-quiz {
+  min-height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px;
+  border-radius: 10px; border: 1px solid var(--linie); background: var(--karte-solid); color: var(--text);
+  font: 500 .875rem var(--schrift); cursor: pointer; position: relative;
+  transition: background var(--uebergang), border-color var(--uebergang), transform .12s ease;
+}
+button.ql-quiz:hover { border-color: var(--akzent); color: var(--akzent); }
+button.ql-quiz:active { transform: translateY(1px); }
+.ql-quiz.gruppe-distanz { border-style: dashed; }
+.ql-quiz.stufig { padding-right: 4px; cursor: default; }
+.ql-quiz.stufig button { min-width: 34px; min-height: 28px; border: 0; border-radius: 7px; background: var(--fuellung); color: var(--text); font: 600 .8125rem var(--schrift); cursor: pointer; }
+.ql-quiz.stufig button:hover { background: var(--akzent-flaeche); color: #fff; }
+.ql-bestwert { width: 6px; height: 6px; border-radius: 50%; background: var(--land-gelb); }
+html[data-stil="comic"] .ql-quiz { border: 2px solid var(--glas-rand); box-shadow: 0 2px 0 var(--glas-rand); }
+html[data-stil="comic"] button.ql-quiz:active { transform: translateY(2px); box-shadow: none; }
 .ql-leer { color: var(--text-leise); margin: 12px 4px; }
 .ql-laedt { height: 220px; border-radius: 14px; background: linear-gradient(90deg, var(--fuellung) 30%, var(--akzent-zart) 50%, var(--fuellung) 70%) 0 0 / 200% 100%; animation: laden 1.2s linear infinite; }
 
@@ -1512,3 +1547,33 @@ html[data-stil="comic"] .weiss-nicht:active { transform: translateY(2px); box-sh
   .kontinentkarte.offen .lupe.frei:hover .lupe-rand,
   .kontinentkarte.erkunden .lupe:hover .lupe-rand { stroke: var(--akzent); stroke-width: 3; }
 }
+
+/* Lange Fragen (Allgemeinwissen, Rekorde) dürfen umbrechen */
+.frage-kapsel .frage-name.lang { white-space: normal; font-size: 1.2rem; line-height: 1.3; max-width: min(560px, 80vw); text-wrap: balance; }
+html[data-stil="comic"] .frage-kapsel .frage-name.lang { font-family: var(--schrift); font-weight: 700; font-size: 1.3rem; }
+
+/* Bild in der Frage (Wikimedia Commons) mit Urheber und Lizenz; Joker-Knopf */
+.frage-foto { margin: 0 auto 8px; width: min(300px, 70vw); }
+.frage-foto img { display: block; width: 100%; height: 170px; object-fit: cover; border-radius: 10px; background: var(--fuellung); animation: bild-auf .35s var(--weich) backwards; }
+.frage-foto figcaption { margin-top: 3px; font-size: .6875rem; line-height: 1.3; color: var(--text-leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.frage-foto figcaption a { color: inherit; }
+html[data-stil="comic"] .frage-foto img { border: 3px solid var(--glas-rand); border-radius: 8px; image-rendering: auto; }
+.joker-knopf {
+  min-height: 30px; display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px 3px 8px;
+  border-radius: 999px; border: 1px solid var(--linie); background: var(--fuellung); color: var(--text);
+  font: 600 .8125rem var(--schrift); cursor: pointer; position: relative;
+}
+.joker-knopf::after { content: ""; position: absolute; inset: -7px -2px; }
+.joker-knopf svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.joker-knopf:hover:not(:disabled) { background: #f2b632; color: #1b1b1b; border-color: transparent; }
+.joker-knopf:disabled { opacity: .45; cursor: default; }
+.joker-zahl { min-width: 18px; height: 18px; display: grid; place-items: center; border-radius: 9px; background: var(--karte-solid); font-size: .75rem; }
+html[data-stil="comic"] .joker-knopf { border: 2px solid var(--glas-rand); border-radius: 8px; background: #f2b632; color: #1b1b1b; box-shadow: 0 2px 0 var(--glas-rand); }
+html[data-stil="comic"] .joker-knopf:active { transform: translateY(2px); box-shadow: none; }
+.frage-kapsel .frage-unter { flex-wrap: wrap; }
+
+/* Inseln-Quiz: Kulisse ruhig, damit die Inseln (bunt) herausstechen */
+.kontinentkarte.kulisse-ruhig .land.kulisse { fill: var(--land); }
+/* Lange Titel in der Leiste umbrechen statt abschneiden */
+.leiste-titel { overflow-wrap: anywhere; hyphens: auto; }
+html[data-stil="comic"] .leiste-titel { font-size: clamp(1.15rem, 2.2vw, 1.75rem); }

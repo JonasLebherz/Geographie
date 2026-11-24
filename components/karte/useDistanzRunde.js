@@ -39,6 +39,17 @@ export function entfernung([lon1, lat1], [lon2, lat2]) {
   return 2 * 6371 * Math.asin(Math.min(1, Math.sqrt(a)));
 }
 
+/**
+ * Abstand eines Klicks zum Ziel in km. Ziele: Punkt (lon, lat); Fläche (flaeche = Kennung der
+ * angeklickten Fläche zählt voll, sonst Abstand minus radius – Kreis gleicher Fläche); Linie
+ * (linie = Stützpunkte, Abstand zum nächsten).
+ */
+export function abstand(ziel, ort, flaeche) {
+  if (ziel.flaeche && flaeche === ziel.flaeche) return 0;
+  const roh = ziel.linie ? Math.min(...ziel.linie.map((p) => entfernung(ort, p))) : entfernung(ort, [ziel.lon, ziel.lat]);
+  return Math.max(0, roh - (ziel.radius ?? 0));
+}
+
 export const farbeFuer = (punkte) => (punkte >= 750 ? 'gruen' : punkte >= 350 ? 'gelb' : 'rot');
 
 export function useDistanzRunde({ einheiten, runde, skala, projektionen, bestenliste }) {
@@ -86,7 +97,7 @@ export function useDistanzRunde({ einheiten, runde, skala, projektionen, bestenl
         return;
       }
       const ziel = nachId.get(s.reihenfolge[s.nummer]);
-      const km = ziel.flaeche && flaeche === ziel.flaeche ? 0 : entfernung(zuLonLat(xy, projektionen), [ziel.lon, ziel.lat]);
+      const km = abstand(ziel, zuLonLat(xy, projektionen), flaeche);
       const punkte = Math.round(HOECHST * Math.exp(-km / skala));
       const farbe = farbeFuer(punkte);
       klang(farbe === 'rot' ? 'falsch' : 'richtig');

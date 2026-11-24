@@ -9,6 +9,8 @@
  *    angeklickten Gebiets. Nach dem dritten Fehlversuch wird das Gesuchte rot aufgedeckt
  *    (Ring + 1,5 s Pause), dann geht es weiter.
  *  - „Weiß ich nicht“ (ueberspringen) deckt sofort rot auf – statt dreimal zu raten.
+ *  - Joker (jokerZiehen): zeigt das Bild zur gesuchten Einheit als Hinweis; ein Treffer zählt dann
+ *    höchstens gelb. JOKER_JE_RUNDE je Runde (Party: einstellbar).
  *  - Klicks auf schon gelöste Gebiete zählen nicht, zeigen aber deren Namen.
  *  - Wertung: grün voll, gelb halb → Prozent. Bei Gleichstand entscheidet die Zeit.
  *  - Serie: Treffer beim ersten Versuch am Stück (jeder Fehlversuch beendet sie).
@@ -58,7 +60,11 @@ export function quote(ergebnis, anzahl) {
  *              naechste() kommt (beide fertig oder Zeit um). onFrageFertig({ nummer, farbe })
  *              meldet, wenn die eigene Frage erledigt ist. zeitUm() wertet die offene Frage als rot.
  */
-export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: festeReihenfolge, gesteuert = false, onFrageFertig }) {
+export const JOKER_JE_RUNDE = 3;
+
+export function useQuizRunde({
+  einheiten, runde, bestenliste, reihenfolge: festeReihenfolge, gesteuert = false, onFrageFertig, joker: jokerAnzahl = JOKER_JE_RUNDE,
+}) {
   const t = useT();
   const namen = useMemo(() => new Map(einheiten.map((e) => [e.id, t.ortsname(e)])), [einheiten, t]);
   const [spiel, setSpiel] = useState(null);
@@ -82,7 +88,7 @@ export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: feste
     // Feste Reihenfolge (Party: beide Spieler bekommen dieselben Fragen) oder zufällig
     const fragbar = einheiten.filter((e) => e.gefragt !== false);
     const ids = festeReihenfolge ?? mischen(fragbar.map((e) => e.id)).slice(0, Math.min(runde, fragbar.length));
-    setSpiel({ reihenfolge: ids, nummer: 0, fehl: 0, ergebnis: {}, start: Date.now(), ende: 0, sperre: false, serie: 0, besteSerie: 0 });
+    setSpiel({ reihenfolge: ids, nummer: 0, fehl: 0, ergebnis: {}, start: Date.now(), ende: 0, sperre: false, serie: 0, besteSerie: 0, joker: {} });
     setRueckmeldung(null);
     setEffekt(null);
   }, [einheiten, runde, festeReihenfolge]);
@@ -147,6 +153,14 @@ export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: feste
     [erledigt, gesteuert, melden, spaeter, weiter],
   );
 
+  /** Joker: zeigt das Bild zur Frage – ein Treffer zählt dann höchstens gelb */
+  const jokerZiehen = useCallback(() => {
+    const s = spielRef.current;
+    if (!s || s.ende || s.sperre || s.joker?.[s.nummer]) return;
+    if (Object.keys(s.joker ?? {}).length >= jokerAnzahl) return;
+    setSpiel({ ...s, joker: { ...s.joker, [s.nummer]: true } });
+  }, [jokerAnzahl]);
+
   /** „Weiß ich nicht“: zählt als falsch (rot), das Gesuchte wird sofort gezeigt */
   const ueberspringen = useCallback(() => {
     const s = spielRef.current;
@@ -168,8 +182,9 @@ export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: feste
         anstossen('richtig');
         setRueckmeldung(null);
         setEffekt(null);
-        const serie = s.fehl === 0 ? s.serie + 1 : 0;
-        const farbe = s.fehl === 0 ? 'gruen' : 'gelb';
+        const mitJoker = Boolean(s.joker?.[s.nummer]);
+        const serie = s.fehl === 0 && !mitJoker ? s.serie + 1 : 0;
+        const farbe = s.fehl === 0 && !mitJoker ? 'gruen' : 'gelb';
         const neu = { ...s, serie, besteSerie: Math.max(s.besteSerie, serie), ergebnis: { ...s.ergebnis, [ziel]: farbe } };
         if (gesteuert) erledigt(neu, farbe);
         else setSpiel(weiter(neu));
@@ -225,6 +240,9 @@ export function useQuizRunde({ einheiten, runde, bestenliste, reihenfolge: feste
     starten,
     klick,
     ueberspringen,
+    jokerZiehen,
+    jokerAktiv: Boolean(spiel && !spiel.ende && spiel.joker?.[spiel.nummer]),
+    jokerRest: Math.max(0, jokerAnzahl - Object.keys(spiel?.joker ?? {}).length),
     rueckmeldung,
     effekt,
     impuls,

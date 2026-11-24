@@ -259,7 +259,11 @@ async function gewaesser() {
   const fluesse = [...haupt, ...europa];
   const seen = (await laden('ne-lakes.geojson')).features
     .filter((f) => f.geometry && f.properties.scalerank <= 7)
-    .map((f) => ({ type: 'Feature', geometry: fuerD3(f.geometry), properties: { rang: f.properties.scalerank } }));
+    .map((f) => ({
+      type: 'Feature',
+      geometry: fuerD3(f.geometry),
+      properties: { rang: f.properties.scalerank, name: f.properties.name_de || f.properties.name || undefined, en: f.properties.name_en || f.properties.name || undefined },
+    }));
   const topo = kompakt(
     { fluesse: { type: 'FeatureCollection', features: fluesse }, seen: { type: 'FeatureCollection', features: seen } },
     0.25,
