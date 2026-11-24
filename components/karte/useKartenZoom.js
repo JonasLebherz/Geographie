@@ -25,8 +25,30 @@ const ZIEH_SCHWELLE = 6; // Pixel Bewegung, ab der ein Klick als Ziehen gilt
 
 const begrenzen = (wert, min, max) => Math.min(max, Math.max(min, wert));
 
-export function useKartenZoom(svgRef, breite, hoehe) {
+export function useKartenZoom(svgRef, breite, hoehe, onAnsicht) {
   const ansicht = useRef({ x: 0, y: 0, w: breite, h: hoehe });
+  // Meldung des sichtbaren Ausschnitts (z. B. für Satellitenkacheln), höchstens einmal je Bild
+  const melder = useRef({ fn: onAnsicht, bild: 0 });
+  melder.current.fn = onAnsicht;
+  const melden = useCallback(() => {
+    if (!melder.current.fn || melder.current.bild) return;
+    melder.current.bild = requestAnimationFrame(() => {
+      melder.current.bild = 0;
+      const svg = svgRef.current;
+      if (!svg) return;
+      // Tatsächlich sichtbarer Bereich (bei „meet“ größer als die viewBox) und Pixel je Einheit
+      const { width, height } = svg.getBoundingClientRect();
+      const v = ansicht.current;
+      const s = Math.min(width / v.w, height / v.h) || 1;
+      const sw = width / s;
+      const sh = height / s;
+      melder.current.fn({ x: v.x - (sw - v.w) / 2, y: v.y - (sh - v.h) / 2, w: sw, h: sh }, s);
+    });
+  }, [svgRef]);
+  // Sobald jemand den Ausschnitt wissen will (z. B. Satellit eingeschaltet): gleich einmal melden
+  useEffect(() => {
+    if (onAnsicht) melden();
+  }, [onAnsicht, melden]);
   const [stand, setStand] = useState({ gezoomt: false, maximal: false });
   const gezogen = useRef(false);
   const animation = useRef(0);
@@ -52,11 +74,12 @@ export function useKartenZoom(svgRef, breite, hoehe) {
       ansicht.current = { x, y, w, h };
       svg.setAttribute('viewBox', `${x} ${y} ${w} ${h}`);
       svg.style.setProperty('--px', massstab());
+      melden();
       const gezoomt = w < breite - 0.5;
       const maximal = w <= breite / MAX_ZOOM + 0.5;
       setStand((alt) => (alt.gezoomt === gezoomt && alt.maximal === maximal ? alt : { gezoomt, maximal }));
     },
-    [svgRef, breite, hoehe, massstab],
+    [svgRef, breite, hoehe, massstab, melden],
   );
 
   /** Bildschirmpunkt → Kartenpunkt (berücksichtigt Ränder durch „meet“) */
@@ -188,8 +211,11 @@ export function useKartenZoom(svgRef, breite, hoehe) {
       }
     }
 
-    // Größe geändert (Fenster, Handy gedreht): --px neu berechnen
-    const beobachter = new ResizeObserver(() => svg.style.setProperty('--px', massstab()));
+    // Größe geändert (Fenster, Handy gedreht): --px neu berechnen, Ausschnitt melden
+    const beobachter = new ResizeObserver(() => {
+      svg.style.setProperty('--px', massstab());
+      melden();
+    });
     beobachter.observe(svg);
 
     svg.addEventListener('wheel', rad, { passive: false });
@@ -206,7 +232,7 @@ export function useKartenZoom(svgRef, breite, hoehe) {
       svg.removeEventListener('pointerup', hoch);
       svg.removeEventListener('pointercancel', hoch);
     };
-  }, [svgRef, inKarte, massstab, setzen, zoomUm]);
+  }, [svgRef, inKarte, massstab, setzen, zoomUm, melden]);
 
   const istGezogen = useCallback(() => gezogen.current, []);
 

@@ -18,10 +18,12 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
-import { useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
+import { mischen, useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
+import DuellAnsicht, { DUELL_FRAGEN } from './DuellAnsicht';
 import Bestenliste, { dauer } from '@/components/Bestenliste';
 import TonSchalter from '@/components/TonSchalter';
-import { Chevron } from '@/components/Symbole';
+import { Chevron, Flamme, Stern } from '@/components/Symbole';
+import Willkommen, { WILLKOMMEN_GESEHEN } from './Willkommen';
 import { useT } from '@/lib/sprache';
 import { klang } from '@/lib/ton';
 import { bestwerteLesen } from '@/lib/bestwerte';
@@ -65,11 +67,39 @@ function kamerafahrt(A, B, rein, schritte = 32) {
   return { kind, eltern, huelle, gegen };
 }
 
-/** Adresse eines Gebiets: /karte/europa/deutschland */
-const adresseVon = (daten) => `/karte${daten.ahnen.slice(1).map((a) => `/${a.slug}`).join('')}`;
+/** Adresse eines Gebiets: /karte/europa/deutschland – die Welt ist die Startseite (/) */
+const adresseVon = (daten) => {
+  const teile = daten.ahnen.slice(1).map((a) => `/${a.slug}`).join('');
+  return teile ? `/karte${teile}` : '/';
+};
 
-export default function Erkundung({ start }) {
+/**
+ * party (nur in einer Lobby, siehe app/party/[code]/Lobby.js):
+ *   { rolle: 'host' | 'gast', ich, gegner, senden(typ, daten), abonnieren(fn) }
+ * Der Gastgeber steuert (Gebiet, Quiz), der Gast fliegt mit; die Adresse bleibt die der Lobby.
+ */
+export default function Erkundung({ start, willkommen: mitWillkommen = false, party = null }) {
+  const partyRef = useRef(party);
+  partyRef.current = party;
+  const gast = party?.rolle === 'gast';
   const t = useT();
+  // Begrüßung (nur Startseite): bis „Solo spielen“ – danach in dieser Sitzung nicht mehr
+  const [willkommen, setWillkommen] = useState(mitWillkommen);
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem(WILLKOMMEN_GESEHEN)) setWillkommen(false);
+    } catch {
+      /* ohne Speicher eben jedes Mal */
+    }
+  }, []);
+  const soloStarten = useCallback(() => {
+    setWillkommen(false);
+    try {
+      sessionStorage.setItem(WILLKOMMEN_GESEHEN, '1');
+    } catch {
+      /* egal */
+    }
+  }, []);
   const [gebiet, setGebiet] = useState(start);
   const [uebergang, setUebergang] = useState(null); // { von: Gebietsdaten, richtung: 'rein' | 'raus' | 'blende' }
   const [quiz, setQuiz] = useState(null); // { satz, daten, nr }
@@ -112,7 +142,7 @@ export default function Erkundung({ start }) {
 
   /** Zu einem anderen Gebiet wechseln – mit Kamerafahrt, wenn es darüber oder darunter liegt */
   const wechseln = useCallback(
-    async (zielId, { verlauf = true } = {}) => {
+    async (zielId, { verlauf = !partyRef.current } = {}) => {
       const aktuell = gebietRef.current;
       if (zielId === aktuell.knoten.id) {
         setQuiz(null);
@@ -139,12 +169,15 @@ export default function Erkundung({ start }) {
         setUebergang({ von: aktuell, richtung });
       }
       setGebiet(neu);
+      // Party: Der Gastgeber nimmt den Gast mit
+      if (partyRef.current?.rolle === 'host') partyRef.current.senden('gebiet', { id: neu.knoten.id });
     },
     [laden],
   );
 
   // Zurück-/Vor-Knopf des Browsers: Gebiet zur Adresse suchen und hinfliegen
   useEffect(() => {
+    if (partyRef.current) return undefined; // in der Lobby bleibt die Adresse
     async function zurueck() {
       const teile = window.location.pathname.replace(/^\/karte\/?/, '').split('/').filter(Boolean);
       let id = 'welt';
@@ -226,24 +259,67 @@ export default function Erkundung({ start }) {
   }, [uebergang]);
 
   /** Quiz starten: Spieldaten laden (oder die Flächen der Gebietskarte nehmen) */
+  /** Spieldaten eines Satzes: Flächen der Gebietskarte oder eigene Datei */
+  const satzLaden = useCallback(
+    (gebietDaten, satz) =>
+      satz.wieKarte
+        ? Promise.resolve({ art: 'flaeche', einheiten: gebietDaten.flaechen.map(({ ziel, ...f }) => f) })
+        : json(`/karte-daten/${gebietDaten.knoten.id}/${satz.id}.json`),
+    [json],
+  );
+
   const quizStarten = useCallback(
     async (satz) => {
+      const p = partyRef.current;
+      if (p?.rolle === 'gast') return; // im Duell wählt der Gastgeber
       setLaedt(satz.id);
       try {
-        const daten = satz.wieKarte
-          ? { art: 'flaeche', einheiten: gebietRef.current.flaechen.map(({ ziel, ...f }) => f) }
-          : await json(`/karte-daten/${gebietRef.current.knoten.id}/${satz.id}.json`);
-        setQuiz({ satz, daten, nr: Date.now() });
+        const daten = await satzLaden(gebietRef.current, satz);
+        const nr = Date.now();
+        if (p) {
+          // Duell: gleiche Fragen in gleicher Reihenfolge für beide
+          const reihenfolge = mischen(daten.einheiten.map((e) => e.id)).slice(0, Math.min(satz.runde, DUELL_FRAGEN));
+          p.senden('start', { gebietId: gebietRef.current.knoten.id, satz, reihenfolge, nr });
+          setQuiz({ satz, daten, nr, reihenfolge });
+        } else {
+          setQuiz({ satz, daten, nr });
+        }
         nachOben();
       } finally {
         setLaedt(null);
       }
     },
-    [json],
+    [satzLaden],
   );
+
+  // Party: Nachrichten des Gastgebers befolgen (Gast) bzw. Neuankömmlinge mitnehmen (Gastgeber)
+  useEffect(() => {
+    if (!party) return undefined;
+    return party.abonnieren(async (n) => {
+      if (partyRef.current?.rolle !== 'gast') return;
+      if (n.typ === 'gebiet') {
+        wechseln(n.id, { verlauf: false });
+      } else if (n.typ === 'start') {
+        const neu = await laden(n.gebietId);
+        const daten = await satzLaden(neu, n.satz);
+        setUebergang(null);
+        setGebiet(neu);
+        setQuiz({ satz: n.satz, daten, nr: n.nr, reihenfolge: n.reihenfolge });
+        nachOben();
+      } else if (n.typ === 'lobby') {
+        setQuiz(null);
+      }
+    });
+  }, [party, laden, satzLaden, wechseln]);
+
+  const gegnerId = party?.gegner?.id;
+  useEffect(() => {
+    if (gegnerId && partyRef.current?.rolle === 'host') partyRef.current.senden('gebiet', { id: gebietRef.current.knoten.id });
+  }, [gegnerId]);
 
   // Direkt mit einem Quiz starten (?quiz=laender, z. B. von alten Adressen /kontinente/europa)
   useEffect(() => {
+    if (partyRef.current) return;
     const wunsch = new URLSearchParams(window.location.search).get('quiz');
     const satz = wunsch && start.saetze.find((s) => s.id === wunsch);
     if (satz) {
@@ -254,6 +330,7 @@ export default function Erkundung({ start }) {
   }, []);
 
   function flaecheGewaehlt(id) {
+    if (gast) return; // der Gast fliegt mit, steuert aber nicht
     const flaeche = gebiet.flaechen.find((f) => f.id === id);
     if (flaeche?.ziel) wechseln(flaeche.ziel);
   }
@@ -264,6 +341,24 @@ export default function Erkundung({ start }) {
         { daten: gebiet, rolle: 'neu' },
       ]
     : [{ daten: gebiet, rolle: 'neu' }];
+
+  if (quiz && !uebergang && party) {
+    return (
+      <div className="erkundung im-quiz">
+        <DuellAnsicht
+          key={quiz.nr}
+          gebiet={gebiet}
+          quiz={quiz}
+          party={party}
+          onLobby={() => {
+            setQuiz(null);
+            if (party.rolle === 'host') party.senden('lobby');
+          }}
+          onRevanche={party.rolle === 'host' ? () => quizStarten(quiz.satz) : null}
+        />
+      </div>
+    );
+  }
 
   if (quiz && !uebergang) {
     return (
@@ -296,10 +391,12 @@ export default function Erkundung({ start }) {
           </div>
         ))}
         {laedt && <div className="buehne-laedt" aria-hidden="true" />}
+        {willkommen && !party && gebiet.knoten.ebene === 'welt' && !uebergang && <Willkommen onSolo={soloStarten} />}
       </div>
 
       <Leiste
         gebiet={gebiet}
+        gesperrt={gast ? t('{name} wählt Gebiet und Quiz.', { name: party?.gegner?.name ?? t('Gastgeber') }) : null}
         bestwerte={bestwerte}
         laedt={laedt}
         onGebiet={wechseln}
@@ -315,7 +412,7 @@ export default function Erkundung({ start }) {
 // Rechte Leiste: Pfad, Gebiet, Quizze, Untergebiete
 // ---------------------------------------------------------------------------------------
 
-function Leiste({ gebiet, bestwerte, laedt, onGebiet, onQuiz, onHervor, onVorschau }) {
+function Leiste({ gebiet, bestwerte, laedt, gesperrt, onGebiet, onQuiz, onHervor, onVorschau }) {
   const t = useT();
   const leisteRef = useRef(null);
   // Neues Gebiet: Leiste wieder von oben zeigen
@@ -329,6 +426,9 @@ function Leiste({ gebiet, bestwerte, laedt, onGebiet, onQuiz, onHervor, onVorsch
 
   return (
     <aside className="leiste" aria-label={t('Auswahl')} ref={leisteRef}>
+      {gesperrt && <p className="leiste-gesperrt">{gesperrt}</p>}
+      {/* Im Duell steuert der Gastgeber: beim Gast sind alle Knöpfe gesperrt (fieldset disabled) */}
+      <fieldset className="leiste-felder" disabled={Boolean(gesperrt)}>
       <nav className="pfad" aria-label={t('Pfad')}>
         {ahnen.map((a, i) =>
           i < ahnen.length - 1 ? (
@@ -394,6 +494,7 @@ function Leiste({ gebiet, bestwerte, laedt, onGebiet, onQuiz, onHervor, onVorsch
           </ul>
         </section>
       )}
+      </fieldset>
     </aside>
   );
 }
@@ -437,7 +538,17 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
         </div>
 
         {!fertig && (
-          <div className="frage-kapsel" aria-live="polite">
+          <div
+            className={`frage-kapsel${runde.impuls ? ` impuls-${runde.impuls.art}` : ''}`}
+            key={runde.impuls?.n ?? 0}
+            aria-live="polite"
+          >
+            {runde.serie >= 2 && (
+              <span className="serie" title={t('Serie')}>
+                <Flamme />
+                {runde.serie}
+              </span>
+            )}
             <p className="frage-name" key={runde.ziel ?? 'leer'}>
               {runde.zielName ?? '\u00a0'}
             </p>
@@ -497,20 +608,38 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
   );
 }
 
+/** Sterne nach Ergebnis: ab 50 % einer, ab 75 % zwei, ab 90 % drei */
+export const sterneFuer = (prozent) => (prozent >= 90 ? 3 : prozent >= 75 ? 2 : prozent >= 50 ? 1 : 0);
+
 function QuizErgebnis({ satz, runde, onNochmal, onEnde }) {
   const t = useT();
-  const { zahlen, quote, sekunden, spiel, namen } = runde;
+  const { zahlen, quote, sekunden, spiel, namen, besteSerie } = runde;
+  const sterne = sterneFuer(quote);
   const aufgedeckt = spiel.reihenfolge.filter((id) => spiel.ergebnis[id] === 'rot').map((id) => namen.get(id));
   aufgedeckt.sort((a, b) => a.localeCompare(b, t.sprache));
 
   return (
     <div className="quiz-ergebnis erscheinen">
-      <p className="eyebrow">{t('Ergebnis')}</p>
+      <div className="sterne" aria-label={t('{n} von 3 Sternen', { n: sterne })}>
+        {[1, 2, 3].map((n) => (
+          <span key={n} className={n <= sterne ? 'stern voll' : 'stern'} style={{ '--i': n }}>
+            <Stern voll={n <= sterne} />
+          </span>
+        ))}
+      </div>
       <p className="ergebnis-zahl">
         {quote}
         <small>%</small>
       </p>
-      <p className="zeit">{dauer(sekunden)} min</p>
+      <p className="zeit">
+        {dauer(sekunden)} min
+        {besteSerie >= 2 && (
+          <>
+            {' · '}
+            {t('beste Serie {n}', { n: besteSerie })}
+          </>
+        )}
+      </p>
       <ul className="bilanz">
         <li>
           <span className="farbpunkt gruen" /> <b>{zahlen.gruen}</b> {t('beim ersten Versuch')}

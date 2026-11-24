@@ -9,6 +9,7 @@
 import Link from 'next/link';
 import Logo, { PRODUKTNAME } from '@/components/Logo';
 import ProfilMenue from '@/components/ProfilMenue';
+import Hauptnavigation from '@/components/Hauptnavigation';
 import { T } from '@/lib/sprache';
 import { START_SKRIPT } from '@/lib/einstellungen-start';
 import './globals.css';
@@ -35,8 +36,9 @@ export default function Layout({ children }) {
           <div className="kopf-innen">
             <Link href="/" className="marke">
               <Logo />
-              {PRODUKTNAME}
+              <span className="marke-name">{PRODUKTNAME}</span>
             </Link>
+            <Hauptnavigation />
             <ProfilMenue />
           </div>
         </header>
