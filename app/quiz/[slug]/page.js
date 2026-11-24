@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { QUIZZE, quizFinden } from '@/lib/quizze';
 import { Chevron } from '@/components/Symbole';
+import { T } from '@/lib/sprache';
 import QuizSpiel from './QuizSpiel';
 
 // Nur Quizze aus lib/quizze gibt es, alles andere ergibt „Seite nicht gefunden“
@@ -35,11 +36,13 @@ export default async function QuizSeite({ params }) {
       <header className="seitenkopf erscheinen">
         <Link href="/" className="zurueck">
           <Chevron richtung="links" className="" />
-          Quizze
+          <T>Quizze</T>
         </Link>
-        <h1>{quiz.titel}</h1>
+        <h1>
+          <T>{quiz.titel}</T>
+        </h1>
         <p className="fakten">
-          {gebiete.length} {quiz.einheit ?? 'Länder'} · {quiz.runden} Fragen
+          <T text={`{n} ${quiz.einheit ?? 'Länder'} · {r} Fragen`} werte={{ n: gebiete.length, r: quiz.runden }} />
         </p>
       </header>
       <QuizSpiel quiz={quiz.slug} gebiete={gebiete} frage={quiz.frage} runden={quiz.runden} />

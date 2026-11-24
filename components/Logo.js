@@ -1,7 +1,7 @@
 /**
  * components/Logo.js – Bildmarke des Geo-Quiz
  *
- * Dunkles, abgerundetes Quadrat mit einem Globus als feiner weißer Linie (Umriss,
+ * Abgerundetes Quadrat in Atlasblau mit einem Globus als feiner weißer Linie (Umriss,
  * Äquator, ein Längenkreis) und einem kleinen Zielpunkt: Hier liegt das gesuchte Land.
  * Fläche und Farben kommen aus dem CSS (.logo in app/globals.css).
  * Dieselbe Form liegt als Browser-Symbol in app/icon.svg.

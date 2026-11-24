@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { GROESSE } from '@/lib/geodaten/umriss';
 import Bestenliste, { dauer } from '@/components/Bestenliste';
 import { klang } from '@/lib/ton';
+import { useT } from '@/lib/sprache';
 
 const ANTWORTEN = 4;
 
@@ -34,6 +35,7 @@ function neuesSpiel(gebiete, runden) {
 }
 
 export default function QuizSpiel({ quiz, gebiete, frage, runden }) {
+  const t = useT();
   // Die Fragen werden erst im Browser gezogen (useEffect). Würde schon der Server
   // würfeln, passten Server- und Browser-Ergebnis nicht zusammen.
   const [fragen, setFragen] = useState(null);
@@ -62,14 +64,14 @@ export default function QuizSpiel({ quiz, gebiete, frage, runden }) {
     return (
       <>
         <section className="karte umriss-ergebnis erscheinen">
-          <p className="eyebrow">Ergebnis</p>
+          <p className="eyebrow">{t('Ergebnis')}</p>
           <p className="ergebnis-zahl">
             {punkte}
             <small> / {fragen.length}</small>
           </p>
           <p className="zeit">{dauer(sekunden)} min</p>
           <button className="knopf knopf-haupt" onClick={starten}>
-            Noch einmal
+            {t('Noch einmal')}
           </button>
         </section>
         <section className="karte erscheinen" style={{ '--i': 1, marginTop: 20 }}>
@@ -97,18 +99,18 @@ export default function QuizSpiel({ quiz, gebiete, frage, runden }) {
     <div className="karte">
       <div className="umriss-stand">
         <span>
-          Frage {nummer + 1} von {fragen.length}
+          {t('Frage {n} von {m}', { n: nummer + 1, m: fragen.length })}
         </span>
-        <span>{punkte} richtig</span>
+        <span>{t('{n} richtig', { n: punkte })}</span>
       </div>
 
-      <p className="umriss-frage">{frage}</p>
+      <p className="umriss-frage">{t(frage)}</p>
 
       <svg
         className="umriss"
         viewBox={`0 0 ${GROESSE} ${GROESSE}`}
         role="img"
-        aria-label="Umriss des gesuchten Gebiets"
+        aria-label={t('Umriss des gesuchten Gebiets')}
       >
         <path d={richtig.pfad} />
       </svg>
@@ -122,7 +124,7 @@ export default function QuizSpiel({ quiz, gebiete, frage, runden }) {
           }
           return (
             <button key={gebiet.id} className={klasse} onClick={() => antworten_(gebiet)} disabled={!!gewaehlt}>
-              {gebiet.name}
+              {t.ortsname(gebiet)}
             </button>
           );
         })}
@@ -136,7 +138,7 @@ export default function QuizSpiel({ quiz, gebiete, frage, runden }) {
             setGewaehlt(null);
           }}
         >
-          {nummer + 1 < fragen.length ? 'Weiter' : 'Ergebnis anzeigen'}
+          {nummer + 1 < fragen.length ? t('Weiter') : t('Ergebnis anzeigen')}
         </button>
       )}
     </div>

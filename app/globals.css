@@ -7,15 +7,19 @@
 /*
  * app/globals.css – Aussehen der ganzen Seite
  *
- * Gleiche Gestaltung wie im Schwesterprojekt PitStop 01 (Instandhaltung), angelehnt an
- * Apples Human Interface Guidelines: ruhiger, leicht getönter Hintergrund („Morgendunst“),
- * Inhalte auf fast deckenden Karten mit feiner Lichtkante, eine einzige Akzentfarbe (Petrol)
- * nur für Bedienbares. Glas mit Unschärfe nur dort, wo Inhalt dahinter liegt (Kopfzeile,
- * Kartenknöpfe). Text hat überall mindestens 4,5:1 Kontrast.
+ * Aufbau wie im Schwesterprojekt PitStop 01 (Instandhaltung), angelehnt an Apples Human
+ * Interface Guidelines: ruhiger, leicht getönter Hintergrund, Inhalte auf fast deckenden
+ * Karten mit feiner Lichtkante, eine einzige Akzentfarbe nur für Bedienbares. Glas mit
+ * Unschärfe nur dort, wo Inhalt dahinter liegt (Kopfzeile, Menüs, Kartenknöpfe).
+ * Text hat überall mindestens 4,5:1 Kontrast.
+ *
+ * Eigene Farbwelt „Atlas“: Hintergrund wie helles Kartenpapier, Wasser in zartem Blau,
+ * Akzent Atlasblau (#2457b5) – klar getrennt von Grün, Gelb und Rot der Antworten.
  *
  * Aufbau:
- *  1. Farben als CSS-Variablen – hell und dunkel (folgt dem Betriebssystem)
- *  2. Grundlayout: Kopf, Inhalt, Fuß, Überschriften, Karten, Knöpfe
+ *  1. Farben als CSS-Variablen – hell (Standard) und dunkel über <html data-theme="dark">
+ *     (gesetzt von lib/einstellungen.js bzw. dem Start-Skript im Layout)
+ *  2. Grundlayout: Kopf, Profil-Menü, Inhalt, Fuß, Überschriften, Karten, Knöpfe
  *  3. Hauptmenü
  *  4. Kontinent-Auswahl (Weltkarte)
  *  5. Spiel „Länder eines Kontinents“ (Spielleiste, Karte, Ergebnis)
@@ -28,35 +32,36 @@
  * ================================================================== */
 
 :root {
-  --hintergrund: #dfe3e8;
+  --hintergrund: #eef0f2;
   --karte-solid: #ffffff;
   --text: #1d1d1f;
-  --text-leise: #5f5f64;           /* 5,5:1 auf Karten */
+  --text-leise: #5f5f64;           /* 5,6:1 auf Karten */
   --linie: rgba(60, 60, 67, .12);
   --feld-rand: rgba(60, 60, 67, .18);
-  --feld-bg: rgba(255, 255, 255, .72);
+  --feld-bg: rgba(255, 255, 255, .8);
   --fuellung: rgba(118, 118, 128, .10);
   --fuellung-hover: rgba(118, 118, 128, .17);
 
-  /* Inhalts-Ebene (Karten) fast deckend, Bedien-Ebene (Kopfzeile, Kartenknöpfe) als Glas */
-  --karte: rgba(255, 255, 255, .74);
-  --glas: rgba(255, 255, 255, .62);
-  --glas-licht: rgba(255, 255, 255, .26);
-  --glas-rand: rgba(255, 255, 255, .55);
+  /* Inhalts-Ebene (Karten) fast deckend, Bedien-Ebene (Kopfzeile, Menüs, Kartenknöpfe) als Glas */
+  --karte: rgba(255, 255, 255, .8);
+  --glas: rgba(255, 255, 255, .7);
+  --glas-erhoeht: rgba(255, 255, 255, .86);  /* Menüs über Inhalt */
+  --glas-licht: rgba(255, 255, 255, .3);
+  --glas-rand: rgba(255, 255, 255, .6);
   --glas-kante: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(255, 255, 255, .18), 0 0 0 .5px rgba(0, 0, 0, .07);
   --glas-unschaerfe: blur(24px) saturate(180%);
 
-  /* Hintergrund „Morgendunst“: warmes Licht oben links, kühles Stahlblau unten rechts */
-  --umgebung-licht: rgba(255, 246, 232, .95);
-  --umgebung-kuehl: rgba(150, 170, 195, .5);
-  --umgebung-dunst: rgba(185, 205, 215, .6);
-  --umgebung-verlauf: linear-gradient(155deg, #e9e6e0 0%, #d9dfe6 55%, #c9d2dc 100%);
+  /* Hintergrund „Kartenpapier“: warmes Licht oben links, ein Hauch Meeresblau unten rechts */
+  --umgebung-licht: rgba(255, 250, 240, .95);
+  --umgebung-kuehl: rgba(165, 192, 220, .38);
+  --umgebung-dunst: rgba(205, 222, 236, .5);
+  --umgebung-verlauf: linear-gradient(160deg, #f6f4ef 0%, #eef1f4 55%, #e2e8ef 100%);
 
-  --akzent: #1b7076;               /* Petrol, 5:1 auf Karten */
-  --akzent-hover: #155c61;
-  --akzent-flaeche: #1b7076;       /* gefüllte Knöpfe mit weißer Schrift (5,8:1) */
-  --akzent-zart: rgba(27, 112, 118, .10);
-  --akzent-ring: rgba(27, 112, 118, .26);
+  --akzent: #2457b5;               /* Atlasblau: 5,9:1 auf Karten */
+  --akzent-hover: #1d4794;
+  --akzent-flaeche: #2457b5;       /* gefüllte Knöpfe mit weißer Schrift (6,8:1) */
+  --akzent-zart: rgba(36, 87, 181, .09);
+  --akzent-ring: rgba(36, 87, 181, .25);
   --akzent-text: #ffffff;
 
   /* Ergebnisfarben: Schrift (kräftig) und zarter Hintergrund */
@@ -65,91 +70,98 @@
   --rot: #c4281c;    --rot-bg: #fde8e7;
 
   /* Karte */
-  --wasser: #dbe4ea;
-  --netz: rgba(40, 80, 110, .08);
-  --land: #fbfaf7;
-  --land-hover: #e7f0f0;
+  --wasser: #d5e3ee;
+  --netz: rgba(40, 90, 140, .09);
+  --land: #fdfcf8;
+  --land-hover: #e4ecf9;
   --land-grenze: rgba(60, 60, 67, .34);
-  --umland: #e4e3df;
+  --umland: #e9e7e0;
   --umland-grenze: rgba(255, 255, 255, .9);
   --land-gruen: #3fa45b;           /* Flächen auf der Karte: kräftig genug, damit man sie sofort sieht */
   --land-gelb: #e9b829;
   --land-rot: #dc4a3d;
   --land-gefaerbt-grenze: rgba(255, 255, 255, .85);
-  --weltkarte-land: #c6ced6;
-  --weltkarte-hover: #1b7076;
+  --weltkarte-land: #c8d2dc;
+  --weltkarte-hover: #2457b5;      /* weiße Beschriftung 6,8:1 */
+
+  /* Bildmarke */
+  --logo-oben: #3a6bc9;
+  --logo-unten: #1f4a99;
 
   /* Formen & Bewegung */
   --radius-karte: 12px;
   --radius-feld: 8px;
-  --schatten: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(31, 38, 64, .04);
-  --schatten-hoch: 0 2px 6px rgba(0, 0, 0, .05), 0 18px 44px rgba(31, 38, 64, .12);
+  --schatten: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(31, 38, 64, .05);
+  --schatten-hoch: 0 2px 6px rgba(0, 0, 0, .05), 0 18px 44px rgba(31, 38, 64, .13);
+  --schatten-menue: 0 0 0 .5px rgba(0, 0, 0, .08), 0 12px 40px rgba(31, 38, 64, .18);
   --weich: cubic-bezier(.2, .8, .2, 1);
   --uebergang: .25s var(--weich);
   color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --hintergrund: #050507;
-    --karte-solid: #1c1c1e;
-    --text: #f5f5f7;
-    --text-leise: #98989d;
-    --linie: rgba(255, 255, 255, .1);
-    --feld-rand: rgba(255, 255, 255, .14);
-    --feld-bg: rgba(255, 255, 255, .06);
-    --fuellung: rgba(255, 255, 255, .08);
-    --fuellung-hover: rgba(255, 255, 255, .13);
+/* Dunkel: dieselben Variablen, andere Werte */
+:root[data-theme="dark"] {
+  --hintergrund: #07080a;
+  --karte-solid: #1c1c1e;
+  --text: #f5f5f7;
+  --text-leise: #98989d;
+  --linie: rgba(255, 255, 255, .1);
+  --feld-rand: rgba(255, 255, 255, .14);
+  --feld-bg: rgba(255, 255, 255, .06);
+  --fuellung: rgba(255, 255, 255, .08);
+  --fuellung-hover: rgba(255, 255, 255, .13);
 
-    --karte: rgba(255, 255, 255, .05);
-    --glas: rgba(36, 38, 44, .62);
-    --glas-licht: rgba(255, 255, 255, .04);
-    --glas-rand: rgba(255, 255, 255, .10);
-    --glas-kante: inset 0 1px 0 rgba(255, 255, 255, .14), 0 0 0 .5px rgba(0, 0, 0, .5);
-    --glas-unschaerfe: blur(24px) saturate(160%);
+  --karte: rgba(255, 255, 255, .05);
+  --glas: rgba(30, 32, 38, .66);
+  --glas-erhoeht: rgba(40, 42, 48, .9);
+  --glas-licht: rgba(255, 255, 255, .04);
+  --glas-rand: rgba(255, 255, 255, .10);
+  --glas-kante: inset 0 1px 0 rgba(255, 255, 255, .14), 0 0 0 .5px rgba(0, 0, 0, .5);
+  --glas-unschaerfe: blur(24px) saturate(160%);
 
-    --umgebung-licht: rgba(80, 88, 100, .35);
-    --umgebung-kuehl: rgba(40, 60, 70, .35);
-    --umgebung-dunst: rgba(30, 50, 60, .25);
-    --umgebung-verlauf: linear-gradient(160deg, #15181d, #0b0d10);
+  --umgebung-licht: rgba(70, 80, 100, .3);
+  --umgebung-kuehl: rgba(30, 55, 90, .35);
+  --umgebung-dunst: rgba(25, 45, 70, .25);
+  --umgebung-verlauf: linear-gradient(160deg, #14171d, #0a0c10);
 
-    --akzent: #2a9aa1;
-    --akzent-hover: #36adb4;
-    --akzent-flaeche: #1c7f85;     /* weiße Schrift 4,8:1 */
-    --akzent-zart: rgba(42, 154, 161, .16);
-    --akzent-ring: rgba(42, 154, 161, .34);
+  --akzent: #7aa7ff;               /* 7,1:1 auf Karten */
+  --akzent-hover: #9dbdff;
+  --akzent-flaeche: #2f62c4;       /* weiße Schrift 5,7:1 */
+  --akzent-zart: rgba(122, 167, 255, .14);
+  --akzent-ring: rgba(122, 167, 255, .32);
 
-    --gruen: #30d158;  --gruen-bg: rgba(48, 209, 88, .16);
-    --gelb: #ffd60a;   --gelb-bg: rgba(255, 214, 10, .14);
-    --rot: #ff6961;    --rot-bg: rgba(255, 69, 58, .17);
+  --gruen: #30d158;  --gruen-bg: rgba(48, 209, 88, .16);
+  --gelb: #ffd60a;   --gelb-bg: rgba(255, 214, 10, .14);
+  --rot: #ff6961;    --rot-bg: rgba(255, 69, 58, .17);
 
-    --wasser: #10161b;
-    --netz: rgba(160, 200, 220, .07);
-    --land: #2a2d31;
-    --land-hover: #2f3e40;
-    --land-grenze: rgba(255, 255, 255, .22);
-    --umland: #1b1e21;
-    --umland-grenze: rgba(255, 255, 255, .07);
-    --land-gruen: #2f9a4c;
-    --land-gelb: #c99a14;
-    --land-rot: #c8433a;
-    --land-gefaerbt-grenze: rgba(0, 0, 0, .45);
-    --weltkarte-land: #3a3f45;
-    --weltkarte-hover: #1c7f85;    /* weiße Beschriftung 4,8:1 */
+  --wasser: #0f1620;
+  --netz: rgba(150, 190, 230, .07);
+  --land: #2a2d32;
+  --land-hover: #2d3a52;
+  --land-grenze: rgba(255, 255, 255, .22);
+  --umland: #1a1d21;
+  --umland-grenze: rgba(255, 255, 255, .07);
+  --land-gruen: #2f9a4c;
+  --land-gelb: #c99a14;
+  --land-rot: #c8433a;
+  --land-gefaerbt-grenze: rgba(0, 0, 0, .45);
+  --weltkarte-land: #3a3f47;
+  --weltkarte-hover: #2f62c4;
 
-    --schatten: 0 2px 10px rgba(0, 0, 0, .35);
-    --schatten-hoch: 0 16px 44px rgba(0, 0, 0, .6);
-    color-scheme: dark;
-  }
+  --logo-oben: #3a6bc9;
+  --logo-unten: #1f4a99;
+
+  --schatten: 0 2px 10px rgba(0, 0, 0, .35);
+  --schatten-hoch: 0 16px 44px rgba(0, 0, 0, .6);
+  --schatten-menue: 0 0 0 .5px rgba(255, 255, 255, .08), 0 16px 48px rgba(0, 0, 0, .6);
+  color-scheme: dark;
 }
 
 /* „Transparenz reduzieren“: feste Flächen */
 @media (prefers-reduced-transparency: reduce) {
-  :root { --karte: #ffffff; --glas: #ffffff; --glas-unschaerfe: none; --glas-licht: transparent;
-          --umgebung-licht: transparent; --umgebung-kuehl: transparent; --umgebung-dunst: transparent; --umgebung-verlauf: #eef0f4; }
-}
-@media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark) {
-  :root { --karte: #1c1c1e; --glas: #1c1c1e; --umgebung-verlauf: #050507; }
+  :root { --karte: #ffffff; --glas: #ffffff; --glas-erhoeht: #ffffff; --glas-unschaerfe: none; --glas-licht: transparent;
+          --umgebung-licht: transparent; --umgebung-kuehl: transparent; --umgebung-dunst: transparent; --umgebung-verlauf: #f1f2f4; }
+  :root[data-theme="dark"] { --karte: #1c1c1e; --glas: #1c1c1e; --glas-erhoeht: #2c2c2e; --umgebung-verlauf: #07080a; }
 }
 
 /* =====================================================================
@@ -224,22 +236,169 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
 }
 .marke:hover { color: var(--text); text-decoration: none; }
 
-/* Bildmarke (components/Logo.js): dunkles Quadrat, darin ein feiner Globus mit Zielpunkt */
+/* Bildmarke (components/Logo.js): Quadrat in Atlasblau, darin ein feiner Globus mit Zielpunkt */
 .logo {
   display: inline-grid;
   place-items: center;
   width: var(--logo-groesse, 30px);
   height: var(--logo-groesse, 30px);
   border-radius: 8px;
-  background: linear-gradient(180deg, #2c2c30, #0c0c0e);
-  color: #f5f5f7;
+  background: linear-gradient(180deg, var(--logo-oben), var(--logo-unten));
+  color: #ffffff;
   box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .08), 0 1px 2px rgba(0, 0, 0, .2);
 }
 .logo svg { width: 72%; height: 72%; }
 .logo-punkt { transform-box: fill-box; transform-origin: center; transition: transform .5s var(--weich); }
 .marke:hover .logo-punkt { transform: scale(1.35); }
-@media (prefers-color-scheme: dark) {
-  .logo { background: linear-gradient(180deg, #3a3a3f, #1a1a1d); box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .16); }
+
+/* ---------- Profil-Menü (components/ProfilMenue.js) ---------- */
+
+.profil { position: relative; }
+.profil-knopf {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--glas-rand);
+  background: var(--fuellung);
+  color: var(--text);
+  cursor: pointer;
+  position: relative;
+  transition: background-color var(--uebergang), box-shadow var(--uebergang);
+}
+.profil-knopf::after { content: ""; position: absolute; inset: -4px; }  /* Trefferfläche 44 px */
+.profil-knopf:hover { background: var(--fuellung-hover); }
+.profil-knopf[aria-expanded="true"] { background: var(--akzent-zart); color: var(--akzent); box-shadow: 0 0 0 3px var(--akzent-ring); }
+.profil-knopf svg { width: 20px; height: 20px; }
+
+.profil-menue {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 30;
+  width: min(320px, calc(100vw - 24px));
+  padding: 16px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--glas-licht), transparent 60%), var(--glas-erhoeht);
+  -webkit-backdrop-filter: var(--glas-unschaerfe);
+  backdrop-filter: var(--glas-unschaerfe);
+  border: 1px solid var(--glas-rand);
+  box-shadow: var(--glas-kante), var(--schatten-menue);
+  transform-origin: top right;
+  animation: menue-auf .18s var(--weich) backwards;
+}
+@keyframes menue-auf { from { opacity: 0; transform: scale(.96) translateY(-4px); } }
+
+.profil-kopf { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.profil-kopf strong { display: block; font-weight: 600; }
+.profil-kopf small { display: block; color: var(--text-leise); font-size: .8125rem; }
+.avatar {
+  width: 44px; height: 44px; flex: none;
+  display: grid; place-items: center;
+  border-radius: 50%;
+  background: var(--fuellung-hover);
+  color: var(--text-leise);
+}
+.avatar svg { width: 24px; height: 24px; }
+.profil-vermerk { margin: 8px 0 0; text-align: center; font-size: .8125rem; color: var(--text-leise); }
+
+.einstellungen { margin-top: 16px; padding-top: 4px; border-top: .5px solid var(--linie); }
+.einstellung { padding: 12px 0 2px; }
+.einstellung.zeile { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 0; }
+.einstellung.gesperrt { opacity: .5; }
+.einstellung-titel { display: flex; justify-content: space-between; font-size: .875rem; font-weight: 600; margin-bottom: 8px; }
+.einstellung.zeile .einstellung-titel { margin: 0; }
+.einstellung-titel .wert { font-weight: 500; color: var(--text-leise); font-variant-numeric: tabular-nums; }
+
+/* Segment-Schalter (wie Apples Segmented Control): heller Knopf auf grauer Schiene */
+.segment-schalter {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 9px;
+  background: var(--fuellung);
+}
+.segment-schalter button {
+  flex: 1 1 0;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  font-size: .875rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color .15s ease, box-shadow .15s ease;
+}
+.segment-schalter button:hover:not(.gewaehlt) { background: var(--fuellung); }
+.segment-schalter button.gewaehlt {
+  background: var(--karte-solid);
+  font-weight: 600;
+  box-shadow: 0 0 0 .5px rgba(0, 0, 0, .06), 0 2px 6px rgba(0, 0, 0, .12);
+}
+:root[data-theme="dark"] .segment-schalter button.gewaehlt { background: #636366; }
+
+/* Kippschalter (wie Apples Toggle) */
+.schalter {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--fuellung-hover);
+  cursor: pointer;
+  transition: background-color .2s ease;
+}
+.schalter span {
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 27px; height: 27px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .2), 0 0 0 .5px rgba(0, 0, 0, .04);
+  transition: transform .2s var(--weich);
+}
+.schalter[aria-checked="true"] { background: var(--land-gruen); }
+.schalter[aria-checked="true"] span { transform: translateX(20px); }
+
+/* Lautstärke-Regler */
+.regler {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 28px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.regler:disabled { cursor: default; }
+.regler::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--akzent) var(--anteil), var(--fuellung-hover) var(--anteil));
+}
+.regler::-moz-range-track { height: 4px; border-radius: 4px; background: var(--fuellung-hover); }
+.regler::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--akzent); }
+.regler::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 22px; height: 22px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .25), 0 0 0 .5px rgba(0, 0, 0, .06);
+}
+.regler::-moz-range-thumb {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .25), 0 0 0 .5px rgba(0, 0, 0, .06);
 }
 
 .inhalt {
@@ -286,7 +445,7 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
   padding: 28px;
 }
 
-/* Knöpfe: Hauptknopf flach in Petrol (höchstens ein bis zwei je Seite), sonst sekundär */
+/* Knöpfe: Hauptknopf flach in Atlasblau (höchstens ein bis zwei je Seite), sonst sekundär */
 .knopf {
   display: inline-flex;
   align-items: center;

@@ -13,6 +13,7 @@ import { KONTINENTE } from '@/lib/geodaten/kontinente';
 import { weltKarte } from '@/lib/geodaten/karte';
 import { GROESSE } from '@/lib/geodaten/umriss';
 import { Chevron } from '@/components/Symbole';
+import { T } from '@/lib/sprache';
 
 export const metadata = { title: { absolute: 'Geo-Quiz' } };
 
@@ -24,8 +25,12 @@ function ModusKarte({ href, titel, fakten, bild, i }) {
       </div>
       <div className="modus-text">
         <div>
-          <h3>{titel}</h3>
-          <p>{fakten}</p>
+          <h3>
+            <T>{titel}</T>
+          </h3>
+          <p>
+            <T text={fakten.text} werte={fakten.werte} />
+          </p>
         </div>
         <Chevron />
       </div>
@@ -50,20 +55,29 @@ export default async function Hauptmenue() {
   return (
     <>
       <header className="seitenkopf erscheinen">
-        <p className="eyebrow">Geografie</p>
-        <h1>Quizze</h1>
+        <p className="eyebrow">
+          <T>Geografie</T>
+        </p>
+        <h1>
+          <T>Quizze</T>
+        </h1>
         <p className="fakten">
-          {laender} Länder · {KONTINENTE.length} Kontinente
+          <T text="{n} Länder · {k} Kontinente" werte={{ n: laender, k: KONTINENTE.length }} />
         </p>
       </header>
 
       <section className="menue-gruppe">
-        <h2 className="abschnitt-titel erscheinen">Welt</h2>
+        <h2 className="abschnitt-titel erscheinen">
+          <T>Welt</T>
+        </h2>
         <div className="modi">
           <ModusKarte
             href="/kontinente"
             titel="Länder eines Kontinents"
-            fakten={`${KONTINENTE.length} Kontinente · ${Math.min(...anzahlen)} bis ${Math.max(...anzahlen)} Länder`}
+            fakten={{
+              text: '{k} Kontinente · {von} bis {bis} Länder',
+              werte: { k: KONTINENTE.length, von: Math.min(...anzahlen), bis: Math.max(...anzahlen) },
+            }}
             i={1}
             bild={
               <svg className="vorschau-welt" viewBox={`-20 -20 ${welt.breite + 40} ${welt.hoehe + 40}`}>
@@ -78,7 +92,7 @@ export default async function Hauptmenue() {
               key={quiz.slug}
               href={`/quiz/${quiz.slug}`}
               titel={quiz.titel}
-              fakten={`${quiz.anzahl} ${quiz.einheit ?? 'Länder'} · ${quiz.runden} Fragen`}
+              fakten={{ text: `{n} ${quiz.einheit ?? 'Länder'} · {r} Fragen`, werte: { n: quiz.anzahl, r: quiz.runden } }}
               i={i + 2}
               bild={
                 <svg className="vorschau-umriss" viewBox={`0 0 ${GROESSE} ${GROESSE}`}>

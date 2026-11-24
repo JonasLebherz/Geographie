@@ -27,6 +27,7 @@ import { Chevron } from '@/components/Symbole';
 import { klang } from '@/lib/ton';
 import { bestenlistenName } from '@/lib/geodaten/kontinente';
 import { bestwertSpeichern } from '@/lib/bestwerte';
+import { useT } from '@/lib/sprache';
 
 const VERSUCHE = 3;
 const AUFGEDECKT_PAUSE = 1500; // ms, so lange bleibt das aufgedeckte Land im Blick
@@ -51,8 +52,9 @@ function quote(ergebnis, anzahl) {
 }
 
 export default function KontinentSpiel({ karte }) {
+  const t = useT();
   const anzahl = karte.laender.length;
-  const namen = useMemo(() => new Map(karte.laender.map((l) => [l.id, l.name])), [karte]);
+  const namen = useMemo(() => new Map(karte.laender.map((l) => [l.id, t.ortsname(l)])), [karte, t]);
 
   // spiel: { reihenfolge, nummer, fehl, ergebnis: { id → farbe }, start, ende, sperre }
   const [spiel, setSpiel] = useState(null);
@@ -140,7 +142,7 @@ export default function KontinentSpiel({ karte }) {
     // Dritter Fehlversuch: gesuchtes Land rot aufdecken, kurz zeigen, dann weiter
     const aufgedeckt = { ...spiel, fehl, sperre: true, ergebnis: { ...spiel.ergebnis, [ziel]: 'rot' } };
     setSpiel(aufgedeckt);
-    melden('aufgedeckt', 'Aufgedeckt');
+    melden('aufgedeckt', t('Aufgedeckt'));
     setTimeout(() => klang('aufgedeckt'), 140);
     spaeter('effekt', () => setEffekt({ id: ziel, art: 'puls' }), 0);
     spaeter(
@@ -171,20 +173,20 @@ export default function KontinentSpiel({ karte }) {
         <div className="spielleiste-links">
           <Link href="/kontinente" className="zurueck">
             <Chevron richtung="links" className="" />
-            Kontinente
+            {t('Kontinente')}
           </Link>
         </div>
 
         <div className="frage" aria-live="polite">
           {fertig ? (
-            <h1 className="frage-name">{karte.name}</h1>
+            <h1 className="frage-name">{t.ortsname(karte)}</h1>
           ) : (
             <>
               <h1 className="frage-name" key={ziel ?? 'leer'}>
                 {ziel ? namen.get(ziel) : ' '}
               </h1>
               <div className="frage-unter">
-                <span className="versuche" aria-label={`${VERSUCHE - (spiel?.fehl ?? 0)} von ${VERSUCHE} Versuchen übrig`}>
+                <span className="versuche" aria-label={t('{n} von {m} Versuchen übrig', { n: VERSUCHE - (spiel?.fehl ?? 0), m: VERSUCHE })}>
                   {Array.from({ length: VERSUCHE }, (_, i) => (
                     <i key={i} className={i < (spiel?.fehl ?? 0) ? 'verbraucht' : undefined} />
                   ))}
@@ -239,16 +241,17 @@ export default function KontinentSpiel({ karte }) {
 }
 
 function Ergebnis({ karte, spiel, zahlen, namen, onNochmal }) {
+  const t = useT();
   const anzahl = karte.laender.length;
   const prozent = quote(spiel.ergebnis, anzahl);
   const sekunden = Math.max(1, Math.round((spiel.ende - spiel.start) / 1000));
   const aufgedeckt = spiel.reihenfolge.filter((id) => spiel.ergebnis[id] === 'rot').map((id) => namen.get(id));
-  aufgedeckt.sort((a, b) => a.localeCompare(b, 'de'));
+  aufgedeckt.sort((a, b) => a.localeCompare(b, t.sprache));
 
   return (
     <div className="ergebnis">
       <section className="karte erscheinen">
-        <p className="eyebrow">Ergebnis</p>
+        <p className="eyebrow">{t('Ergebnis')}</p>
         <p className="ergebnis-zahl">
           {prozent}
           <small>%</small>
@@ -256,26 +259,26 @@ function Ergebnis({ karte, spiel, zahlen, namen, onNochmal }) {
         <p className="zeit">{dauer(sekunden)} min</p>
         <ul className="bilanz">
           <li>
-            <span className="farbpunkt gruen" /> <b>{zahlen.gruen}</b> beim ersten Versuch
+            <span className="farbpunkt gruen" /> <b>{zahlen.gruen}</b> {t('beim ersten Versuch')}
           </li>
           <li>
-            <span className="farbpunkt gelb" /> <b>{zahlen.gelb}</b> beim zweiten oder dritten Versuch
+            <span className="farbpunkt gelb" /> <b>{zahlen.gelb}</b> {t('beim zweiten oder dritten Versuch')}
           </li>
           <li>
-            <span className="farbpunkt rot" /> <b>{zahlen.rot}</b> aufgedeckt
+            <span className="farbpunkt rot" /> <b>{zahlen.rot}</b> {t('aufgedeckt')}
           </li>
         </ul>
         <div className="ergebnis-knoepfe">
           <button type="button" className="knopf knopf-haupt" onClick={onNochmal}>
-            Noch einmal
+            {t('Noch einmal')}
           </button>
           <Link href="/kontinente" className="knopf knopf-zweit">
-            Anderer Kontinent
+            {t('Anderer Kontinent')}
           </Link>
         </div>
         {aufgedeckt.length > 0 && (
           <p className="verpasst">
-            Aufgedeckt: <strong>{aufgedeckt.join(', ')}</strong>
+            {t('Aufgedeckt')}: <strong>{aufgedeckt.join(', ')}</strong>
           </p>
         )}
       </section>

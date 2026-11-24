@@ -11,6 +11,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import { useT } from '@/lib/sprache';
 
 const PLAETZE = 10;
 const NAME_SPEICHER = 'geo-quiz-name';
@@ -25,6 +26,7 @@ export function dauer(sekunden) {
 }
 
 export default function Bestenliste({ quiz, punkte, fragen, sekunden, wertText = standardText }) {
+  const t = useT();
   const db = supabase();
   const [eintraege, setEintraege] = useState(null);
   const [name, setName] = useState('');
@@ -56,7 +58,7 @@ export default function Bestenliste({ quiz, punkte, fragen, sekunden, wertText =
   }, [laden]);
 
   if (!db) {
-    return <p className="hinweis">Bestenliste nicht eingerichtet.</p>;
+    return <p className="hinweis">{t('Bestenliste nicht eingerichtet.')}</p>;
   }
 
   async function eintragen(e) {
@@ -86,30 +88,30 @@ export default function Bestenliste({ quiz, punkte, fragen, sekunden, wertText =
 
   return (
     <div className="bestenliste">
-      <h2>Bestenliste</h2>
+      <h2>{t('Bestenliste')}</h2>
       {eigeneId ? (
-        <p className="eingetragen">Eingetragen.</p>
+        <p className="eingetragen">{t('Eingetragen.')}</p>
       ) : (
         <form onSubmit={eintragen} className="eintragen" noValidate>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Name"
+            placeholder={t('Name')}
             maxLength={20}
-            aria-label="Name für die Bestenliste"
+            aria-label={t('Name für die Bestenliste')}
             autoComplete="nickname"
           />
           <button className="knopf knopf-zweit" disabled={sendet}>
-            Eintragen
+            {t('Eintragen')}
           </button>
         </form>
       )}
-      {fehler && <p className="fehler">{fehler}</p>}
+      {fehler && <p className="fehler">{t(fehler)}</p>}
 
       {eintraege === null ? (
-        <p className="hinweis">Wird geladen …</p>
+        <p className="hinweis">{t('Wird geladen …')}</p>
       ) : eintraege.length === 0 ? (
-        <p className="hinweis">Noch keine Einträge.</p>
+        <p className="hinweis">{t('Noch keine Einträge.')}</p>
       ) : (
         <ol>
           {eintraege.map((e) => (
