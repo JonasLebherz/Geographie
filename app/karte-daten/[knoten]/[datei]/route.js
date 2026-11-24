@@ -16,7 +16,7 @@ export function generateStaticParams() {
   return alleKnoten().flatMap((knoten) => [
     { knoten, datei: 'gebiet.json' },
     ...saetze(baum().get(knoten))
-      .filter((s) => !s.wieKarte)
+      .filter((s) => !s.wieKarte && !s.datei)
       .map((s) => ({ knoten, datei: `${s.id}.json` })),
   ]);
 }

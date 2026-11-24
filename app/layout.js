@@ -45,7 +45,9 @@ export default function Layout({ children }) {
         <main className="inhalt">{children}</main>
         <footer className="fuss">
           <T>Geodaten</T>: <a href="https://www.naturalearthdata.com/">Natural Earth</a> (<T>gemeinfrei</T>) ·{' '}
-          <T>Kreisgrenzen</T>: © <a href="https://ec.europa.eu/eurostat/web/gisco">EuroGeographics</a>
+          <T>Kreisgrenzen</T>: © <a href="https://ec.europa.eu/eurostat/web/gisco">EuroGeographics</a> ·{' '}
+          <T>Städte</T>: <a href="https://www.geonames.org/">GeoNames</a> (CC BY 4.0) ·{' '}
+          <T>Wissen</T>: <a href="https://www.wikidata.org/">Wikidata</a> (CC0)
         </footer>
       </body>
     </html>

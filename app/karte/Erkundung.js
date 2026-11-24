@@ -16,9 +16,13 @@
  * Die Adresse wandert mit (/karte/europa/deutschland), der Zurück-Knopf des Browsers fliegt
  * wieder hinaus. Daten der Gebiete: /karte-daten/<kennung>/gebiet.json (beim Bauen erzeugt).
  */
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
-import { mischen, useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
+import { mischen, sterneFuer, useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
+import Frage from '@/components/karte/Frage';
+import SatzZeile from '@/components/karte/SatzZeile';
+import QuizListe from './QuizListe';
+import DistanzAnsicht from './DistanzAnsicht';
 import DuellAnsicht, { DUELL_FRAGEN } from './DuellAnsicht';
 import Bestenliste, { dauer } from '@/components/Bestenliste';
 import TonSchalter from '@/components/TonSchalter';
@@ -27,6 +31,7 @@ import Willkommen, { WILLKOMMEN_GESEHEN } from './Willkommen';
 import { useT } from '@/lib/sprache';
 import { klang } from '@/lib/ton';
 import { bestwerteLesen } from '@/lib/bestwerte';
+import { RUNDE_AUSWAHL, RUNDE_GROSS } from '@/lib/gebiete/runde';
 
 const FAHRT_DAUER = 1000; // ms
 const weich = (x) => (x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2);
@@ -82,6 +87,9 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
   const partyRef = useRef(party);
   partyRef.current = party;
   const gast = party?.rolle === 'gast';
+  // Party: Der Gastgeber darf schon ein Quiz wählen – los geht es erst mit Mitspieler
+  const [vorgemerkt, setVorgemerkt] = useState(null);
+  const mitspielerDa = Boolean(party?.gegner);
   const t = useT();
   // Begrüßung (nur Startseite): bis „Solo spielen“ – danach in dieser Sitzung nicht mehr
   const [willkommen, setWillkommen] = useState(mitWillkommen);
@@ -106,6 +114,8 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
   const [laedt, setLaedt] = useState(null);
   const [hervor, setHervor] = useState(null);
   const [bestwerte, setBestwerte] = useState({});
+  const [listeOffen, setListeOffen] = useState(false); // Quiz-Liste links aufgeklappt
+  const [startNach, setStartNach] = useState(null); // { gebietId, satzId, stufe } – Quiz nach der Kamerafahrt starten
   const zwischenspeicher = useRef(new Map([[start.knoten.id, start]]));
   const buehneRef = useRef(null);
   const altRef = useRef(null);
@@ -258,19 +268,32 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uebergang]);
 
-  /** Quiz starten: Spieldaten laden (oder die Flächen der Gebietskarte nehmen) */
-  /** Spieldaten eines Satzes: Flächen der Gebietskarte oder eigene Datei */
+  /**
+   * Spieldaten eines Satzes: Flächen der Gebietskarte, eigene Datei oder die eines anderen
+   * Satzes (Flaggen → Länder, Kennzeichen → Kreise). Städte: nur die gewählte Stufe (Top 10/50/100).
+   */
   const satzLaden = useCallback(
-    (gebietDaten, satz) =>
-      satz.wieKarte
-        ? Promise.resolve({ art: 'flaeche', einheiten: gebietDaten.flaechen.map(({ ziel, ...f }) => f) })
-        : json(`/karte-daten/${gebietDaten.knoten.id}/${satz.id}.json`),
+    async (gebietDaten, satz) => {
+      let daten = satz.wieKarte
+        ? { art: 'flaeche', einheiten: gebietDaten.flaechen.map(({ ziel, ...f }) => f) }
+        : await json(`/karte-daten/${gebietDaten.knoten.id}/${satz.datei ?? satz.id}.json`);
+      if (satz.stufe) daten = { ...daten, einheiten: daten.einheiten.slice(0, satz.stufe) };
+      if (satz.frage === 'kennzeichen') daten = { ...daten, einheiten: daten.einheiten.map((e) => (e.kz ? e : { ...e, gefragt: false })) };
+      return daten;
+    },
     [json],
   );
 
   const quizStarten = useCallback(
-    async (satz) => {
+    async (wahl, stufe) => {
       const p = partyRef.current;
+      // Städte: gewählte Stufe als eigener Satz (eigene Bestenliste je Stufe)
+      const satz = stufe
+        ? {
+            ...wahl, stufe, anzahl: stufe, runde: stufe > RUNDE_GROSS ? RUNDE_AUSWAHL : stufe, bestenliste: `${wahl.bestenliste}-${stufe}`,
+            titel: `Die ${stufe} größten Städte`, titelEn: `${stufe} largest cities`,
+          }
+        : wahl;
       if (p?.rolle === 'gast') return; // im Duell wählt der Gastgeber
       setLaedt(satz.id);
       try {
@@ -278,7 +301,8 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
         const nr = Date.now();
         if (p) {
           // Duell: gleiche Fragen in gleicher Reihenfolge für beide
-          const reihenfolge = mischen(daten.einheiten.map((e) => e.id)).slice(0, Math.min(satz.runde, DUELL_FRAGEN));
+          const fragbar = daten.einheiten.filter((e) => e.gefragt !== false);
+          const reihenfolge = mischen(fragbar.map((e) => e.id)).slice(0, Math.min(satz.runde, DUELL_FRAGEN));
           p.senden('start', { gebietId: gebietRef.current.knoten.id, satz, reihenfolge, nr });
           setQuiz({ satz, daten, nr, reihenfolge });
         } else {
@@ -317,6 +341,14 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
     if (gegnerId && partyRef.current?.rolle === 'host') partyRef.current.senden('gebiet', { id: gebietRef.current.knoten.id });
   }, [gegnerId]);
 
+  // Quiz aus der Liste links: erst hinfliegen, nach der Kamerafahrt starten
+  useEffect(() => {
+    if (!startNach || uebergang || laedt === startNach.gebietId || gebiet.knoten.id !== startNach.gebietId) return;
+    const satz = gebiet.saetze.find((s) => s.id === startNach.satzId);
+    setStartNach(null);
+    if (satz) quizStarten(satz, startNach.stufe);
+  }, [startNach, uebergang, laedt, gebiet, quizStarten]);
+
   // Direkt mit einem Quiz starten (?quiz=laender, z. B. von alten Adressen /kontinente/europa)
   useEffect(() => {
     if (partyRef.current) return;
@@ -342,9 +374,28 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
       ]
     : [{ daten: gebiet, rolle: 'neu' }];
 
+  // Die Quiz-Liste links bleibt in allen Ansichten dieselbe (außer in der Party)
+  const mitListe = (inhalt, imQuiz) => (
+    <div className={`erkundung${imQuiz ? ' im-quiz' : ''}${party ? '' : ' mit-liste'}${listeOffen ? ' liste-offen' : ''}`}>
+      {!party && (
+        <QuizListe
+          offen={listeOffen}
+          onOffen={setListeOffen}
+          aktuell={gebiet.knoten.id}
+          bestwerte={bestwerte}
+          onWahl={(gebietId, satz, stufe) => {
+            setListeOffen(false);
+            setStartNach({ gebietId, satzId: satz.id, stufe });
+            wechseln(gebietId);
+          }}
+        />
+      )}
+      {inhalt}
+    </div>
+  );
+
   if (quiz && !uebergang && party) {
-    return (
-      <div className="erkundung im-quiz">
+    return mitListe(
         <DuellAnsicht
           key={quiz.nr}
           gebiet={gebiet}
@@ -355,27 +406,39 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
             if (party.rolle === 'host') party.senden('lobby');
           }}
           onRevanche={party.rolle === 'host' ? () => quizStarten(quiz.satz) : null}
-        />
-      </div>
+        />,
+      true,
+    );
+  }
+
+  if (quiz && !uebergang && quiz.satz.art === 'distanz') {
+    return mitListe(
+        <DistanzAnsicht
+          key={quiz.nr}
+          gebiet={gebiet}
+          quiz={quiz}
+          onEnde={() => setQuiz(null)}
+          onNochmal={() => setQuiz({ ...quiz, nr: Date.now() })}
+        />,
+      true,
     );
   }
 
   if (quiz && !uebergang) {
-    return (
-      <div className="erkundung im-quiz">
+    return mitListe(
         <QuizAnsicht
           key={quiz.nr}
           gebiet={gebiet}
           quiz={quiz}
           onEnde={() => setQuiz(null)}
           onNochmal={() => setQuiz({ ...quiz, nr: Date.now() })}
-        />
-      </div>
+        />,
+      true,
     );
   }
 
-  return (
-    <div className="erkundung">
+  return mitListe(
+    <>
       <div className="buehne" ref={buehneRef}>
         {ebenen.map(({ daten, rolle }) => (
           <div key={daten.knoten.id} className={`ebene-huelle huelle-${rolle}`}>
@@ -396,15 +459,28 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
 
       <Leiste
         gebiet={gebiet}
+        party={Boolean(party)}
         gesperrt={gast ? t('{name} wählt Gebiet und Quiz.', { name: party?.gegner?.name ?? t('Gastgeber') }) : null}
+        vorgemerkt={party?.rolle === 'host' && vorgemerkt?.gebiet === gebiet.knoten.id ? vorgemerkt : null}
+        mitspielerDa={mitspielerDa}
+        onVorgemerktStarten={() => {
+          const wahl = vorgemerkt;
+          setVorgemerkt(null);
+          if (wahl) quizStarten(wahl.satz, wahl.stufe);
+        }}
         bestwerte={bestwerte}
         laedt={laedt}
         onGebiet={wechseln}
-        onQuiz={quizStarten}
+        onQuiz={(satz, stufe) => {
+          // Party ohne Mitspieler: nur vormerken, gestartet wird über „Starten“
+          if (party?.rolle === 'host' && !mitspielerDa) setVorgemerkt({ satz, stufe, gebiet: gebiet.knoten.id });
+          else quizStarten(satz, stufe);
+        }}
         onHervor={setHervor}
         onVorschau={vorladen}
       />
-    </div>
+    </>,
+    false,
   );
 }
 
@@ -412,7 +488,16 @@ export default function Erkundung({ start, willkommen: mitWillkommen = false, pa
 // Rechte Leiste: Pfad, Gebiet, Quizze, Untergebiete
 // ---------------------------------------------------------------------------------------
 
-function Leiste({ gebiet, bestwerte, laedt, gesperrt, onGebiet, onQuiz, onHervor, onVorschau }) {
+/** Drei Kästen in der Leiste: Grundlagen, weitere Quizze, Schätzen nach Entfernung */
+const GRUPPEN = [
+  ['quiz', 'Quizze'],
+  ['weitere', 'Weitere Quizze'],
+  ['distanz', 'Am nächsten dran'],
+];
+
+function Leiste({
+  gebiet, bestwerte, laedt, gesperrt, party, vorgemerkt, mitspielerDa, onVorgemerktStarten, onGebiet, onQuiz, onHervor, onVorschau,
+}) {
   const t = useT();
   const leisteRef = useRef(null);
   // Neues Gebiet: Leiste wieder von oben zeigen
@@ -420,13 +505,26 @@ function Leiste({ gebiet, bestwerte, laedt, gesperrt, onGebiet, onQuiz, onHervor
     leisteRef.current?.scrollTo({ top: 0 });
   }, [gebiet.knoten.id]);
   const { knoten, ahnen, kinder, saetze } = gebiet;
-  const fakten = saetze.slice(0, 2).map((s) => `${t.zahl(s.anzahl)} ${t.ortsname({ name: s.titel, en: s.titelEn })}`);
+  const fakten = saetze.filter((s) => s.gruppe === 'quiz' && !s.stufen).slice(0, 2).map((s) => `${t.zahl(s.anzahl)} ${t.ortsname({ name: s.titel, en: s.titelEn })}`);
   const kinderTitel = { welt: t('Kontinente'), kontinent: t('Länder') }[knoten.ebene]
     ?? (saetze[0] ? t.ortsname({ name: saetze[0].titel, en: saetze[0].titelEn }) : '');
 
   return (
     <aside className="leiste" aria-label={t('Auswahl')} ref={leisteRef}>
       {gesperrt && <p className="leiste-gesperrt">{gesperrt}</p>}
+      {vorgemerkt && (
+        <div className="karte vorgemerkt erscheinen">
+          <span className="leise">{t('Gewählt')}</span>
+          <strong>
+            {vorgemerkt.stufe
+              ? t('Die {n} größten Städte', { n: vorgemerkt.stufe })
+              : t.ortsname({ name: vorgemerkt.satz.titel, en: vorgemerkt.satz.titelEn })}
+          </strong>
+          <button type="button" className="knopf knopf-haupt knopf-breit" disabled={!mitspielerDa} onClick={onVorgemerktStarten}>
+            {mitspielerDa ? t('Starten') : t('Warte auf Mitspieler …')}
+          </button>
+        </div>
+      )}
       {/* Im Duell steuert der Gastgeber: beim Gast sind alle Knöpfe gesperrt (fieldset disabled) */}
       <fieldset className="leiste-felder" disabled={Boolean(gesperrt)}>
       <nav className="pfad" aria-label={t('Pfad')}>
@@ -446,28 +544,20 @@ function Leiste({ gebiet, bestwerte, laedt, gesperrt, onGebiet, onQuiz, onHervor
       </h1>
       <p className="leiste-fakten">{fakten.join(' · ')}</p>
 
-      {saetze.length > 0 && (
-        <section className="leiste-abschnitt">
-          <h2>{t('Quizze')}</h2>
-          <ul className="liste karte">
-            {saetze.map((s) => {
-              const bestwert = bestwerte[s.bestenliste];
-              return (
-                <li key={s.id}>
-                  <button type="button" className={`listen-zeile${laedt === s.id ? ' laedt' : ''}`} onClick={() => onQuiz(s)}>
-                    <span className="titel">{t.ortsname({ name: s.titel, en: s.titelEn })}</span>
-                    <span className="zusatz">
-                      {s.runde < s.anzahl ? t('{r} von {n}', { r: s.runde, n: t.zahl(s.anzahl) }) : t.zahl(s.anzahl)}
-                      {bestwert && <small>{t('Bestwert {q} %', { q: bestwert.quote })}</small>}
-                    </span>
-                    <Chevron />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </section>
-      )}
+      {GRUPPEN.map(([gruppe, ueberschrift]) => {
+        const liste = saetze.filter((s) => s.gruppe === gruppe && !(party && gruppe === 'distanz'));
+        if (!liste.length) return null;
+        return (
+          <section className="leiste-abschnitt" key={gruppe}>
+            <h2>{t(ueberschrift)}</h2>
+            <ul className="liste karte">
+              {liste.map((s) => (
+                <SatzZeile key={s.id} satz={s} bestwerte={bestwerte} laedt={laedt} onQuiz={onQuiz} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
 
       {kinder.length > 0 && (
         <section className="leiste-abschnitt">
@@ -507,6 +597,7 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
   const t = useT();
   const { satz, daten } = quiz;
   const runde = useQuizRunde({ einheiten: daten.einheiten, runde: satz.runde, bestenliste: satz.bestenliste });
+  const einheiten = useMemo(() => new Map(daten.einheiten.map((e) => [e.id, e])), [daten.einheiten]);
   const { spiel, fertig, zahlen, anzahl } = runde;
   const titel = t.ortsname({ name: satz.titel, en: satz.titelEn });
   const namenZeigen = useCallback((id) => fertig || Boolean(runde.ergebnis[id]), [fertig, runde.ergebnis]);
@@ -549,9 +640,7 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
                 {runde.serie}
               </span>
             )}
-            <p className="frage-name" key={runde.ziel ?? 'leer'}>
-              {runde.zielName ?? '\u00a0'}
-            </p>
+            <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} />
             <div className="frage-unter">
               <span className="versuche" aria-label={t('{n} von {m} Versuchen übrig', { n: VERSUCHE - (spiel?.fehl ?? 0), m: VERSUCHE })}>
                 {Array.from({ length: VERSUCHE }, (_, i) => (
@@ -608,8 +697,6 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
   );
 }
 
-/** Sterne nach Ergebnis: ab 50 % einer, ab 75 % zwei, ab 90 % drei */
-export const sterneFuer = (prozent) => (prozent >= 90 ? 3 : prozent >= 75 ? 2 : prozent >= 50 ? 1 : 0);
 
 function QuizErgebnis({ satz, runde, onNochmal, onEnde }) {
   const t = useT();
