@@ -1,103 +1,765 @@
-/* globals.css – Aussehen der ganzen Seite (hell und dunkel) */
+/* Schrift IBM Plex Sans – liegt mit im Projekt (keine Anfrage an Google), sachlich statt der üblichen Vorlagen-Schriften */
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-sans/700.css";
+
+/*
+ * app/globals.css – Aussehen der ganzen Seite
+ *
+ * Gleiche Gestaltung wie im Schwesterprojekt PitStop 01 (Instandhaltung), angelehnt an
+ * Apples Human Interface Guidelines: ruhiger, leicht getönter Hintergrund („Morgendunst“),
+ * Inhalte auf fast deckenden Karten mit feiner Lichtkante, eine einzige Akzentfarbe (Petrol)
+ * nur für Bedienbares. Glas mit Unschärfe nur dort, wo Inhalt dahinter liegt (Kopfzeile,
+ * Kartenknöpfe). Text hat überall mindestens 4,5:1 Kontrast.
+ *
+ * Aufbau:
+ *  1. Farben als CSS-Variablen – hell und dunkel (folgt dem Betriebssystem)
+ *  2. Grundlayout: Kopf, Inhalt, Fuß, Überschriften, Karten, Knöpfe
+ *  3. Hauptmenü
+ *  4. Kontinent-Auswahl (Weltkarte)
+ *  5. Spiel „Länder eines Kontinents“ (Spielleiste, Karte, Ergebnis)
+ *  6. Umriss-Quiz, Bestenliste
+ *  7. Bewegung (aus bei „Bewegung reduzieren“)
+ */
+
+/* =====================================================================
+ * 1. Farben
+ * ================================================================== */
 
 :root {
-  --hintergrund: #f4f6f8;
-  --flaeche: #ffffff;
-  --text: #1c2430;
-  --leise: #5b6675;
-  --rand: #dde2e8;
-  --akzent: #1f6feb;
-  --umriss: #2f7d5b;
-  --richtig: #1a7f37;
-  --richtig-hell: #dafbe1;
-  --falsch: #cf222e;
-  --falsch-hell: #ffebe9;
+  --hintergrund: #dfe3e8;
+  --karte-solid: #ffffff;
+  --text: #1d1d1f;
+  --text-leise: #5f5f64;           /* 5,5:1 auf Karten */
+  --linie: rgba(60, 60, 67, .12);
+  --feld-rand: rgba(60, 60, 67, .18);
+  --feld-bg: rgba(255, 255, 255, .72);
+  --fuellung: rgba(118, 118, 128, .10);
+  --fuellung-hover: rgba(118, 118, 128, .17);
+
+  /* Inhalts-Ebene (Karten) fast deckend, Bedien-Ebene (Kopfzeile, Kartenknöpfe) als Glas */
+  --karte: rgba(255, 255, 255, .74);
+  --glas: rgba(255, 255, 255, .62);
+  --glas-licht: rgba(255, 255, 255, .26);
+  --glas-rand: rgba(255, 255, 255, .55);
+  --glas-kante: inset 0 1px 0 rgba(255, 255, 255, .95), inset 0 -1px 0 rgba(255, 255, 255, .18), 0 0 0 .5px rgba(0, 0, 0, .07);
+  --glas-unschaerfe: blur(24px) saturate(180%);
+
+  /* Hintergrund „Morgendunst“: warmes Licht oben links, kühles Stahlblau unten rechts */
+  --umgebung-licht: rgba(255, 246, 232, .95);
+  --umgebung-kuehl: rgba(150, 170, 195, .5);
+  --umgebung-dunst: rgba(185, 205, 215, .6);
+  --umgebung-verlauf: linear-gradient(155deg, #e9e6e0 0%, #d9dfe6 55%, #c9d2dc 100%);
+
+  --akzent: #1b7076;               /* Petrol, 5:1 auf Karten */
+  --akzent-hover: #155c61;
+  --akzent-flaeche: #1b7076;       /* gefüllte Knöpfe mit weißer Schrift (5,8:1) */
+  --akzent-zart: rgba(27, 112, 118, .10);
+  --akzent-ring: rgba(27, 112, 118, .26);
+  --akzent-text: #ffffff;
+
+  /* Ergebnisfarben: Schrift (kräftig) und zarter Hintergrund */
+  --gruen: #17722f;  --gruen-bg: #e3f5e8;
+  --gelb: #8a5a00;   --gelb-bg: #fdf3d7;
+  --rot: #c4281c;    --rot-bg: #fde8e7;
+
+  /* Karte */
+  --wasser: #dbe4ea;
+  --netz: rgba(40, 80, 110, .08);
+  --land: #fbfaf7;
+  --land-hover: #e7f0f0;
+  --land-grenze: rgba(60, 60, 67, .34);
+  --umland: #e4e3df;
+  --umland-grenze: rgba(255, 255, 255, .9);
+  --land-gruen: #3fa45b;           /* Flächen auf der Karte: kräftig genug, damit man sie sofort sieht */
+  --land-gelb: #e9b829;
+  --land-rot: #dc4a3d;
+  --land-gefaerbt-grenze: rgba(255, 255, 255, .85);
+  --weltkarte-land: #c6ced6;
+  --weltkarte-hover: #1b7076;
+
+  /* Formen & Bewegung */
+  --radius-karte: 12px;
+  --radius-feld: 8px;
+  --schatten: 0 1px 2px rgba(0, 0, 0, .04), 0 2px 10px rgba(31, 38, 64, .04);
+  --schatten-hoch: 0 2px 6px rgba(0, 0, 0, .05), 0 18px 44px rgba(31, 38, 64, .12);
+  --weich: cubic-bezier(.2, .8, .2, 1);
+  --uebergang: .25s var(--weich);
+  color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --hintergrund: #0f141a;
-    --flaeche: #1a212b;
-    --text: #e6edf3;
-    --leise: #9aa5b1;
-    --rand: #2d3743;
-    --akzent: #4c8dff;
-    --umriss: #4fb487;
-    --richtig: #3fb950;
-    --richtig-hell: #12361f;
-    --falsch: #f85149;
-    --falsch-hell: #3d1517;
+    --hintergrund: #050507;
+    --karte-solid: #1c1c1e;
+    --text: #f5f5f7;
+    --text-leise: #98989d;
+    --linie: rgba(255, 255, 255, .1);
+    --feld-rand: rgba(255, 255, 255, .14);
+    --feld-bg: rgba(255, 255, 255, .06);
+    --fuellung: rgba(255, 255, 255, .08);
+    --fuellung-hover: rgba(255, 255, 255, .13);
+
+    --karte: rgba(255, 255, 255, .05);
+    --glas: rgba(36, 38, 44, .62);
+    --glas-licht: rgba(255, 255, 255, .04);
+    --glas-rand: rgba(255, 255, 255, .10);
+    --glas-kante: inset 0 1px 0 rgba(255, 255, 255, .14), 0 0 0 .5px rgba(0, 0, 0, .5);
+    --glas-unschaerfe: blur(24px) saturate(160%);
+
+    --umgebung-licht: rgba(80, 88, 100, .35);
+    --umgebung-kuehl: rgba(40, 60, 70, .35);
+    --umgebung-dunst: rgba(30, 50, 60, .25);
+    --umgebung-verlauf: linear-gradient(160deg, #15181d, #0b0d10);
+
+    --akzent: #2a9aa1;
+    --akzent-hover: #36adb4;
+    --akzent-flaeche: #1c7f85;     /* weiße Schrift 4,8:1 */
+    --akzent-zart: rgba(42, 154, 161, .16);
+    --akzent-ring: rgba(42, 154, 161, .34);
+
+    --gruen: #30d158;  --gruen-bg: rgba(48, 209, 88, .16);
+    --gelb: #ffd60a;   --gelb-bg: rgba(255, 214, 10, .14);
+    --rot: #ff6961;    --rot-bg: rgba(255, 69, 58, .17);
+
+    --wasser: #10161b;
+    --netz: rgba(160, 200, 220, .07);
+    --land: #2a2d31;
+    --land-hover: #2f3e40;
+    --land-grenze: rgba(255, 255, 255, .22);
+    --umland: #1b1e21;
+    --umland-grenze: rgba(255, 255, 255, .07);
+    --land-gruen: #2f9a4c;
+    --land-gelb: #c99a14;
+    --land-rot: #c8433a;
+    --land-gefaerbt-grenze: rgba(0, 0, 0, .45);
+    --weltkarte-land: #3a3f45;
+    --weltkarte-hover: #1c7f85;    /* weiße Beschriftung 4,8:1 */
+
+    --schatten: 0 2px 10px rgba(0, 0, 0, .35);
+    --schatten-hoch: 0 16px 44px rgba(0, 0, 0, .6);
+    color-scheme: dark;
   }
 }
 
-* { box-sizing: border-box; }
+/* „Transparenz reduzieren“: feste Flächen */
+@media (prefers-reduced-transparency: reduce) {
+  :root { --karte: #ffffff; --glas: #ffffff; --glas-unschaerfe: none; --glas-licht: transparent;
+          --umgebung-licht: transparent; --umgebung-kuehl: transparent; --umgebung-dunst: transparent; --umgebung-verlauf: #eef0f4; }
+}
+@media (prefers-reduced-transparency: reduce) and (prefers-color-scheme: dark) {
+  :root { --karte: #1c1c1e; --glas: #1c1c1e; --umgebung-verlauf: #050507; }
+}
+
+/* =====================================================================
+ * 2. Grundlayout
+ * ================================================================== */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.45;
+  letter-spacing: -.01em;
   background: var(--hintergrund);
   color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
 
-a { color: var(--akzent); }
-
-.kopf { padding: 16px; border-bottom: 1px solid var(--rand); background: var(--flaeche); }
-.logo { font-weight: 700; font-size: 1.2rem; text-decoration: none; color: var(--text); }
-
-.inhalt { flex: 1; width: 100%; max-width: 640px; margin: 0 auto; padding: 24px 16px; }
-h1 { font-size: 1.5rem; margin: 0 0 20px; }
-
-.fuss { padding: 16px; text-align: center; font-size: 0.85rem; color: var(--leise); }
-
-/* Startseite */
-.kacheln { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-.kachel {
-  display: block; padding: 18px; border: 1px solid var(--rand); border-radius: 12px;
-  background: var(--flaeche); color: var(--text); text-decoration: none;
-  transition: border-color 0.15s, transform 0.15s;
+/* Ruhiger Hintergrund hinter allem – bewusst ohne bunte Farbwolken */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -10%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(55% 45% at 8% 0%, var(--umgebung-licht), transparent 70%),
+    radial-gradient(60% 55% at 100% 100%, var(--umgebung-kuehl), transparent 72%),
+    radial-gradient(45% 40% at 85% 10%, var(--umgebung-dunst), transparent 70%),
+    var(--umgebung-verlauf);
 }
-.kachel:hover { border-color: var(--akzent); transform: translateY(-2px); }
-.kachel h2 { margin: 0 0 6px; font-size: 1.1rem; }
-.kachel p { margin: 0; color: var(--leise); }
 
-/* Quiz */
-.karte { background: var(--flaeche); border: 1px solid var(--rand); border-radius: 12px; padding: 20px; }
-.stand { display: flex; justify-content: space-between; color: var(--leise); font-size: 0.9rem; }
-.frage { font-size: 1.15rem; font-weight: 600; text-align: center; margin: 16px 0 8px; }
-.umriss { display: block; width: 100%; max-width: 320px; margin: 0 auto 16px; aspect-ratio: 1; }
-.umriss path { fill: var(--umriss); stroke: var(--text); stroke-width: 0.6; stroke-linejoin: round; }
+a { color: var(--akzent); text-decoration: none; }
+a:hover { color: var(--akzent-hover); text-decoration: underline; }
+:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+button { font: inherit; letter-spacing: inherit; color: inherit; }
+
+/* Kopfzeile: Glas, weil der Inhalt beim Scrollen darunter durchläuft */
+.kopf {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: linear-gradient(180deg, var(--glas-licht), transparent 80%), var(--glas);
+  -webkit-backdrop-filter: var(--glas-unschaerfe);
+  backdrop-filter: var(--glas-unschaerfe);
+  border-bottom: .5px solid var(--linie);
+}
+.kopf-innen {
+  max-width: 1200px;
+  margin: 0 auto;
+  height: 56px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.marke {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 650;
+  font-size: 1.05rem;
+  letter-spacing: -.02em;
+  color: var(--text);
+}
+.marke:hover { color: var(--text); text-decoration: none; }
+
+/* Bildmarke (components/Logo.js): dunkles Quadrat, darin ein feiner Globus mit Zielpunkt */
+.logo {
+  display: inline-grid;
+  place-items: center;
+  width: var(--logo-groesse, 30px);
+  height: var(--logo-groesse, 30px);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #2c2c30, #0c0c0e);
+  color: #f5f5f7;
+  box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .08), 0 1px 2px rgba(0, 0, 0, .2);
+}
+.logo svg { width: 72%; height: 72%; }
+.logo-punkt { transform-box: fill-box; transform-origin: center; transition: transform .5s var(--weich); }
+.marke:hover .logo-punkt { transform: scale(1.35); }
+@media (prefers-color-scheme: dark) {
+  .logo { background: linear-gradient(180deg, #3a3a3f, #1a1a1d); box-shadow: inset 0 0 0 .5px rgba(255, 255, 255, .16); }
+}
+
+.inhalt {
+  flex: 1;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 56px;
+}
+.schmal { max-width: 680px; margin-left: auto; margin-right: auto; }
+
+.fuss {
+  padding: 20px 24px 28px;
+  text-align: center;
+  font-size: .8125rem;
+  color: var(--text-leise);
+}
+
+/* Seitenkopf: graue Überzeile, großer Titel, darunter Fakten (keine Bedienhinweise) */
+.seitenkopf { margin-bottom: 32px; }
+.eyebrow { color: var(--text-leise); font-weight: 600; font-size: .9rem; margin: 0 0 6px; }
+.seitenkopf h1, h1.titel {
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -.03em;
+  line-height: 1.1;
+  margin: 0 0 8px;
+}
+.seitenkopf p.fakten { color: var(--text-leise); font-size: 1.1rem; margin: 0; }
+.abschnitt-titel {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -.015em;
+  margin: 0 0 14px;
+}
+.leise { color: var(--text-leise); }
+
+/* Inhaltskarte */
+.karte {
+  background: linear-gradient(180deg, var(--glas-licht), transparent 60%), var(--karte);
+  border: 1px solid var(--glas-rand);
+  border-radius: var(--radius-karte);
+  box-shadow: var(--glas-kante), var(--schatten);
+  padding: 28px;
+}
+
+/* Knöpfe: Hauptknopf flach in Petrol (höchstens ein bis zwei je Seite), sonst sekundär */
+.knopf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 22px;
+  border-radius: 980px;
+  border: 1px solid transparent;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--uebergang), border-color var(--uebergang), color var(--uebergang), transform var(--uebergang), box-shadow var(--uebergang);
+}
+.knopf:hover { text-decoration: none; }
+.knopf:active { transform: scale(.97); }
+.knopf:disabled { opacity: .55; cursor: default; transform: none; }
+.knopf-haupt {
+  background: var(--akzent-flaeche);
+  color: var(--akzent-text);
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .18), 0 1px 2px rgba(0, 0, 0, .12);
+}
+.knopf-haupt:hover { background: color-mix(in srgb, var(--akzent-flaeche) 86%, #000); color: var(--akzent-text); }
+.knopf-haupt:active { background: color-mix(in srgb, var(--akzent-flaeche) 76%, #000); }
+.knopf-zweit { background: var(--fuellung); border-color: var(--glas-rand); color: var(--text); }
+.knopf-zweit:hover { background: var(--fuellung-hover); color: var(--text); }
+.knopf-breit { width: 100%; }
+
+/* Runde Symbolknöpfe (Ton, Zoom) */
+.symbolknopf {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--glas-rand);
+  background: var(--fuellung);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color var(--uebergang), color var(--uebergang), transform var(--uebergang);
+}
+.symbolknopf:hover { background: var(--fuellung-hover); }
+.symbolknopf:active { transform: scale(.94); }
+.symbolknopf svg { width: 18px; height: 18px; }
+/* Größere Trefferfläche für Finger, ohne dass der Knopf größer aussieht (≥ 44 pt laut HIG) */
+.symbolknopf { position: relative; }
+.symbolknopf::after { content: ""; position: absolute; inset: -4px; }
+
+/* Zurück-Link mit Chevron */
+.zurueck {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  font-weight: 500;
+  color: var(--akzent);
+}
+.zurueck svg { width: 18px; height: 18px; margin-left: -4px; }
+.zurueck:hover { text-decoration: none; color: var(--akzent-hover); }
+
+.hinweis { color: var(--text-leise); }
+.fehler { color: var(--rot); }
+
+/* Nur für Bildschirmleser */
+.unsichtbar {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+
+/* =====================================================================
+ * 3. Hauptmenü
+ * ================================================================== */
+
+.menue-gruppe + .menue-gruppe { margin-top: 40px; }
+.modi {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+}
+.karte.modus {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+  color: var(--text);
+  transition: box-shadow var(--uebergang), transform var(--uebergang);
+}
+.modus:hover { color: var(--text); text-decoration: none; transform: translateY(-2px); box-shadow: var(--glas-kante), var(--schatten-hoch); }
+.modus:active { transform: translateY(0) scale(.995); }
+.modus-bild {
+  aspect-ratio: 16 / 8;
+  display: grid;
+  place-items: center;
+  background: var(--wasser);
+  border-bottom: .5px solid var(--linie);
+  overflow: hidden;
+}
+.modus-bild svg { width: 100%; height: 100%; }
+.modus-bild .vorschau-welt path { fill: var(--land); stroke: var(--land-grenze); stroke-width: .6; vector-effect: non-scaling-stroke; }
+.modus-bild .vorschau-welt path.hervor { fill: var(--land-gruen); stroke: var(--land-gefaerbt-grenze); }
+.modus-bild .vorschau-umriss { width: 46%; height: 82%; }
+.modus-bild .vorschau-umriss path { fill: var(--land); stroke: var(--text); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.modus-text { display: flex; align-items: center; gap: 12px; padding: 18px 22px 20px; }
+.modus-text div { flex: 1; min-width: 0; }
+.modus-text h3 { margin: 0 0 2px; font-size: 1.125rem; font-weight: 600; letter-spacing: -.015em; }
+.modus-text p { margin: 0; color: var(--text-leise); font-size: .9375rem; }
+.modus-text .chevron { width: 18px; height: 18px; color: var(--text-leise); flex: none; transition: transform var(--uebergang); }
+.modus:hover .chevron { transform: translateX(2px); }
+
+/* =====================================================================
+ * 4. Kontinent-Auswahl
+ * ================================================================== */
+
+.auswahl { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) 300px; align-items: start; }
+@media (max-width: 900px) { .auswahl { grid-template-columns: 1fr; } }
+
+.weltkarte-karte { padding: 20px; overflow: hidden; }
+.weltkarte { display: block; width: 100%; height: auto; overflow: visible; }
+.weltkarte .kontinent { cursor: pointer; }
+.weltkarte .kontinent path {
+  fill: var(--weltkarte-land);
+  transition: fill .25s var(--weich);
+}
+.weltkarte .kontinent.aktiv path { fill: var(--weltkarte-hover); }
+.weltkarte text {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -.01em;
+  fill: var(--text);
+  text-anchor: middle;
+  pointer-events: none;
+  paint-order: stroke;
+  stroke: var(--karte-solid);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  transition: fill .25s var(--weich), stroke .25s var(--weich);
+}
+.weltkarte text tspan.anzahl { font-size: 13px; font-weight: 500; fill: var(--text-leise); }
+.weltkarte .aktiv text { fill: #ffffff; stroke: transparent; }
+.weltkarte .aktiv text tspan.anzahl { fill: rgba(255, 255, 255, .92); }
+
+/* Liste der Kontinente neben (bzw. unter) der Karte – gruppierte Liste wie in den iOS-Einstellungen */
+.liste { list-style: none; margin: 0; padding: 0; overflow: hidden; }
+.karte.liste { padding: 0; }
+.liste li + li .listen-zeile { border-top: .5px solid var(--linie); }
+.listen-zeile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 16px 10px 18px;
+  color: var(--text);
+  transition: background-color .15s ease;
+}
+.listen-zeile:hover, .listen-zeile.aktiv { background: var(--akzent-zart); color: var(--text); text-decoration: none; }
+.listen-zeile .titel { flex: 1; min-width: 0; font-weight: 500; }
+.listen-zeile .zusatz { color: var(--text-leise); font-size: .9375rem; font-variant-numeric: tabular-nums; text-align: right; }
+.listen-zeile .zusatz small { display: block; font-size: .8125rem; }
+.listen-zeile .chevron { width: 16px; height: 16px; color: var(--text-leise); flex: none; }
+
+/* =====================================================================
+ * 5. Spiel „Länder eines Kontinents“
+ * ================================================================== */
+
+/*
+ * Breite des Spiels: so breit, dass die ganze Karte ohne Scrollen ins Fenster passt
+ * (--verhaeltnis = Breite/Höhe der Karte, gesetzt in KontinentSpiel.js), aber mindestens
+ * so breit, dass die Spielleiste Platz hat. Die Karte selbst ist nie breiter, als ihre
+ * Höhe erlaubt – so gibt es keine leeren Ränder neben der Karte.
+ */
+.spiel {
+  --kartenhoehe: max(340px, calc(100dvh - 236px));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(100%, max(760px, calc(var(--kartenhoehe) * var(--verhaeltnis, 1.4))));
+  margin: -8px auto 0;
+}
+
+/* Spielleiste: zurück | gesuchtes Land | Stand und Ton */
+.spielleiste {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  min-height: 72px;
+}
+.spielleiste-links { justify-self: start; display: flex; align-items: center; gap: 12px; }
+.spielleiste-rechts { justify-self: end; display: flex; align-items: center; gap: 14px; }
+.stand { font-variant-numeric: tabular-nums; color: var(--text-leise); font-weight: 500; white-space: nowrap; }
+.stand strong { color: var(--text); font-weight: 600; }
+
+.frage { text-align: center; min-width: 0; }
+.frage-name {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -.025em;
+  line-height: 1.15;
+}
+.frage-unter { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 26px; margin-top: 6px; }
+
+/* Drei Punkte = drei Versuche. Ein Fehlversuch färbt einen Punkt. */
+.versuche { display: inline-flex; gap: 6px; }
+.versuche i {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--fuellung-hover);
+  box-shadow: inset 0 0 0 1px var(--feld-rand);
+  transition: background-color .2s ease, box-shadow .2s ease, transform .2s var(--weich);
+}
+.versuche i.verbraucht { background: var(--rot); box-shadow: none; transform: scale(1.1); }
+
+/* Kurze Rückmeldung unter dem Namen (z. B. welches Land angeklickt wurde) */
+.rueckmeldung {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 980px;
+  font-size: .875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.rueckmeldung.falsch { background: var(--rot-bg); color: var(--rot); }
+.rueckmeldung.info { background: var(--fuellung); color: var(--text-leise); }
+.rueckmeldung.aufgedeckt { background: var(--rot-bg); color: var(--rot); }
+
+/* Dünner Fortschrittsbalken über der Karte, Abschnitte in Ergebnisfarben */
+.fortschritt { display: flex; height: 4px; border-radius: 4px; background: var(--fuellung); overflow: hidden; }
+.fortschritt span { height: 100%; transition: width .35s var(--weich); }
+.fortschritt .f-gruen { background: var(--land-gruen); }
+.fortschritt .f-gelb { background: var(--land-gelb); }
+.fortschritt .f-rot { background: var(--land-rot); }
+
+/* Kartenfläche */
+.karte.karten-rahmen {
+  position: relative;
+  width: min(100%, calc(var(--kartenhoehe) * var(--verhaeltnis, 1.4)));
+  margin: 0 auto;
+  padding: 0;
+  overflow: hidden;
+  background: var(--wasser);
+}
+.kontinentkarte {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: none;           /* Ziehen und Zwei-Finger-Zoom übernimmt die Karte selbst */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  cursor: default;
+}
+.kontinentkarte.zieht { cursor: grabbing; }
+.kontinentkarte .wasser { fill: var(--wasser); }
+.kontinentkarte .netz { fill: none; stroke: var(--netz); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.kontinentkarte .umland { fill: var(--umland); stroke: var(--umland-grenze); stroke-width: .8; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.kontinentkarte .land {
+  fill: var(--land);
+  stroke: var(--land-grenze);
+  stroke-width: .8;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  transition: fill .3s var(--weich);
+}
+.kontinentkarte.offen .land.frei { cursor: pointer; }
+@media (hover: hover) {
+  .kontinentkarte.offen .land.frei:hover { fill: var(--land-hover); }
+}
+.kontinentkarte .land.gruen { fill: var(--land-gruen); stroke: var(--land-gefaerbt-grenze); }
+.kontinentkarte .land.gelb { fill: var(--land-gelb); stroke: var(--land-gefaerbt-grenze); }
+.kontinentkarte .land.rot { fill: var(--land-rot); stroke: var(--land-gefaerbt-grenze); }
+.kontinentkarte .land.daneben { animation: daneben .6s ease; }
+.kontinentkarte .land.puls { animation: puls 1.1s ease 2; }
+
+/* Klickpunkte für Kleinstaaten: Größe in Bildschirmpixeln (--px = Karteneinheiten je Pixel) */
+.kontinentkarte .marke-punkt { transform: scale(calc(var(--px, 1) * 7)); fill: var(--land); stroke: var(--land-grenze); stroke-width: 1.2; vector-effect: non-scaling-stroke; transition: fill .3s var(--weich); pointer-events: none; }
+.kontinentkarte .marke-ziel { transform: scale(calc(var(--px, 1) * 16)); fill: transparent; }
+.kontinentkarte.offen .marke.frei .marke-ziel { cursor: pointer; }
+@media (hover: hover) {
+  .kontinentkarte.offen .marke.frei:hover .marke-punkt { fill: var(--land-hover); stroke: var(--akzent); }
+}
+.kontinentkarte .marke.gruen .marke-punkt { fill: var(--land-gruen); stroke: var(--land-gefaerbt-grenze); }
+.kontinentkarte .marke.gelb .marke-punkt { fill: var(--land-gelb); stroke: var(--land-gefaerbt-grenze); }
+.kontinentkarte .marke.rot .marke-punkt { fill: var(--land-rot); stroke: var(--land-gefaerbt-grenze); }
+.kontinentkarte .marke.daneben .marke-punkt { animation: daneben .6s ease; }
+
+/* Ring um das aufgedeckte Land: zwei Wellen nacheinander, Größe in Bildschirmpixeln */
+.kontinentkarte .aufdeck-ring {
+  fill: none;
+  stroke: var(--land-rot);
+  stroke-width: 2.5;
+  vector-effect: non-scaling-stroke;
+  opacity: 0;
+  pointer-events: none;
+  animation: ring 1.2s var(--weich) 2 backwards;
+}
+.kontinentkarte .aufdeck-ring.zweiter { animation-delay: .3s; }
+
+@keyframes daneben {
+  0%, 100% { fill: var(--land); }
+  25% { fill: var(--rot-bg); }
+  35% { fill: color-mix(in srgb, var(--land-rot) 45%, var(--land)); }
+}
+@keyframes puls {
+  0%, 100% { fill-opacity: 1; }
+  50% { fill-opacity: .45; }
+}
+@keyframes ring {
+  0% { opacity: .95; transform: scale(calc(var(--px, 1) * 6)); }
+  100% { opacity: 0; transform: scale(calc(var(--px, 1) * 38)); }
+}
+
+/* Zoom-Knöpfe: Glas, weil die Karte dahinter liegt */
+.zoom {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  background: linear-gradient(180deg, var(--glas-licht), transparent 80%), var(--glas);
+  -webkit-backdrop-filter: var(--glas-unschaerfe);
+  backdrop-filter: var(--glas-unschaerfe);
+  border: 1px solid var(--glas-rand);
+  box-shadow: var(--glas-kante), var(--schatten);
+  overflow: hidden;
+}
+.zoom button {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border: 0; padding: 0;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.zoom button + button { border-top: .5px solid var(--linie); }
+.zoom button:hover:not(:disabled) { background: var(--fuellung); }
+.zoom button:disabled { color: var(--text-leise); opacity: .5; cursor: default; }
+.zoom svg { width: 16px; height: 16px; }
+
+/* Name beim Darüberfahren (nur über gelösten Ländern und nach dem Spiel) */
+.kartentipp {
+  position: absolute;
+  left: 0; top: 0;
+  z-index: 3;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--karte-solid);
+  color: var(--text);
+  font-size: .875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 0 0 .5px var(--linie), 0 4px 14px rgba(0, 0, 0, .12);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.kartentipp.sichtbar { opacity: 1; }
+
+/* Ergebnis */
+.ergebnis { display: grid; gap: 24px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 860px) { .ergebnis { grid-template-columns: 1fr; } }
+.ergebnis-zahl { font-size: 4rem; font-weight: 700; letter-spacing: -.04em; line-height: 1; margin: 4px 0 6px; font-variant-numeric: tabular-nums; }
+.ergebnis-zahl small { font-size: 2rem; font-weight: 600; margin-left: 2px; }
+.ergebnis .zeit { color: var(--text-leise); margin: 0 0 20px; }
+.bilanz { list-style: none; margin: 0 0 24px; padding: 0; display: grid; gap: 8px; }
+.bilanz li { display: flex; align-items: center; gap: 10px; }
+.bilanz li b { font-variant-numeric: tabular-nums; min-width: 2ch; text-align: right; font-weight: 600; }
+.bilanz .farbpunkt { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.farbpunkt.gruen { background: var(--land-gruen); }
+.farbpunkt.gelb { background: var(--land-gelb); }
+.farbpunkt.rot { background: var(--land-rot); }
+.ergebnis-knoepfe { display: flex; gap: 10px; flex-wrap: wrap; }
+.verpasst { margin: 20px 0 0; font-size: .9375rem; color: var(--text-leise); }
+.verpasst strong { color: var(--text); font-weight: 600; }
+
+/* Handy: Leiste in zwei Zeilen, Name groß darunter */
+@media (max-width: 640px) {
+  .inhalt { padding: 20px 16px 40px; }
+  .kopf-innen { padding: 0 16px; }
+  .seitenkopf h1, h1.titel { font-size: 2rem; }
+  .karte { padding: 20px; }
+  .spielleiste { grid-template-columns: 1fr auto; grid-template-areas: "links rechts" "frage frage"; gap: 6px 12px; }
+  .spielleiste-links { grid-area: links; }
+  .spielleiste-rechts { grid-area: rechts; }
+  .frage { grid-area: frage; }
+  .frage-name { font-size: 1.6rem; }
+  /* Beschriftungen der Weltkarte wären hier winzig – die Liste darunter zeigt dasselbe */
+  .weltkarte text { display: none; }
+  .weltkarte-karte { padding: 14px; }
+  .zoom { right: 8px; bottom: 8px; border-radius: 10px; }
+  .zoom button { width: 34px; height: 34px; }
+  .ergebnis-zahl { font-size: 3.2rem; }
+}
+
+/* =====================================================================
+ * 6. Umriss-Quiz, Bestenliste
+ * ================================================================== */
+
+.umriss-stand { display: flex; justify-content: space-between; color: var(--text-leise); font-size: .9375rem; font-variant-numeric: tabular-nums; }
+.umriss-frage { font-size: 1.15rem; font-weight: 600; text-align: center; margin: 16px 0 8px; }
+.umriss { display: block; width: 100%; max-width: 300px; margin: 0 auto 20px; aspect-ratio: 1; }
+.umriss path { fill: var(--land); stroke: var(--text); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 
 .antworten { display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
 @media (max-width: 420px) { .antworten { grid-template-columns: 1fr; } }
-
-.antwort, .knopf {
-  font: inherit; padding: 12px; border-radius: 10px; cursor: pointer;
-  border: 1px solid var(--rand); background: var(--hintergrund); color: var(--text);
+.antwort {
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: var(--radius-feld);
+  border: 1px solid var(--feld-rand);
+  background: var(--feld-bg);
+  cursor: pointer;
+  text-align: center;
+  transition: border-color var(--uebergang), background-color var(--uebergang), transform var(--uebergang);
 }
 .antwort:hover:not(:disabled) { border-color: var(--akzent); }
+.antwort:active:not(:disabled) { transform: scale(.98); }
 .antwort:disabled { cursor: default; }
-.antwort.richtig { border-color: var(--richtig); background: var(--richtig-hell); font-weight: 600; }
-.antwort.falsch { border-color: var(--falsch); background: var(--falsch-hell); }
+.antwort.richtig { border-color: var(--gruen); background: var(--gruen-bg); color: var(--gruen); font-weight: 600; }
+.antwort.falsch { border-color: var(--rot); background: var(--rot-bg); color: var(--rot); }
+.umriss-weiter { margin-top: 16px; }
+.umriss-ergebnis { text-align: center; }
+.umriss-ergebnis .ergebnis-zahl { margin-top: 0; }
 
-.knopf { background: var(--akzent); border-color: var(--akzent); color: #fff; font-weight: 600; }
-.weiter { display: block; width: 100%; margin-top: 14px; }
-
-.ergebnis { text-align: center; }
-.punkte { font-size: 1.6rem; font-weight: 700; margin: 8px 0 20px; }
-.hinweis { color: var(--leise); }
-
-/* Bestenliste */
-.bestenliste { text-align: left; margin: 8px 0 4px; }
-.bestenliste h2 { font-size: 1.1rem; margin: 18px 0 8px; }
-.bestenliste ol { margin: 0; padding-left: 1.6em; }
-.bestenliste li { padding: 6px 0; border-bottom: 1px solid var(--rand); }
-.bestenliste li span:last-child { float: right; color: var(--leise); font-variant-numeric: tabular-nums; }
-.eintragen { display: flex; gap: 8px; flex-wrap: wrap; }
-.eintragen input {
-  flex: 1 1 160px; font: inherit; padding: 12px; border-radius: 10px;
-  border: 1px solid var(--rand); background: var(--hintergrund); color: var(--text);
+.bestenliste { text-align: left; }
+.bestenliste h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: -.015em; margin: 0 0 12px; }
+.bestenliste ol { list-style: none; margin: 0; padding: 0; counter-reset: platz; }
+.bestenliste li {
+  counter-increment: platz;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: .5px solid var(--linie);
+  font-variant-numeric: tabular-nums;
 }
-.fehler { color: var(--falsch); }
+.bestenliste li::before { content: counter(platz); width: 1.6ch; color: var(--text-leise); text-align: right; font-weight: 500; }
+.bestenliste li .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bestenliste li .wert { font-weight: 600; }
+.bestenliste li .dauer { color: var(--text-leise); min-width: 5ch; text-align: right; }
+.bestenliste li.eigener { color: var(--akzent); }
+.eintragen { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+.eintragen input {
+  flex: 1 1 160px;
+  min-height: 44px;
+  font: inherit;
+  padding: 10px 14px;
+  border-radius: var(--radius-feld);
+  border: 1px solid var(--feld-rand);
+  background: var(--feld-bg);
+  color: var(--text);
+  transition: border-color var(--uebergang), box-shadow var(--uebergang);
+}
+.eintragen input:focus { outline: none; border-color: var(--akzent); box-shadow: 0 0 0 4px var(--akzent-ring); }
+.eingetragen { color: var(--gruen); font-weight: 500; margin: 0 0 16px; }
+
+/* =====================================================================
+ * 7. Bewegung – kurz und ruhig, bei „Bewegung reduzieren“ aus
+ * ================================================================== */
+
+@keyframes erscheinen { from { opacity: 0; transform: translateY(6px); } }
+.erscheinen { animation: erscheinen .32s var(--weich) backwards; animation-delay: calc(var(--i, 0) * 30ms); }
+@keyframes name-wechsel { from { opacity: 0; transform: translateY(4px); } }
+.frage-name { animation: name-wechsel .22s var(--weich) backwards; }
+.rueckmeldung { animation: erscheinen .2s var(--weich) backwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  /* Statt der Wellen ein ruhiger Ring um das aufgedeckte Land */
+  .kontinentkarte .aufdeck-ring { animation: none !important; opacity: .9; transform: scale(calc(var(--px, 1) * 16)); }
+  .kontinentkarte .aufdeck-ring.zweiter { display: none; }
+}

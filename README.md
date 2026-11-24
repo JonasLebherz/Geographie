@@ -1,6 +1,9 @@
 # Geo-Quiz
 
-Webseite mit Geografie-Quizzen: Länder, Regionen, Bundesländer, Landkreise usw. an ihren Umrissen erkennen.
+Webseite mit Geografie-Quizzen. Im Hauptmenü wählt man die Spielart:
+
+- **Länder eines Kontinents** – Kontinent auf der Weltkarte wählen, dann das genannte Land auf der Karte anklicken (grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen).
+- **Länder am Umriss** – ein Umriss, vier Antworten.
 
 **Technik:** Next.js 15 (React 19, JavaScript), Hosting auf **Vercel**, Datenbank **Supabase** (nur für die Bestenliste).
 
@@ -21,7 +24,7 @@ Die Quizze laufen auch ohne Supabase. Für die Bestenliste `.env.example` nach `
 2. Links **SQL Editor** → **New query** → den Inhalt von [`supabase/schema.sql`](supabase/schema.sql) einfügen → **Run**.
 3. **Project Settings → API** (oder oben **Connect**) öffnen und zwei Werte kopieren:
    - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
-   - **anon public** bzw. **publishable** Key → `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - **anon public** bzw. **publishable** Key → `NEXT_PUBLIC_SUPABASE_ANON_KEY` (oder `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
    Den **service_role**/**secret** Key nie verwenden.
 
 ### 2. Vercel
@@ -33,7 +36,7 @@ Die Quizze laufen auch ohne Supabase. Für die Bestenliste `.env.example` nach `
 
 Werden die Variablen später geändert: **Deployments → … → Redeploy**, weil `NEXT_PUBLIC_…`-Werte beim Bauen eingesetzt werden.
 
-## Neues Quiz hinzufügen
+## Neues Umriss-Quiz hinzufügen
 
 1. Datei in `lib/geodaten/` mit einer Funktion `laden()` anlegen, die `[{ id, name, pfad }]` liefert (Vorlage: `welt-laender.js`, Umrechnung mit `umrissPfad()` aus `umriss.js`).
 2. Eintrag in `lib/quizze/index.js`. Die Seite `/quiz/<slug>` und die Kachel auf der Startseite entstehen automatisch.

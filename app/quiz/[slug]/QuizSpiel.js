@@ -8,7 +8,8 @@
  */
 import { useEffect, useState } from 'react';
 import { GROESSE } from '@/lib/geodaten/umriss';
-import Bestenliste from './Bestenliste';
+import Bestenliste, { dauer } from '@/components/Bestenliste';
+import { klang } from '@/lib/ton';
 
 const ANTWORTEN = 4;
 
@@ -53,26 +54,28 @@ export default function QuizSpiel({ quiz, gebiete, frage, runden }) {
 
   useEffect(starten, [gebiete, runden]);
 
-  if (!fragen) return <p className="hinweis">Quiz wird vorbereitet …</p>;
+  if (!fragen) return <div className="karte" style={{ minHeight: 480 }} />;
 
   // Spiel vorbei
   if (nummer >= fragen.length) {
+    const sekunden = Math.max(1, Math.round((ende - start) / 1000));
     return (
-      <div className="karte ergebnis">
-        <p className="punkte">
-          {punkte} von {fragen.length} richtig
-        </p>
-        <p className="hinweis">Zeit: {Math.max(1, Math.round((ende - start) / 1000))} Sekunden</p>
-        <Bestenliste
-          quiz={quiz}
-          punkte={punkte}
-          fragen={fragen.length}
-          sekunden={Math.max(1, Math.round((ende - start) / 1000))}
-        />
-        <button className="knopf weiter" onClick={starten}>
-          Noch einmal spielen
-        </button>
-      </div>
+      <>
+        <section className="karte umriss-ergebnis erscheinen">
+          <p className="eyebrow">Ergebnis</p>
+          <p className="ergebnis-zahl">
+            {punkte}
+            <small> / {fragen.length}</small>
+          </p>
+          <p className="zeit">{dauer(sekunden)} min</p>
+          <button className="knopf knopf-haupt" onClick={starten}>
+            Noch einmal
+          </button>
+        </section>
+        <section className="karte erscheinen" style={{ '--i': 1, marginTop: 20 }}>
+          <Bestenliste quiz={quiz} punkte={punkte} fragen={fragen.length} sekunden={sekunden} />
+        </section>
+      </>
     );
   }
 
@@ -82,19 +85,24 @@ export default function QuizSpiel({ quiz, gebiete, frage, runden }) {
     if (gewaehlt) return; // pro Frage nur eine Antwort
     setGewaehlt(gebiet);
     if (nummer + 1 === fragen.length) setEnde(Date.now()); // letzte Frage: Zeit stoppen
-    if (gebiet.id === richtig.id) setPunkte((p) => p + 1);
+    if (gebiet.id === richtig.id) {
+      klang('richtig');
+      setPunkte((p) => p + 1);
+    } else {
+      klang('falsch');
+    }
   }
 
   return (
     <div className="karte">
-      <div className="stand">
+      <div className="umriss-stand">
         <span>
           Frage {nummer + 1} von {fragen.length}
         </span>
-        <span>{punkte} Punkte</span>
+        <span>{punkte} richtig</span>
       </div>
 
-      <p className="frage">{frage}</p>
+      <p className="umriss-frage">{frage}</p>
 
       <svg
         className="umriss"
@@ -122,7 +130,7 @@ export default function QuizSpiel({ quiz, gebiete, frage, runden }) {
 
       {gewaehlt && (
         <button
-          className="knopf weiter"
+          className="knopf knopf-haupt knopf-breit umriss-weiter"
           onClick={() => {
             setNummer((n) => n + 1);
             setGewaehlt(null);
