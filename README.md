@@ -1,6 +1,6 @@
 # Quizzle
 
-Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will: **Weltkarte** oder **Wissensquiz** (200 leichte Fragen mit vier Antworten in sechs Kategorien: Geografie, Sport, Wissenschaft, Geschichte, Tiere & Natur, Essen & Trinken), weitere Modi sind in Arbeit. In der Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
+Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will: **Weltkarte** oder **Wissensquiz** (200 leichte Fragen mit vier Antworten in sechs Kategorien: Geografie, Sport, Wissenschaft, Geschichte, Tiere & Natur, Essen & Trinken) oder **Schätzen** (Zahl tippen, z. B. „Wie viele Beine hat der Tausendfüßer mit den meisten Beinen?“ – je näher, desto mehr Punkte), weitere Modi sind in Arbeit. In der Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
 
 - **Quizze:** Länder, Hauptstädte, Kontinente, größte Städte (Top 10/50/100), Bundesstaaten/Regionen, Landkreise
 - **Weitere Quizze:** Flüsse, Sehenswürdigkeiten, Autobahnen, Inseln, Flaggen, Fußballstadien, Autokennzeichen (Deutschland)
@@ -8,7 +8,7 @@ Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will:
 - **Bilder** von Wikimedia Commons in der Frage (Sehenswürdigkeiten, Stadien, Gipfel, Essen, Personen) und als **Joker** in den anderen Quizzen
 - **Alle Quizze** als aufklappbare Liste links (Suche, Filter); ein Klick fliegt hin und startet.
 
-**Party:** bis zu 8 Spieler mit Lobby-Link (z. B. `/party/flinker-pinguin`), auf Wunsch in Teams – gleiche Fragen für alle, Spielregeln beim Gastgeber (Fragen, Joker, Bedenkzeit, feste Ansicht), Jubel mit der eigenen Comic-Figur.
+**Party:** bis zu 8 Spieler mit Lobby-Link (z. B. `/party/flinker-pinguin`), auf Wunsch in Teams – gleiche Fragen für alle, Spielregeln beim Gastgeber (Fragen, Joker, Bedenkzeit, feste Ansicht), Jubel mit der eigenen Comic-Figur. Gespielt wird Weltkarte, Wissensquiz oder Schätzen – das wählt der Gastgeber.
 
 **Freunde** (mit Konto): eigenen Einladungslink teilen – wer ihn öffnet, kann einen als Freund hinzufügen. Freunde direkt zur Party einladen (aus der Freundesliste oder in der Lobby mit „Freunde einladen“); die Einladung erscheint beim Freund sofort unten rechts mit „Beitreten“.
 

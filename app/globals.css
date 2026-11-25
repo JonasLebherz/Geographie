@@ -2147,3 +2147,70 @@ html[data-stil="comic"] .einladung { box-shadow: var(--schatten); }
 html[data-stil="comic"] .wissen-kat strong { font-family: var(--schrift-titel); font-size: .8rem; line-height: 1.6; overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: reduce) { .wissen-kat { transition: none; } .wissen-kat:hover, .wissen-kat:active { transform: none; } }
 @media (max-width: 440px) { html[data-stil="comic"] .wissen-kat strong { font-family: var(--schrift); font-size: 1.25rem; line-height: 1.2; } }
+
+/* Party: Spielwahl (Weltkarte / Wissensquiz / Schätzen) und Fragen-Runde (app/party/[code]/FragenParty.js) */
+.spielwahl { align-self: flex-start; max-width: 100%; }
+.spielwahl button { min-height: 44px; padding-inline: 18px; font-size: .9375rem; }
+.spielwahl button:disabled { opacity: .45; cursor: default; }
+.fragen-party { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.fragen-haupt { display: grid; gap: 16px; min-width: 0; }
+.fragen-leiste { padding: 16px; display: grid; gap: 8px; position: sticky; top: 16px; }
+.fragen-leiste .leiste-titel { margin: 0; }
+.fragen-auswahl { display: grid; gap: 12px; }
+.fragen-auswahl .wissen-kat:disabled { cursor: default; transform: none; }
+.wissen-antwort.gewaehlt { background: var(--akzent-zart); border-color: var(--akzent); }
+.wissen-antwort.gewaehlt .buchstabe { background: var(--akzent); color: #fff; }
+.antwort-wer { margin-left: auto; display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; }
+@media (max-width: 860px) { .fragen-party { grid-template-columns: 1fr; } .fragen-leiste { position: static; } }
+
+/* Schätzen (components/SchaetzKarte.js, app/schaetzen) */
+.schaetz-eingabe { display: flex; gap: 12px; flex-wrap: wrap; align-items: stretch; min-width: 0; }
+.schaetz-karte, .schaetz-karte > * { min-width: 0; }
+.schaetz-feld {
+  flex: 1 1 220px; display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 0 16px;
+  border-radius: 12px; border: 1px solid var(--linie); background: var(--karte-solid);
+}
+.schaetz-feld:focus-within { outline: 3px solid var(--akzent-ring); outline-offset: 2px; }
+.schaetz-feld input {
+  flex: 1; min-width: 0; width: 100%; border: 0; background: transparent; color: var(--text); outline: none;
+  font: 600 1.6rem var(--schrift); font-variant-numeric: tabular-nums;
+}
+.schaetz-einheit { color: var(--text-leise); font-weight: 600; white-space: nowrap; }
+.schaetz-eingabe .knopf { min-height: 64px; padding-inline: 24px; }
+@media (max-width: 560px) { .schaetz-feld { flex-basis: 100%; } .schaetz-eingabe .knopf { flex: 1 1 100%; } .wissen-stand { gap: 10px; } }
+.schaetz-aufloesung { display: grid; gap: 12px; }
+.schaetz-richtig { margin: 0; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.schaetz-richtig strong { font: 800 clamp(1.8rem, 6vw, 2.6rem) var(--schrift-titel); color: var(--gruen); letter-spacing: -.02em; }
+.schaetz-richtig span { font-weight: 600; color: var(--text-leise); }
+.schaetz-mein { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px 14px; }
+.schaetz-mein > .leise:last-child { grid-column: 1 / -1; }
+.schaetz-balken { height: 12px; border-radius: 6px; background: var(--fuellung); overflow: hidden; }
+.schaetz-balken span { display: block; height: 100%; border-radius: 6px; transition: width .5s var(--weich); }
+.schaetz-balken .gruen { background: var(--land-gruen); }
+.schaetz-balken .gelb { background: var(--land-gelb); }
+.schaetz-balken .rot { background: var(--land-rot); }
+.schaetz-punkte { font-weight: 800; font-variant-numeric: tabular-nums; }
+.schaetz-punkte.gruen { color: var(--gruen); }
+.schaetz-punkte.gelb { color: var(--text); }
+.schaetz-punkte.rot { color: var(--rot); }
+.schaetz-tipps { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.schaetz-tipps li { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; border-radius: 10px; background: var(--fuellung); }
+.schaetz-tipps li.ich { outline: 2px solid var(--akzent); }
+.schaetz-name { flex: 1; min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.schaetz-wert { font-variant-numeric: tabular-nums; font-weight: 600; }
+.schaetz-tipps .schaetz-punkte { min-width: 2.5em; text-align: right; }
+.schaetz-summe { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html[data-stil="comic"] .schaetz-feld { border: var(--kontur); box-shadow: 0 4px 0 var(--glas-rand); }
+html[data-stil="comic"] .schaetz-balken { border: 2px solid var(--glas-rand); height: 16px; }
+html[data-stil="comic"] .schaetz-tipps li { border: 2px solid var(--glas-rand); }
+@media (prefers-reduced-motion: reduce) { .schaetz-balken span { transition: none; } }
+
+/* Startseite: Kachel „Schätzen“ – Zahlenstrahl mit Tipp und richtiger Zahl */
+.kachel-schaetzen .kachel-bild { background: var(--stat-0); }
+.schaetz-bild .sb-strahl { stroke: var(--glas-rand); stroke-width: 4; stroke-linecap: round; }
+.schaetz-bild .sb-strich { stroke: var(--glas-rand); stroke-width: 2.5; stroke-linecap: round; }
+.schaetz-bild .sb-ziel { fill: var(--land-gruen); stroke: var(--glas-rand); stroke-width: 2.5; }
+.schaetz-bild .sb-tipp { fill: var(--karte-solid); stroke: var(--glas-rand); stroke-width: 2.5; }
+.schaetz-bild .sb-bogen { fill: none; stroke: var(--akzent); stroke-width: 3; stroke-dasharray: 6 6; stroke-linecap: round; }
+.fragen-leiste .leiste-titel { font-size: 1.15rem; overflow-wrap: anywhere; }
+html[data-stil="comic"] .fragen-leiste .leiste-titel { font-size: .95rem; line-height: 1.5; }
