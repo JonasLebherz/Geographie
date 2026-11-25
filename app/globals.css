@@ -2086,3 +2086,12 @@ html[data-stil="comic"] .leiste { padding-right: 8px; }  /* Abstand zwischen Kä
 .google-knopf svg { width: 20px; height: 20px; flex: none; }
 .anmeldung .oder { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--text-leise); font-size: .8125rem; }
 .anmeldung .oder::before, .anmeldung .oder::after { content: ""; flex: 1; height: 1px; background: var(--linie); }
+/* Freunde (ohne Beispiele): eigene Karte, leere Liste, leerer Chat */
+.ich-karte { display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.ich-karte div { display: grid; min-width: 0; }
+.ich-karte small { color: var(--text-leise); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.freundesliste.leer { padding: 16px; display: grid; gap: 6px; }
+.freundesliste.leer h2 { margin: 0; font: 800 1rem var(--schrift-titel); }
+.freundesliste.leer .hinweis { margin: 0; }
+.chat-leer-gross { margin: auto; display: grid; justify-items: center; gap: 12px; color: var(--text-leise); text-align: center; padding: 24px; }
+.chat-leer-gross svg { width: 44px; height: 44px; }
