@@ -118,3 +118,202 @@ $$;
 
 revoke execute on function public.konto_loeschen() from public, anon;
 grant execute on function public.konto_loeschen() to authenticated;
+
+-- =====================================================================
+-- Statistik (Seite /statistik, nur für Admins)
+--
+-- ereignisse: anonyme Zählung (Besuch, Seite, Quiz gestartet/beendet, Party, Anmeldung).
+--   Keine IP, keine Cookies. Ort (Land, Region, Stadt) kommt grob von Vercel aus der IP,
+--   gespeichert wird nur der Ort. Bei angemeldeten Spielern steht das Konto dabei (nutzer).
+-- admins: wer die Statistik sehen darf. Absichtlich ohne Freigaben – eintragen nur hier im
+--   SQL Editor:  insert into admins (nutzer) select id from auth.users where email = '…';
+-- Auswertung nur über die Funktionen statistik(), konten_liste(), konto_quizze() – sie
+-- prüfen selbst, ob der Aufrufer Admin ist. Lesen der Rohdaten ist niemandem erlaubt.
+-- =====================================================================
+
+create table if not exists admins (
+  nutzer uuid primary key references auth.users (id) on delete cascade,
+  seit   timestamptz not null default now()
+);
+alter table admins enable row level security;
+
+create table if not exists ereignisse (
+  id          bigint generated always as identity primary key,
+  art         text not null check (art in ('besuch', 'seite', 'quiz_start', 'quiz_ende', 'party_lobby', 'anmeldung', 'registrierung')),
+  nutzer      uuid default auth.uid() references auth.users (id) on delete set null,
+  pfad        text check (char_length(pfad) <= 120),
+  quiz        text check (char_length(quiz) <= 80),      -- Bestenlisten-Schlüssel, z. B. 'DE:kreise'
+  titel       text check (char_length(titel) <= 80),
+  gebiet      text check (char_length(gebiet) <= 40),
+  quizart     text check (char_length(quizart) <= 20),
+  quote       int  check (quote between 0 and 100),
+  sekunden    int  check (sekunden between 0 and 360000),
+  party       boolean not null default false,
+  geraet      text check (geraet in ('handy', 'tablet', 'computer')),
+  sprache     text check (char_length(sprache) <= 5),
+  herkunft    text check (char_length(herkunft) <= 80),
+  land        text check (char_length(land) <= 2),
+  region      text check (char_length(region) <= 60),
+  stadt       text check (char_length(stadt) <= 80),
+  erstellt_am timestamptz not null default now()
+);
+create index if not exists ereignisse_zeit on ereignisse (erstellt_am);
+create index if not exists ereignisse_nutzer on ereignisse (nutzer, erstellt_am);
+
+alter table ereignisse enable row level security;
+drop policy if exists "Ereignis melden" on ereignisse;
+create policy "Ereignis melden" on ereignisse
+  for insert to anon, authenticated
+  with check (nutzer is not distinct from (select auth.uid()) and erstellt_am > now() - interval '1 minute');
+
+create or replace function public.ist_admin()
+returns boolean
+language sql stable
+security definer set search_path = ''
+as $$
+  select exists (select 1 from public.admins where nutzer = auth.uid());
+$$;
+revoke execute on function public.ist_admin() from public, anon;
+grant execute on function public.ist_admin() to authenticated;
+
+-- Alle Zahlen für einen Zeitraum (tage) und den gleich langen Zeitraum davor, Tage nach deutscher Zeit
+create or replace function public.statistik(tage int default 30)
+returns jsonb
+language plpgsql stable
+security definer set search_path = ''
+as $$
+declare
+  n      int := greatest(1, least(coalesce(tage, 30), 365));
+  heute  date := (now() at time zone 'Europe/Berlin')::date;
+  von    timestamptz := ((heute - (n - 1))::timestamp) at time zone 'Europe/Berlin';
+  vorher timestamptz := ((heute - (2 * n - 1))::timestamp) at time zone 'Europe/Berlin';
+  ergebnis jsonb;
+begin
+  if not public.ist_admin() then
+    raise exception 'Kein Zugriff' using errcode = '42501';
+  end if;
+
+  with e as (
+    select * from public.ereignisse where erstellt_am >= vorher
+  ), jetzt as (
+    select * from e where erstellt_am >= von
+  )
+  select jsonb_build_object(
+    'tage', n,
+    'kennzahlen', (select jsonb_build_object(
+        'besuche',            count(*) filter (where art = 'besuch' and erstellt_am >= von),
+        'besuche_vorher',     count(*) filter (where art = 'besuch' and erstellt_am < von),
+        'quiz_start',         count(*) filter (where art = 'quiz_start' and erstellt_am >= von),
+        'quiz_start_vorher',  count(*) filter (where art = 'quiz_start' and erstellt_am < von),
+        'quiz_ende',          count(*) filter (where art = 'quiz_ende' and not party and erstellt_am >= von),
+        'quiz_allein',        count(*) filter (where art = 'quiz_start' and not party and erstellt_am >= von),
+        'quote',              round(avg(quote) filter (where art = 'quiz_ende' and erstellt_am >= von)),
+        'quote_vorher',       round(avg(quote) filter (where art = 'quiz_ende' and erstellt_am < von)),
+        'party',              count(*) filter (where art = 'quiz_start' and party and erstellt_am >= von),
+        'party_vorher',       count(*) filter (where art = 'quiz_start' and party and erstellt_am < von),
+        'lobbys',             count(*) filter (where art = 'party_lobby' and erstellt_am >= von),
+        'anmeldungen',        count(*) filter (where art = 'anmeldung' and erstellt_am >= von),
+        'anmeldungen_vorher', count(*) filter (where art = 'anmeldung' and erstellt_am < von),
+        'laender',            count(distinct land) filter (where art = 'besuch' and erstellt_am >= von)
+      ) from e),
+    'konten', (select jsonb_build_object(
+        'gesamt',     count(*),
+        'neu',        count(*) filter (where created_at >= von),
+        'neu_vorher', count(*) filter (where created_at >= vorher and created_at < von),
+        'aktiv',      count(*) filter (where last_sign_in_at >= von)
+      ) from auth.users),
+    'verlauf', (select coalesce(jsonb_agg(jsonb_build_object(
+          'tag', t.tag, 'besuche', coalesce(z.besuche, 0), 'quizze', coalesce(z.quizze, 0), 'konten', coalesce(k.konten, 0)
+        ) order by t.tag), '[]'::jsonb)
+      from (select (heute - i) as tag from generate_series(0, n - 1) as i) t
+      left join (
+        select (erstellt_am at time zone 'Europe/Berlin')::date as tag,
+               count(*) filter (where art = 'besuch') as besuche,
+               count(*) filter (where art = 'quiz_start') as quizze
+        from jetzt group by 1
+      ) z on z.tag = t.tag
+      left join (
+        select (created_at at time zone 'Europe/Berlin')::date as tag, count(*) as konten
+        from auth.users where created_at >= von group by 1
+      ) k on k.tag = t.tag),
+    'quizze', (select coalesce(jsonb_agg(to_jsonb(x) order by x.starts desc), '[]'::jsonb) from (
+        select quiz, max(titel) as titel, max(gebiet) as gebiet, max(quizart) as quizart,
+               count(*) filter (where art = 'quiz_start') as starts,
+               count(*) filter (where art = 'quiz_start' and not party) as allein,
+               count(*) filter (where art = 'quiz_ende' and not party) as enden,
+               round(avg(quote) filter (where art = 'quiz_ende')) as quote,
+               round(avg(sekunden) filter (where art = 'quiz_ende')) as sekunden
+        from jetzt where art in ('quiz_start', 'quiz_ende') and quiz is not null
+        group by quiz order by 5 desc limit 60) x),
+    'gebiete', (select coalesce(jsonb_agg(jsonb_build_object('gebiet', gebiet, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
+        select gebiet, count(*) as anzahl from jetzt where art = 'quiz_start' and gebiet is not null group by gebiet) g),
+    'laender', (select coalesce(jsonb_agg(jsonb_build_object('land', land, 'besuche', besuche, 'quizze', quizze) order by besuche desc), '[]'::jsonb) from (
+        select land, count(*) filter (where art = 'besuch') as besuche, count(*) filter (where art = 'quiz_start') as quizze
+        from jetzt where land is not null group by land) l),
+    'staedte', (select coalesce(jsonb_agg(to_jsonb(s) order by s.besuche desc), '[]'::jsonb) from (
+        select land, region, stadt, count(*) as besuche from jetzt
+        where art = 'besuch' and stadt is not null group by land, region, stadt order by 4 desc limit 25) s),
+    'geraete',  (select coalesce(jsonb_agg(jsonb_build_object('name', geraet, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
+        select geraet, count(*) as anzahl from jetzt where art = 'besuch' and geraet is not null group by geraet) x),
+    'sprachen', (select coalesce(jsonb_agg(jsonb_build_object('name', sprache, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
+        select sprache, count(*) as anzahl from jetzt where art = 'besuch' and sprache is not null group by sprache) x),
+    'herkunft', (select coalesce(jsonb_agg(jsonb_build_object('name', herkunft, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
+        select herkunft, count(*) as anzahl from jetzt where art = 'besuch' and herkunft is not null
+        group by herkunft order by 2 desc limit 10) x),
+    'seiten', (select coalesce(jsonb_agg(jsonb_build_object('name', pfad, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
+        select pfad, count(*) as anzahl from jetzt where art in ('besuch', 'seite') and pfad is not null
+        group by pfad order by 2 desc limit 15) x)
+  ) into ergebnis;
+  return ergebnis;
+end;
+$$;
+revoke execute on function public.statistik(int) from public, anon;
+grant execute on function public.statistik(int) to authenticated;
+
+-- Alle Konten mit Name, E-Mail, Daten und letztem Ort (nur für Admins)
+create or replace function public.konten_liste()
+returns jsonb
+language plpgsql stable
+security definer set search_path = ''
+as $$
+begin
+  if not public.ist_admin() then
+    raise exception 'Kein Zugriff' using errcode = '42501';
+  end if;
+  return (select coalesce(jsonb_agg(to_jsonb(x) order by x.zuletzt desc nulls last), '[]'::jsonb) from (
+    select u.id, u.email, p.name, p.avatar, u.created_at as erstellt,
+           u.email_confirmed_at is not null as bestaetigt,
+           greatest(u.last_sign_in_at, (select max(e.erstellt_am) from public.ereignisse e where e.nutzer = u.id)) as zuletzt,
+           (select count(*) from public.ereignisse e where e.nutzer = u.id and e.art = 'quiz_ende') as quizze,
+           (select round(avg(e.quote)) from public.ereignisse e where e.nutzer = u.id and e.art = 'quiz_ende') as quote,
+           (select jsonb_build_object('land', e.land, 'region', e.region, 'stadt', e.stadt)
+              from public.ereignisse e where e.nutzer = u.id and e.land is not null
+              order by e.erstellt_am desc limit 1) as ort,
+           exists (select 1 from public.admins a where a.nutzer = u.id) as admin
+    from auth.users u left join public.profile p on p.id = u.id
+    limit 1000) x);
+end;
+$$;
+revoke execute on function public.konten_liste() from public, anon;
+grant execute on function public.konten_liste() to authenticated;
+
+-- Die letzten Quizze eines Kontos (nur für Admins)
+create or replace function public.konto_quizze(konto uuid)
+returns jsonb
+language plpgsql stable
+security definer set search_path = ''
+as $$
+begin
+  if not public.ist_admin() then
+    raise exception 'Kein Zugriff' using errcode = '42501';
+  end if;
+  return (select coalesce(jsonb_agg(to_jsonb(x) order by x.erstellt_am desc), '[]'::jsonb) from (
+    select e.art, e.quiz, coalesce(e.titel, (select s.titel from public.ereignisse s where s.quiz = e.quiz and s.titel is not null limit 1)) as titel,
+           e.gebiet, e.quote, e.sekunden, e.party, e.erstellt_am
+    from public.ereignisse e
+    where e.nutzer = konto and e.art in ('quiz_start', 'quiz_ende')
+    order by e.erstellt_am desc limit 40) x);
+end;
+$$;
+revoke execute on function public.konto_quizze(uuid) from public, anon;
+grant execute on function public.konto_quizze(uuid) to authenticated;

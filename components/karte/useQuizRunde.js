@@ -23,6 +23,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { klang } from '@/lib/ton';
 import { bestwertSpeichern } from '@/lib/bestwerte';
+import { melden as statistikMelden } from '@/lib/statistik';
 import { useT } from '@/lib/sprache';
 
 export const VERSUCHE = 3;
@@ -114,7 +115,9 @@ export function useQuizRunde({
       if (nummer < stand.reihenfolge.length) return { ...stand, nummer, fehl: 0, sperre: false };
       const ende = Date.now();
       const sekunden = Math.max(1, Math.round((ende - stand.start) / 1000));
-      if (!gesteuert) bestwertSpeichern(bestenliste, quote(stand.ergebnis, stand.reihenfolge.length), sekunden);
+      const q = quote(stand.ergebnis, stand.reihenfolge.length);
+      if (!gesteuert) bestwertSpeichern(bestenliste, q, sekunden);
+      statistikMelden('quiz_ende', { quiz: bestenliste, quote: q, sekunden, party: Boolean(gesteuert) });
       setTimeout(() => klang('fertig'), 250);
       return { ...stand, nummer, fehl: 0, sperre: false, ende };
     },

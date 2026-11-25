@@ -38,7 +38,12 @@ Die Quizze laufen auch ohne Supabase. Für Bestenliste und Party über verschied
    - **URL Configuration:** *Site URL* = die Adresse der Seite (z. B. `https://geo-quiz.vercel.app`), unter *Redirect URLs* `https://<deine-adresse>/**` und für lokal `http://localhost:3000/**` eintragen – dorthin führen die Links aus Bestätigungs- und Passwort-Mails.
    - Der eingebaute Mailversand von Supabase schickt nur sehr wenige Mails pro Stunde und ist für Tests gedacht. Für echte Nutzer unter **Authentication → Emails → SMTP Settings** einen eigenen Mailserver eintragen (z. B. Resend, Brevo oder das Postfach des eigenen Anbieters).
    - Die Texte der Mails (deutsch) unter **Authentication → Emails → Templates** anpassen.
-5. Vor dem Veröffentlichen Name, Anschrift und E-Mail in [`lib/rechtliches.js`](lib/rechtliches.js) eintragen (Impressum und Datenschutzerklärung).
+5. **Statistik** (`/statistik`): Sich selbst als Admin eintragen – erst auf der Seite ein Konto anlegen, dann im SQL Editor:
+   ```sql
+   insert into admins (nutzer) select id from auth.users where email = 'deine@email.de' on conflict do nothing;
+   ```
+   Danach (neu anmelden) erscheint im Profil-Menü „Statistik“. Gezählt wird ohne Cookies und ohne IP; der Ort (Land, Region, Stadt) kommt nur auf Vercel dazu.
+6. Vor dem Veröffentlichen Name, Anschrift und E-Mail in [`lib/rechtliches.js`](lib/rechtliches.js) eintragen (Impressum und Datenschutzerklärung).
 
 ### 2. Vercel
 

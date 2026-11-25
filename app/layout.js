@@ -8,6 +8,7 @@
  */
 import Link from 'next/link';
 import Logo, { PRODUKTNAME } from '@/components/Logo';
+import Besuchszaehler from '@/components/Besuchszaehler';
 import ProfilMenue from '@/components/ProfilMenue';
 import Hilfe from '@/components/Hilfe';
 import Hauptnavigation from '@/components/Hauptnavigation';
@@ -48,6 +49,7 @@ export default function Layout({ children }) {
           </div>
         </header>
         <main className="inhalt">{children}</main>
+        <Besuchszaehler />
         <footer className="fuss">
           <T>Geodaten</T>: <a href="https://www.naturalearthdata.com/">Natural Earth</a> (<T>gemeinfrei</T>) ·{' '}
           <T>Kreisgrenzen</T>: © <a href="https://ec.europa.eu/eurostat/web/gisco">EuroGeographics</a> ·{' '}

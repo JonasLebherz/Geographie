@@ -31,6 +31,7 @@ import { Chevron, Flamme, Stern } from '@/components/Symbole';
 import { useT } from '@/lib/sprache';
 import { klang } from '@/lib/ton';
 import { bestwerteLesen } from '@/lib/bestwerte';
+import { melden } from '@/lib/statistik';
 import { RUNDE_AUSWAHL, RUNDE_GROSS } from '@/lib/gebiete/runde';
 
 const FAHRT_DAUER = 1000; // ms
@@ -318,6 +319,7 @@ export default function Erkundung({ start, party = null }) {
         } else {
           setQuiz({ satz, daten, nr });
         }
+        melden('quiz_start', { quiz: satz.bestenliste, titel: satz.titel, gebiet: gebietRef.current.knoten.id, quizart: satz.art, party: Boolean(p) });
         nachOben();
       } finally {
         setLaedt(null);
