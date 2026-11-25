@@ -1,5 +1,5 @@
 /**
- * components/Logo.js – Bildmarke des Geo-Quiz: die Comic-Erde als Pixelbild
+ * components/Logo.js – Bildmarke von Quizzle: die Comic-Erde als Pixelbild
  *
  * 16 × 16 Pixel auf einer gelben Kachel mit schwarzem Rand: blaue Erde mit Kontinenten,
  * Gesicht (Augen, Wangen, Lächeln) und einer rosa Kartennadel als Hut. Gezeichnet aus Rechtecken
@@ -8,7 +8,7 @@
  */
 import { pixelRechtecke } from '@/lib/logo-pixel';
 
-export const PRODUKTNAME = 'Geo-Quiz';
+export const PRODUKTNAME = 'Quizzle';
 
 export default function Logo({ groesse = 36 }) {
   return (
