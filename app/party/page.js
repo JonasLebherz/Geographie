@@ -1,5 +1,5 @@
 /**
- * app/party/page.js – Party (1 gegen 1): Lobby erstellen oder beitreten
+ * app/party/page.js – Party (bis zu 8 Spieler, auch in Teams): Lobby erstellen oder beitreten
  */
 import PartyStart from './PartyStart';
 

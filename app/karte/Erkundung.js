@@ -103,7 +103,7 @@ const adresseVon = (daten) => {
 
 /**
  * party (nur in einer Lobby, siehe app/party/[code]/Lobby.js):
- *   { rolle: 'host' | 'gast', ich, gegner, senden(typ, daten), abonnieren(fn) }
+ *   { rolle: 'host' | 'gast', ich, spieler, gastgeber, teams, regeln, senden(typ, daten), abonnieren(fn), emote(art) }
  * Der Gastgeber steuert (Gebiet, Quiz), der Gast fliegt mit; die Adresse bleibt die der Lobby.
  */
 export default function Erkundung({ start, party = null }) {
@@ -112,7 +112,7 @@ export default function Erkundung({ start, party = null }) {
   const gast = party?.rolle === 'gast';
   // Party: Der Gastgeber darf schon ein Quiz wählen – los geht es erst mit Mitspieler
   const [vorgemerkt, setVorgemerkt] = useState(null);
-  const mitspielerDa = Boolean(party?.gegner);
+  const mitspielerDa = (party?.spieler?.length ?? 0) > 1;
   const t = useT();
   const [gebiet, setGebiet] = useState(start);
   const [uebergang, setUebergang] = useState(null); // { von: Gebietsdaten, richtung: 'rein' | 'raus' | 'blende' }
@@ -309,11 +309,13 @@ export default function Erkundung({ start, party = null }) {
         const daten = await satzLaden(gebietRef.current, satz);
         const nr = Date.now();
         if (p) {
-          // Duell: gleiche Fragen in gleicher Reihenfolge für beide
+          // Party: gleiche Fragen in gleicher Reihenfolge für alle, Regeln des Gastgebers
+          const regeln = p.regeln ?? {};
           const fragbar = daten.einheiten.filter((e) => e.gefragt !== false);
-          const reihenfolge = mischen(fragbar.map((e) => e.id)).slice(0, Math.min(satz.runde, DUELL_FRAGEN));
-          p.senden('start', { gebietId: gebietRef.current.knoten.id, satz, reihenfolge, nr });
-          setQuiz({ satz, daten, nr, reihenfolge });
+          const reihenfolge = mischen(fragbar.map((e) => e.id)).slice(0, Math.min(satz.runde, regeln.fragen ?? DUELL_FRAGEN));
+          const partie = { reihenfolge, joker: regeln.joker ?? 3, zeit: regeln.zeit ?? 10, teilnehmer: p.spieler.map((sp) => sp.id) };
+          p.senden('start', { gebietId: gebietRef.current.knoten.id, satz, nr, ...partie });
+          setQuiz({ satz, daten, nr, ...partie });
         } else {
           setQuiz({ satz, daten, nr });
         }
@@ -337,7 +339,7 @@ export default function Erkundung({ start, party = null }) {
         const daten = await satzLaden(neu, n.satz);
         setUebergang(null);
         setGebiet(neu);
-        setQuiz({ satz: n.satz, daten, nr: n.nr, reihenfolge: n.reihenfolge });
+        setQuiz({ satz: n.satz, daten, nr: n.nr, reihenfolge: n.reihenfolge, joker: n.joker, zeit: n.zeit, teilnehmer: n.teilnehmer });
         nachOben();
       } else if (n.typ === 'lobby') {
         setQuiz(null);
@@ -345,10 +347,11 @@ export default function Erkundung({ start, party = null }) {
     });
   }, [party, laden, satzLaden, wechseln]);
 
-  const gegnerId = party?.gegner?.id;
+  // Gastgeber: Wer neu dazukommt, fliegt gleich ins aktuelle Gebiet
+  const spielerKette = (party?.spieler ?? []).map((sp) => sp.id).join(',');
   useEffect(() => {
-    if (gegnerId && partyRef.current?.rolle === 'host') partyRef.current.senden('gebiet', { id: gebietRef.current.knoten.id });
-  }, [gegnerId]);
+    if (spielerKette.includes(',') && partyRef.current?.rolle === 'host') partyRef.current.senden('gebiet', { id: gebietRef.current.knoten.id });
+  }, [spielerKette]);
 
   // Quiz aus der Liste links: erst hinfliegen, nach der Kamerafahrt starten
   useEffect(() => {
@@ -357,7 +360,7 @@ export default function Erkundung({ start, party = null }) {
     setStartNach(null);
     if (!satz) return;
     // Party ohne Mitspieler: nur vormerken, gestartet wird über „Starten“
-    if (partyRef.current?.rolle === 'host' && !partyRef.current.gegner) setVorgemerkt({ satz, stufe: startNach.stufe, gebiet: gebiet.knoten.id });
+    if (partyRef.current?.rolle === 'host' && (partyRef.current.spieler?.length ?? 0) < 2) setVorgemerkt({ satz, stufe: startNach.stufe, gebiet: gebiet.knoten.id });
     else quizStarten(satz, startNach.stufe);
   }, [startNach, uebergang, laedt, gebiet, quizStarten]);
 
@@ -472,7 +475,7 @@ export default function Erkundung({ start, party = null }) {
       <Leiste
         gebiet={gebiet}
         party={Boolean(party)}
-        gesperrt={gast ? t('{name} wählt Gebiet und Quiz.', { name: party?.gegner?.name ?? t('Gastgeber') }) : null}
+        gesperrt={gast ? t('{name} wählt Gebiet und Quiz.', { name: party?.gastgeber?.name ?? t('Gastgeber') }) : null}
         vorgemerkt={party?.rolle === 'host' && vorgemerkt?.gebiet === gebiet.knoten.id ? vorgemerkt : null}
         mitspielerDa={mitspielerDa}
         onVorgemerktStarten={() => {

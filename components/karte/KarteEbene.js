@@ -19,7 +19,8 @@
  * Umgebung, Gradnetz und Flüsse laufen über den Kartenrand hinaus weiter (overflow: visible),
  * damit im breiteren Fenster nichts hart abbricht.
  */
-import { memo, useCallback, useId, useRef, useState } from 'react';
+import { memo, useCallback, useContext, useId, useRef, useState } from 'react';
+import { AnsichtKontext } from '@/lib/party/ansicht';
 import { useKartenZoom } from './useKartenZoom';
 import Satellit from './Satellit';
 import { Einpassen, Minus, Plus } from '@/components/Symbole';
@@ -180,7 +181,10 @@ export default function KarteEbene({
   const tippRef = useRef(null);
   const rahmenRef = useRef(null);
   const { karte } = daten;
-  const [ansichtArt, setAnsichtArt] = useEinstellung('ansicht');
+  const [ansichtGewaehlt, setAnsichtArt] = useEinstellung('ansicht');
+  // Party: Der Gastgeber kann die Ansicht festlegen – dann gibt es keinen Schalter
+  const ansichtFest = useContext(AnsichtKontext);
+  const ansichtArt = ansichtFest === 'karte' || ansichtFest === 'satellit' ? ansichtFest : ansichtGewaehlt;
   const satellit = ansichtArt === 'satellit';
   const [sichtbar, setSichtbar] = useState(null); // { ansicht, s } – für die Satellitenkacheln
   const meldung = useCallback((ansicht, s) => setSichtbar({ ansicht, s }), []);
@@ -291,6 +295,7 @@ export default function KarteEbene({
 
       {aktiv && (
         <>
+          {ansichtFest === 'frei' && (
           <div className="ansicht-schalter" role="radiogroup" aria-label={t('Ansicht')}>
             {[
               ['karte', t('Karte')],
@@ -308,6 +313,7 @@ export default function KarteEbene({
               </button>
             ))}
           </div>
+          )}
           <div className="zoom">
             <button type="button" onClick={zoom.zoomRein} disabled={zoom.maximal} aria-label={t('Hineinzoomen')} title={t('Hineinzoomen')}>
               <Plus />

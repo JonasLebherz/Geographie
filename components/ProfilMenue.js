@@ -2,7 +2,8 @@
 /**
  * components/ProfilMenue.js – Profil-Knopf oben rechts mit Einstellungen
  *
- * Oben das Profil: Anmelden gibt es noch nicht (Knopf gesperrt, kurzer Vermerk).
+ * Oben das Profil mit der eigenen Comic-Figur (Avatar, components/AvatarEditor.js). Anmelden gibt
+ * es noch nicht (Knopf gesperrt, kurzer Vermerk).
  * Darunter die Einstellungen – sie gelten sofort und bleiben in diesem Browser gespeichert
  * (lib/einstellungen.js):
  *   Stil (Comic, Atlas, Seekarte), Darstellung (Hell, Dunkel, Automatisch – die Seekarte gibt es
@@ -16,6 +17,8 @@ import { useEinstellung } from '@/lib/einstellungen';
 import { useT } from '@/lib/sprache';
 import { klang } from '@/lib/ton';
 import { Person } from './Symbole';
+import Avatar from './Avatar';
+import AvatarEditor from './AvatarEditor';
 
 /** Segment-Schalter (wie bei Apple): eine Auswahl aus wenigen Möglichkeiten */
 function Segmente({ titel, wert, optionen, onWahl }) {
@@ -45,6 +48,8 @@ export default function ProfilMenue() {
   const [lautstaerke, setLautstaerke] = useEinstellung('lautstaerke');
   const [sprache, setSprache] = useEinstellung('sprache');
   const [stil, setStil] = useEinstellung('stil');
+  const [avatar] = useEinstellung('avatar');
+  const [editor, setEditor] = useState(false);
   const huelle = useRef(null);
   const knopf = useRef(null);
   const menueId = useId();
@@ -84,18 +89,38 @@ export default function ProfilMenue() {
         title={t('Profil und Einstellungen')}
         onClick={() => setOffen((o) => !o)}
       >
-        <Person />
+        {avatar ? <Avatar wert={avatar} groesse={34} /> : <Person />}
       </button>
+      {editor && <AvatarEditor onSchliessen={() => setEditor(false)} />}
 
       {offen && (
         <div className="profil-menue" id={menueId} role="dialog" aria-label={t('Profil und Einstellungen')}>
           <div className="profil-kopf">
-            <span className="avatar" aria-hidden="true">
-              <Person />
-            </span>
+            <button
+              type="button"
+              className="avatar avatar-knopf"
+              onClick={() => {
+                setEditor(true);
+                setOffen(false);
+              }}
+              aria-label={t('Avatar bearbeiten')}
+              title={t('Avatar bearbeiten')}
+            >
+              {avatar ? <Avatar wert={avatar} groesse={44} /> : <Person />}
+            </button>
             <div>
               <strong>{t('Gast')}</strong>
               <small>{t('Nicht angemeldet')}</small>
+              <button
+                type="button"
+                className="profil-link"
+                onClick={() => {
+                  setEditor(true);
+                  setOffen(false);
+                }}
+              >
+                {avatar ? t('Avatar bearbeiten') : t('Avatar erstellen')}
+              </button>
             </div>
           </div>
           <button type="button" className="knopf knopf-zweit knopf-breit" disabled>
