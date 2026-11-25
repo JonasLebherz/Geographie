@@ -149,11 +149,16 @@ const Einheiten = memo(function Einheiten({ flaechen, punkte, linien, zustand, e
                   <circle className="lupe-ort" cx={f.punkt[0]} cy={f.punkt[1]} r="4.5" />
                   <circle className="lupe-grund" cx={x} cy={y} r={r} />
                   <g clipPath={`url(#${clip})`}>
-                    <path
-                      className={`land f-${f.farbe ?? 0} ${zustandKlasse}`}
-                      d={f.pfad}
-                      transform={`translate(${x} ${y}) scale(${k}) translate(${-m[0]} ${-m[1]})`}
-                    />
+                    {f.pfad ? (
+                      <path
+                        className={`land f-${f.farbe ?? 0} ${zustandKlasse}`}
+                        d={f.pfad}
+                        transform={`translate(${x} ${y}) scale(${k}) translate(${-m[0]} ${-m[1]})`}
+                      />
+                    ) : (
+                      // Staat ohne Fläche in den Daten (Vatikanstadt): ein Punkt in der Lupe
+                      <circle className={`land f-${f.farbe ?? 0} ${zustandKlasse}`} cx={x} cy={y} r={r * 0.32} />
+                    )}
                   </g>
                   <circle className="lupe-rand" cx={x} cy={y} r={r} />
                 </g>

@@ -1956,10 +1956,17 @@ html[data-stil="comic"] .kz-wert { font-size: 2rem; }
  *     Firefox über scrollbar-color
  * ================================================================== */
 html[data-stil="comic"] :is(html, .leiste, .ql-liste, .avatar-editor, .anmeldung, .tabelle-huelle, .profil-menue) { scrollbar-width: auto; scrollbar-color: auto; }
-html[data-stil="comic"] ::-webkit-scrollbar { width: 14px; height: 14px; }
-html[data-stil="comic"] ::-webkit-scrollbar-track { background: var(--karte); border-left: 2px solid var(--glas-rand); }
-html[data-stil="comic"] ::-webkit-scrollbar-thumb { background: var(--akzent-flaeche); border: 2px solid var(--glas-rand); border-radius: 7px; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
-html[data-stil="comic"] ::-webkit-scrollbar-thumb:hover { background: var(--akzent); }
+/* Griff mit Luft rundum (Wunsch: sonst gequetscht): durchsichtiger Rand + background-clip,
+   die schwarze Kontur als innerer Schatten */
+html[data-stil="comic"] ::-webkit-scrollbar { width: 18px; height: 18px; }
+html[data-stil="comic"] ::-webkit-scrollbar-track { background: var(--fuellung); border-radius: 9px; }
+html[data-stil="comic"] ::-webkit-scrollbar-thumb {
+  min-height: 40px;
+  border: 3px solid transparent; border-radius: 9px; background-clip: padding-box;
+  background-color: var(--akzent-flaeche);
+  box-shadow: inset 0 0 0 2px var(--glas-rand), inset -3px -3px 0 rgba(0, 0, 0, .22);
+}
+html[data-stil="comic"] ::-webkit-scrollbar-thumb:hover { background-color: var(--akzent); }
 html[data-stil="comic"] ::-webkit-scrollbar-corner { background: transparent; }
 html[data-stil="comic"]::-webkit-scrollbar-track { background: var(--hintergrund); }
 @supports (-moz-appearance: none) {
@@ -2073,3 +2080,9 @@ html[data-stil="comic"] .wissen-antwort .buchstabe { border: 2px solid var(--gla
 .wissen-bild .wb-buchstabe { fill: var(--fuellung); stroke: var(--glas-rand); stroke-width: 1.5; }
 .wissen-bild .wb-zeile { fill: var(--text-leise); opacity: .5; }
 .wissen-bild .wb-zeichen { fill: none; stroke: var(--akzent); stroke-width: 3; stroke-linecap: round; }
+html[data-stil="comic"] .leiste { padding-right: 8px; }  /* Abstand zwischen Kästen und Scrollbalken */
+/* Anmeldung: Google-Knopf und „oder“-Trenner */
+.google-knopf { display: inline-flex; align-items: center; justify-content: center; gap: 10px; }
+.google-knopf svg { width: 20px; height: 20px; flex: none; }
+.anmeldung .oder { display: flex; align-items: center; gap: 10px; margin: 0; color: var(--text-leise); font-size: .8125rem; }
+.anmeldung .oder::before, .anmeldung .oder::after { content: ""; flex: 1; height: 1px; background: var(--linie); }

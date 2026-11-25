@@ -3,11 +3,12 @@
  * components/Anmeldung.js – Dialog zum Anmelden mit E-Mail und Passwort (lib/konto.js)
  *
  * Drei Ansichten: Anmelden, Konto erstellen (mit Name), Passwort vergessen (Link per Mail).
+ * Darüber „Mit Google anmelden“, sobald Google eingerichtet ist (GOOGLE_AN, lib/konto.js).
  * Nach dem Erstellen schickt Supabase meist erst eine Bestätigungs-Mail – das steht dann da.
  */
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { anmelden, passwortVergessen, registrieren } from '@/lib/konto';
+import { anmelden, GOOGLE_AN, mitGoogle, passwortVergessen, registrieren } from '@/lib/konto';
 import { useT } from '@/lib/sprache';
 
 const MIN_PASSWORT = 8;
@@ -72,6 +73,32 @@ export default function Anmeldung({ onSchliessen }) {
               </button>
             ))}
           </div>
+        )}
+        {GOOGLE_AN && art !== 'vergessen' && (
+          <>
+            <button
+              type="button"
+              className="knopf knopf-zweit knopf-breit google-knopf"
+              disabled={sendet}
+              onClick={async () => {
+                setSendet(true);
+                const ergebnis = await mitGoogle();
+                setSendet(false);
+                if (ergebnis.fehler) setFehler(t(ergebnis.fehler));
+              }}
+            >
+              <svg viewBox="0 0 48 48" aria-hidden="true">
+                <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.1C12.4 13.7 17.7 9.5 24 9.5z" />
+                <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.2 5.3-4.6 6.9l7.4 5.7c4.3-4 6.9-9.9 6.9-17.1z" />
+                <path fill="#FBBC05" d="M10.5 28.6c-.5-1.4-.7-2.9-.7-4.6s.3-3.2.7-4.6l-7.9-6.1C1 16.6 0 20.2 0 24s1 7.4 2.6 10.7l7.9-6.1z" />
+                <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.4-5.7c-2.1 1.4-4.8 2.3-8.5 2.3-6.3 0-11.6-4.2-13.5-10l-7.9 6.1C6.6 42.6 14.6 48 24 48z" />
+              </svg>
+              {t('Mit Google anmelden')}
+            </button>
+            <p className="oder" aria-hidden="true">
+              <span>{t('oder')}</span>
+            </p>
+          </>
         )}
         {art === 'registrieren' && (
           <label className="feld">
