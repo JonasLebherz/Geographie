@@ -107,7 +107,7 @@ create policy "Eigene Bestwerte ändern" on bestwerte
   for update to authenticated using ((select auth.uid()) = nutzer) with check ((select auth.uid()) = nutzer);
 
 -- Konto löschen (DSGVO: jeder kann sein Konto selbst entfernen). Profil und Bestwerte
--- verschwinden mit (on delete cascade); Einträge in der öffentlichen Bestenliste bleiben.
+-- verschwinden mit (on delete cascade), Einträge in der öffentlichen Bestenliste bleiben.
 create or replace function public.konto_loeschen()
 returns void
 language sql
@@ -126,7 +126,7 @@ grant execute on function public.konto_loeschen() to authenticated;
 --   Keine IP, keine Cookies. Ort (Land, Region, Stadt) kommt grob von Vercel aus der IP,
 --   gespeichert wird nur der Ort. Bei angemeldeten Spielern steht das Konto dabei (nutzer).
 -- admins: wer die Statistik sehen darf. Absichtlich ohne Freigaben – eintragen nur hier im
---   SQL Editor:  insert into admins (nutzer) select id from auth.users where email = '…';
+--   SQL Editor (siehe README, Schritt 5).
 -- Auswertung nur über die Funktionen statistik(), konten_liste(), konto_quizze() – sie
 -- prüfen selbst, ob der Aufrufer Admin ist. Lesen der Rohdaten ist niemandem erlaubt.
 -- =====================================================================
@@ -187,20 +187,13 @@ declare
   heute  date := (now() at time zone 'Europe/Berlin')::date;
   von    timestamptz := ((heute - (n - 1))::timestamp) at time zone 'Europe/Berlin';
   vorher timestamptz := ((heute - (2 * n - 1))::timestamp) at time zone 'Europe/Berlin';
-  ergebnis jsonb;
 begin
   if not public.ist_admin() then
     raise exception 'Kein Zugriff' using errcode = '42501';
   end if;
 
-  -- Als Zuweisung geschrieben (nicht „with … select … into“): das lehnte der SQL-Editor von Supabase ab
-  ergebnis := (
-  with e as (
-    select * from public.ereignisse where erstellt_am >= vorher
-  ), jetzt as (
-    select * from e where erstellt_am >= von
-  )
-  select jsonb_build_object(
+  -- Ohne „with … as (…)“: daran verschluckte sich der SQL-Editor von Supabase
+  return jsonb_build_object(
     'tage', n,
     'kennzahlen', (select jsonb_build_object(
         'besuche',            count(*) filter (where art = 'besuch' and erstellt_am >= von),
@@ -217,7 +210,7 @@ begin
         'anmeldungen',        count(*) filter (where art = 'anmeldung' and erstellt_am >= von),
         'anmeldungen_vorher', count(*) filter (where art = 'anmeldung' and erstellt_am < von),
         'laender',            count(distinct land) filter (where art = 'besuch' and erstellt_am >= von)
-      ) from e),
+      ) from public.ereignisse where erstellt_am >= vorher),
     'konten', (select jsonb_build_object(
         'gesamt',     count(*),
         'neu',        count(*) filter (where created_at >= von),
@@ -232,7 +225,7 @@ begin
         select (erstellt_am at time zone 'Europe/Berlin')::date as tag,
                count(*) filter (where art = 'besuch') as besuche,
                count(*) filter (where art = 'quiz_start') as quizze
-        from jetzt group by 1
+        from public.ereignisse where erstellt_am >= von group by 1
       ) z on z.tag = t.tag
       left join (
         select (created_at at time zone 'Europe/Berlin')::date as tag, count(*) as konten
@@ -245,29 +238,27 @@ begin
                count(*) filter (where art = 'quiz_ende' and not party) as enden,
                round(avg(quote) filter (where art = 'quiz_ende')) as quote,
                round(avg(sekunden) filter (where art = 'quiz_ende')) as sekunden
-        from jetzt where art in ('quiz_start', 'quiz_ende') and quiz is not null
+        from public.ereignisse where erstellt_am >= von and art in ('quiz_start', 'quiz_ende') and quiz is not null
         group by quiz order by 5 desc limit 60) x),
     'gebiete', (select coalesce(jsonb_agg(jsonb_build_object('gebiet', gebiet, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
-        select gebiet, count(*) as anzahl from jetzt where art = 'quiz_start' and gebiet is not null group by gebiet) g),
+        select gebiet, count(*) as anzahl from public.ereignisse where erstellt_am >= von and art = 'quiz_start' and gebiet is not null group by gebiet) g),
     'laender', (select coalesce(jsonb_agg(jsonb_build_object('land', land, 'besuche', besuche, 'quizze', quizze) order by besuche desc), '[]'::jsonb) from (
         select land, count(*) filter (where art = 'besuch') as besuche, count(*) filter (where art = 'quiz_start') as quizze
-        from jetzt where land is not null group by land) l),
+        from public.ereignisse where erstellt_am >= von and land is not null group by land) l),
     'staedte', (select coalesce(jsonb_agg(to_jsonb(s) order by s.besuche desc), '[]'::jsonb) from (
-        select land, region, stadt, count(*) as besuche from jetzt
-        where art = 'besuch' and stadt is not null group by land, region, stadt order by 4 desc limit 25) s),
+        select land, region, stadt, count(*) as besuche from public.ereignisse
+        where erstellt_am >= von and art = 'besuch' and stadt is not null group by land, region, stadt order by 4 desc limit 25) s),
     'geraete',  (select coalesce(jsonb_agg(jsonb_build_object('name', geraet, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
-        select geraet, count(*) as anzahl from jetzt where art = 'besuch' and geraet is not null group by geraet) x),
+        select geraet, count(*) as anzahl from public.ereignisse where erstellt_am >= von and art = 'besuch' and geraet is not null group by geraet) x),
     'sprachen', (select coalesce(jsonb_agg(jsonb_build_object('name', sprache, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
-        select sprache, count(*) as anzahl from jetzt where art = 'besuch' and sprache is not null group by sprache) x),
+        select sprache, count(*) as anzahl from public.ereignisse where erstellt_am >= von and art = 'besuch' and sprache is not null group by sprache) x),
     'herkunft', (select coalesce(jsonb_agg(jsonb_build_object('name', herkunft, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
-        select herkunft, count(*) as anzahl from jetzt where art = 'besuch' and herkunft is not null
+        select herkunft, count(*) as anzahl from public.ereignisse where erstellt_am >= von and art = 'besuch' and herkunft is not null
         group by herkunft order by 2 desc limit 10) x),
     'seiten', (select coalesce(jsonb_agg(jsonb_build_object('name', pfad, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
-        select pfad, count(*) as anzahl from jetzt where art in ('besuch', 'seite') and pfad is not null
+        select pfad, count(*) as anzahl from public.ereignisse where erstellt_am >= von and art in ('besuch', 'seite') and pfad is not null
         group by pfad order by 2 desc limit 15) x)
-  )
   );
-  return ergebnis;
 end;
 $$;
 revoke execute on function public.statistik(int) from public, anon;
