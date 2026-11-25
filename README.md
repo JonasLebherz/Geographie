@@ -40,12 +40,18 @@ Die Quizze laufen auch ohne Supabase. Für Bestenliste und Party über verschied
    - **URL Configuration:** *Site URL* = die Adresse der Seite (z. B. `https://geo-quiz.vercel.app`), unter *Redirect URLs* `https://<deine-adresse>/**` und für lokal `http://localhost:3000/**` eintragen – dorthin führen die Links aus Bestätigungs- und Passwort-Mails.
    - Der eingebaute Mailversand von Supabase schickt nur sehr wenige Mails pro Stunde und ist für Tests gedacht. Für echte Nutzer unter **Authentication → Emails → SMTP Settings** einen eigenen Mailserver eintragen (z. B. Resend, Brevo oder das Postfach des eigenen Anbieters).
    - Die Texte der Mails (deutsch) unter **Authentication → Emails → Templates** anpassen.
-5. **Statistik** (`/statistik`): Sich selbst als Admin eintragen – erst auf der Seite ein Konto anlegen, dann im SQL Editor:
+5. **Anmelden mit Google** (freiwillig, zusätzlich zur E-Mail):
+   1. In der [Google Cloud Console](https://console.cloud.google.com/) ein Projekt anlegen → **Google Auth Platform** (früher „OAuth-Zustimmungsbildschirm“): App-Name „Quizzle“, Support-E-Mail, Zielgruppe **Extern**. Unter *Branding → Autorisierte Domains* die Domain der Seite und `<projekt>.supabase.co` eintragen.
+   2. **Clients → Client erstellen** → Typ **Webanwendung**. *Autorisierte JavaScript-Quellen:* die Adresse der Seite (z. B. `https://geographie-eight.vercel.app`) und `http://localhost:3000`. *Autorisierte Weiterleitungs-URIs:* die **Callback-URL** aus Supabase (Authentication → Sign In / Providers → Google, sieht aus wie `https://<projekt>.supabase.co/auth/v1/callback`). Client-ID und Clientschlüssel kopieren.
+   3. In Supabase: **Authentication → Sign In / Providers → Google** einschalten, Client-ID und Clientschlüssel eintragen, speichern.
+   4. Bei Vercel die Umgebungsvariable `NEXT_PUBLIC_ANMELDEN_GOOGLE` = `an` anlegen und neu bereitstellen (Redeploy). Erst dann erscheint „Mit Google anmelden“.
+   5. Solange die App in Google auf „Testen“ steht, können sich nur eingetragene Testnutzer anmelden – für alle: unter *Zielgruppe* „App veröffentlichen“ (für Name und E-Mail ist keine Prüfung durch Google nötig).
+6. **Statistik** (`/statistik`): Sich selbst als Admin eintragen – erst auf der Seite ein Konto anlegen, dann im SQL Editor:
    ```sql
    insert into admins (nutzer) select id from auth.users where email = 'deine@email.de' on conflict do nothing;
    ```
    Danach (neu anmelden) erscheint im Profil-Menü „Statistik“. Gezählt wird ohne Cookies und ohne IP; der Ort (Land, Region, Stadt) kommt nur auf Vercel dazu.
-6. Vor dem Veröffentlichen Name, Anschrift und E-Mail in [`lib/rechtliches.js`](lib/rechtliches.js) eintragen (Impressum und Datenschutzerklärung).
+7. Vor dem Veröffentlichen Name, Anschrift und E-Mail in [`lib/rechtliches.js`](lib/rechtliches.js) eintragen (Impressum und Datenschutzerklärung).
 
 ### 2. Vercel
 
