@@ -209,7 +209,12 @@ begin
         'lobbys',             count(*) filter (where art = 'party_lobby' and erstellt_am >= von),
         'anmeldungen',        count(*) filter (where art = 'anmeldung' and erstellt_am >= von),
         'anmeldungen_vorher', count(*) filter (where art = 'anmeldung' and erstellt_am < von),
-        'laender',            count(distinct land) filter (where art = 'besuch' and erstellt_am >= von)
+        'laender',            count(distinct land) filter (where art = 'besuch' and erstellt_am >= von),
+        -- Wie viele sind dabei angemeldet? (nutzer gesetzt = mit Konto)
+        'besuche_konto',      count(*) filter (where art = 'besuch' and nutzer is not null and erstellt_am >= von),
+        'quiz_konto',         count(*) filter (where art = 'quiz_start' and nutzer is not null and erstellt_am >= von),
+        'quiz_konto_vorher',  count(*) filter (where art = 'quiz_start' and nutzer is not null and erstellt_am < von),
+        'spieler_konto',      count(distinct nutzer) filter (where art in ('quiz_start', 'quiz_ende') and erstellt_am >= von)
       ) from public.ereignisse where erstellt_am >= vorher),
     'konten', (select jsonb_build_object(
         'gesamt',     count(*),
@@ -218,13 +223,15 @@ begin
         'aktiv',      count(*) filter (where last_sign_in_at >= von)
       ) from auth.users),
     'verlauf', (select coalesce(jsonb_agg(jsonb_build_object(
-          'tag', t.tag, 'besuche', coalesce(z.besuche, 0), 'quizze', coalesce(z.quizze, 0), 'konten', coalesce(k.konten, 0)
+          'tag', t.tag, 'besuche', coalesce(z.besuche, 0), 'quizze', coalesce(z.quizze, 0), 'quizze_konto', coalesce(z.quizze_konto, 0),
+          'konten', coalesce(k.konten, 0)
         ) order by t.tag), '[]'::jsonb)
       from (select (heute - i) as tag from generate_series(0, n - 1) as i) t
       left join (
         select (erstellt_am at time zone 'Europe/Berlin')::date as tag,
                count(*) filter (where art = 'besuch') as besuche,
-               count(*) filter (where art = 'quiz_start') as quizze
+               count(*) filter (where art = 'quiz_start') as quizze,
+               count(*) filter (where art = 'quiz_start' and nutzer is not null) as quizze_konto
         from public.ereignisse where erstellt_am >= von group by 1
       ) z on z.tag = t.tag
       left join (

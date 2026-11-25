@@ -12,18 +12,34 @@
  * lib/einstellungen.js). Hier werden vor allem die Farb- und Schrift-Variablen aus globals.css
  * überschrieben, dazu Formen (Konturen, Schatten, Radien).
  * Schriften liegen im Projekt (@fontsource), keine Anfrage an Google:
- *  Pixelify Sans (Fließtext, gut lesbar) und Press Start 2P (Titel, nur kurze Wörter).
+ *  Jersey 15 (Fließtext, auch klein gut lesbar – ersetzt Pixelify Sans, dessen Kleinbuchstaben
+ *  in kleinen Größen seltsam wirkten) und Press Start 2P (Titel, nur kurze Wörter).
  */
 @import "@fontsource/pixelify-sans/400.css";
-@import "@fontsource/pixelify-sans/500.css";
-@import "@fontsource/pixelify-sans/600.css";
-@import "@fontsource/pixelify-sans/700.css";
 @import "@fontsource/press-start-2p/400.css";
 @import "@fontsource/im-fell-english/400.css";
 @import "@fontsource/im-fell-english/400-italic.css";
 @import "@fontsource/im-fell-english-sc/400.css";
 
-/* Ziffern für Comic Pixel: In Pixelify Sans sieht die 3 aus wie eine 8 – Ziffern daher aus VT323
+/* Textschrift für Comic Pixel: Jersey 15 (SIL OFL, Dateien aus @fontsource/jersey-15 nach
+   public/schriften/), um ein Viertel größer, weil sie sehr klein ausfällt. Nur eine Stärke –
+   künstlich fett gerechnete Pixel verschwimmen, daher font-synthesis: none (siehe unten). */
+@font-face {
+  font-family: "Quizzle Text";
+  src: url("/schriften/jersey-15-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  size-adjust: 122%;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Quizzle Text";
+  src: url("/schriften/jersey-15-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  size-adjust: 122%;
+  font-display: swap;
+}
+
+/* Ziffern für das Nummernschild (Kennzeichen-Quiz): In Pixelify Sans sieht die 3 aus wie eine 8 – Ziffern daher aus VT323
    (SIL OFL, Datei aus @fontsource/vt323 nach public/schriften/), etwas größer, damit sie passen */
 @font-face {
   font-family: "Pixel Ziffern";
@@ -38,6 +54,7 @@
  * ================================================================== */
 
 html[data-stil="comic"] {
+  font-synthesis-weight: none; /* nur eine Stärke der Pixelschrift – nicht künstlich fett rechnen */
   --hintergrund: #ffe9a8;
   --karte-solid: #fffdf7;
   --text: #1b1b1b;
@@ -66,14 +83,17 @@ html[data-stil="comic"] {
   --akzent-zart: rgba(91, 71, 168, .11);
   --akzent-ring: rgba(91, 71, 168, .3);
 
-  --wasser: #b3d6e6;
-  --netz: rgba(27, 27, 27, .07);
+  /* Wasser satter und etwas dunkler als die Länder (Wunsch: Land hebt sich klar ab), Länder in
+     sechs kräftigeren Pastelltönen, darunter ein helles Salbeigrün (deutlich heller als das
+     Antwort-Grün #3fa45b) */
+  --wasser: #8cc5e4;
+  --netz: rgba(27, 27, 27, .08);
   --land: #fffdf7;
-  --land-0: #e9bfd2; --land-1: #ecc8a4; --land-2: #cfc2e6; --land-3: #eed6c2; --land-4: #f1d9e3; --land-5: #dccbe5;
+  --land-0: #f7c39b; --land-1: #c6e0a2; --land-2: #d5c1f1; --land-3: #f5aabb; --land-4: #f3d9ae; --land-5: #e9b5de;
   --land-hover: #ffffff;
   --land-grenze: #1b1b1b;
   --land-gefaerbt-grenze: #1b1b1b;
-  --umland: #efe9dc;
+  --umland: #f1ecdf;
   --umland-grenze: rgba(27, 27, 27, .28);
   --fluss: #6aa6c8;
   --fluss-quiz: #2f7fb5;
@@ -83,7 +103,7 @@ html[data-stil="comic"] {
   --wz-linie: #1b1b1b;
   --hoehenlinien: transparent;
 
-  --schrift: "Pixel Ziffern", "Pixelify Sans", "Courier New", monospace;
+  --schrift: "Quizzle Text", "Pixelify Sans", "Courier New", monospace;
   --schrift-titel: "Press Start 2P", "Pixelify Sans", monospace;
   --schrift-kennzeichen: "Pixel Ziffern", "Pixelify Sans", monospace;
   --radius-karte: 12px;
@@ -108,9 +128,9 @@ html[data-stil="comic"][data-theme="dark"] {
   --akzent-hover: #ddd2ff;
   --akzent-flaeche: #6b56c4;
   --akzent-zart: rgba(201, 184, 255, .13);
-  --wasser: #2d4a5c;
+  --wasser: #1f3f55;
   --land: #3a3550;
-  --land-0: #8a6577; --land-1: #8d6e52; --land-2: #6f6690; --land-3: #8b7462; --land-4: #8f7083; --land-5: #7a6a8c;
+  --land-0: #9c6f52; --land-1: #5f7f55; --land-2: #6f63a0; --land-3: #9a5f72; --land-4: #8f7a57; --land-5: #8a5f86;
   --land-grenze: #0d0b16;
   --land-gefaerbt-grenze: #0d0b16;
   --umland: #312c44;
@@ -336,6 +356,10 @@ html[data-stil="seekarte"] .leiste::after {
   .kopf-rechts { gap: 6px; }
   .kopf-innen { gap: 8px; }
 }
-@media (max-width: 380px) {
-  .hauptnav a svg { display: none; }
+/* Drei Menüpunkte (Spielen, Party, Freunde): auf schmalen Handys nur die Symbole –
+   die Beschriftung bleibt für Screenreader lesbar */
+@media (max-width: 560px) {
+  .hauptnav a { padding: 6px 12px; min-width: 46px; justify-content: center; }
+  .hauptnav a span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .hauptnav a svg { width: 22px; height: 22px; }
 }

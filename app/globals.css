@@ -883,7 +883,7 @@ button { font: inherit; letter-spacing: inherit; color: inherit; }
   .kontinentkarte.erkunden .land.frei:hover { filter: brightness(1.06) saturate(1.25); }
 }
 .kontinentkarte .land.hervor { filter: brightness(1.06) saturate(1.35); }
-.kontinentkarte .land.blatt { fill: var(--land); }
+/* Blätter (Kreise, Bundesstaaten ohne eigene Karte) sind genauso bunt wie alle anderen Flächen – nur ohne Klick */
 /* Hintergrund beim Städte-Quiz: Flächen ohne Klick, leicht zurückgenommen */
 .kontinentkarte .land.kulisse { pointer-events: none; }  /* bunt wie beim Erkunden – zur Orientierung */
 .kontinentkarte .nebenkarte { fill: var(--wasser); stroke: var(--land-grenze); stroke-width: 1; vector-effect: non-scaling-stroke; }
@@ -1831,7 +1831,7 @@ html[data-stil="comic"] .feld input { border: 2px solid var(--glas-rand); }
 .statistik-kopf .segment-schalter { max-width: 100%; }
 .statistik-laedt { height: 420px; border-radius: 14px; background: linear-gradient(90deg, var(--fuellung) 30%, var(--akzent-zart) 50%, var(--fuellung) 70%) 0 0 / 200% 100%; animation: laden 1.2s linear infinite; }
 
-.kennzahlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); gap: 12px; }
+.kennzahlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); gap: 12px; }
 @media (max-width: 640px) { .kennzahlen { grid-template-columns: 1fr 1fr; } .kz-wert { font-size: 1.6rem; } }
 .kennzahl { padding: 14px 16px; display: grid; gap: 2px; align-content: start; }
 .kz-titel { font-size: .875rem; font-weight: 600; color: var(--text-leise); }
@@ -1929,3 +1929,147 @@ html[data-stil="comic"] :is(.qs-karte) { border: 2px solid var(--glas-rand); bor
 html[data-stil="comic"] .sk-flaeche { border: var(--kontur); border-radius: 8px; }
 html[data-stil="comic"] .kz-wert { font-size: 2rem; }
 .statistik-link { margin-top: 8px; justify-content: center; }
+/* Statistik: Anteil mit Konto / als Gast */
+.konto-anteil { padding: 14px 16px; display: grid; gap: 12px; }
+.konto-anteil h2 { margin: 0; }
+.ka-legende { display: flex; gap: 16px; font-size: .8125rem; color: var(--text-leise); }
+.ka-legende span { display: inline-flex; align-items: center; gap: 6px; }
+.ka-legende i { width: 14px; height: 10px; border-radius: 3px; }
+.ka-zeile { display: grid; gap: 4px; }
+.ka-kopf { display: flex; justify-content: space-between; font-weight: 600; }
+.ka-kopf strong { font-variant-numeric: tabular-nums; }
+.ka-balken { display: flex; gap: 2px; height: 14px; border-radius: 4px; overflow: hidden; background: var(--fuellung); }
+.ka-balken span { flex-basis: 0; min-width: 4px; }
+.ka-konto { background: var(--akzent-flaeche); }
+.ka-gast { background: var(--stat-1); }
+.ka-zeile small { color: var(--text-leise); font-size: .8125rem; }
+
+/* Erkunden: Kartenknöpfe klein in der Ecke der Karte (ohne Kopfleiste, alles oben bündig) */
+.buehne-steuerung { position: absolute; top: 10px; right: 10px; z-index: 6; display: flex; gap: 8px; align-items: center; pointer-events: none; }
+.buehne-steuerung > * { pointer-events: auto; }
+.buehne-steuerung .ansicht-schalter, .buehne-steuerung .zoom { box-shadow: 0 2px 10px rgba(0, 0, 0, .12); }
+@media (max-width: 640px) { .buehne-steuerung .ansicht-schalter button { padding: 4px 8px; } .buehne-steuerung .zoom button { width: 34px; height: 34px; } }
+
+/* =====================================================================
+ * 5m. Scrollbalken im Stil (Comic: dicke Kontur, Pflaume; sonst dezent)
+ *     Chrome/Safari über ::-webkit-scrollbar (dafür scrollbar-width/-color auf „auto“),
+ *     Firefox über scrollbar-color
+ * ================================================================== */
+html[data-stil="comic"] :is(html, .leiste, .ql-liste, .avatar-editor, .anmeldung, .tabelle-huelle, .profil-menue) { scrollbar-width: auto; scrollbar-color: auto; }
+html[data-stil="comic"] ::-webkit-scrollbar { width: 14px; height: 14px; }
+html[data-stil="comic"] ::-webkit-scrollbar-track { background: var(--karte); border-left: 2px solid var(--glas-rand); }
+html[data-stil="comic"] ::-webkit-scrollbar-thumb { background: var(--akzent-flaeche); border: 2px solid var(--glas-rand); border-radius: 7px; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
+html[data-stil="comic"] ::-webkit-scrollbar-thumb:hover { background: var(--akzent); }
+html[data-stil="comic"] ::-webkit-scrollbar-corner { background: transparent; }
+html[data-stil="comic"]::-webkit-scrollbar-track { background: var(--hintergrund); }
+@supports (-moz-appearance: none) {
+  html[data-stil="comic"] :is(html, .leiste, .ql-liste, .avatar-editor, .anmeldung, .tabelle-huelle, .profil-menue) { scrollbar-color: var(--akzent-flaeche) var(--karte); }
+}
+html[data-stil="seekarte"] ::-webkit-scrollbar { width: 12px; }
+html[data-stil="seekarte"] ::-webkit-scrollbar-thumb { background: #8a6a43; border: 3px solid #efe2c2; border-radius: 6px; }
+html[data-stil="seekarte"] :is(.leiste, .ql-liste) { scrollbar-width: auto; scrollbar-color: auto; }
+/* Lange Titel der Rechtstexte („Datenschutzerklärung“) passen auch aufs Handy */
+.rechtstext h1 { font-size: clamp(1.15rem, 5.2vw, 2.2rem); overflow-wrap: anywhere; hyphens: auto; }
+
+/* =====================================================================
+ * 5n. Freunde (Vorschau, app/freunde)
+ * ================================================================== */
+.freunde { max-width: 1120px; margin: 0 auto; display: grid; gap: 18px; }
+.freunde-kopf { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.freunde-kopf h1 { margin: 0; }
+.vorschau-marke { padding: 3px 10px; border-radius: 999px; background: var(--akzent-zart); color: var(--akzent); font-weight: 600; font-size: .8125rem; }
+.freunde-zahl { margin-left: auto; color: var(--text-leise); }
+.freunde-raster { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.freunde-spalte { display: grid; gap: 14px; }
+.einladen { padding: 16px; display: grid; gap: 10px; }
+.einladen h2 { display: flex; align-items: center; gap: 8px; margin: 0; font: 800 1rem var(--schrift-titel); }
+.einladen h2 svg { width: 22px; height: 22px; }
+.einladen-link { display: flex; gap: 8px; align-items: center; }
+.einladen-link code { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px 10px; border-radius: 8px; background: var(--fuellung); font: .8125rem var(--schrift); }
+.freundesliste { list-style: none; margin: 0; padding: 6px; display: grid; gap: 2px; }
+.freund { width: 100%; display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 0; border-radius: 10px; background: none; color: var(--text); text-align: left; cursor: pointer; font: inherit; min-height: 56px; }
+.freund:hover { background: var(--akzent-zart); }
+.freund.gewaehlt { background: var(--akzent-zart); box-shadow: inset 3px 0 0 var(--akzent-flaeche); }
+.freund-figur { position: relative; flex: none; display: grid; }
+.status-punkt { position: absolute; right: 0; bottom: 2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--karte-solid); background: #9a9aa3; }
+.status-punkt.online, .status-punkt.spielt { background: var(--land-gruen); }
+.freund-text { flex: 1; min-width: 0; display: grid; }
+.freund-text small { color: var(--text-leise); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ungelesen { min-width: 22px; height: 22px; display: grid; place-items: center; border-radius: 11px; background: var(--akzent-flaeche); color: #fff; font-size: .75rem; }
+.chat { display: flex; flex-direction: column; height: min(640px, calc(100dvh - 190px)); min-height: 420px; padding: 0; overflow: hidden; }
+.chat-kopf { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--linie); }
+.chat-kopf div { flex: 1; min-width: 0; display: grid; }
+.chat-kopf small { color: var(--text-leise); }
+.chat-verlauf { flex: 1; min-height: 0; overflow-y: auto; list-style: none; margin: 0; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.chat-leer { margin: auto; display: grid; justify-items: center; gap: 8px; color: var(--text-leise); }
+.chat-leer svg { width: 34px; height: 34px; }
+.nachricht { display: flex; align-items: flex-end; gap: 8px; max-width: 80%; }
+.nachricht.eigene { align-self: flex-end; }
+.blase { padding: 8px 12px; border-radius: 14px; background: var(--fuellung); line-height: 1.35; overflow-wrap: anywhere; }
+.nachricht.fremde .blase { border-bottom-left-radius: 4px; }
+.nachricht.eigene .blase { background: var(--akzent-flaeche); color: #fff; border-bottom-right-radius: 4px; }
+.nachricht.eigene .blase .profil-link { color: #fff; text-decoration: underline; display: inline; }
+.chat-eingabe { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--linie); }
+.chat-eingabe input { flex: 1; min-width: 0; min-height: 44px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--linie); background: var(--fuellung); color: var(--text); font: inherit; }
+.chat-eingabe input:focus { outline: none; border-color: var(--akzent); box-shadow: 0 0 0 4px var(--akzent-ring); }
+.chat-vermerk { margin: 0; padding: 0 16px 10px; font-size: .75rem; color: var(--text-leise); }
+html[data-stil="comic"] :is(.blase) { border: 2px solid var(--glas-rand); }
+html[data-stil="comic"] .chat-eingabe input, html[data-stil="comic"] .einladen-link code { border: 2px solid var(--glas-rand); }
+@media (max-width: 900px) {
+  .freunde-raster { grid-template-columns: 1fr; }
+  .chat { height: 70dvh; }
+}
+.freunde-raster > *, .freunde-spalte > * { min-width: 0; }
+.freunde > *, .einladen > * { min-width: 0; }
+@media (max-width: 560px) { .chat-kopf { flex-wrap: wrap; } .chat-kopf .knopf { width: 100%; justify-content: center; } .freunde-zahl { margin-left: 0; width: 100%; } }
+
+/* =====================================================================
+ * 5o. Wissensquiz (app/wissen): Frage-Karte, vier Antworten im 2×2-Raster
+ * ================================================================== */
+.wissen { max-width: 820px; margin: 0 auto; display: grid; gap: 16px; }
+.wissen-stand { display: flex; align-items: center; gap: 14px; }
+.wissen-fortschritt { flex: 1; height: 10px; border-radius: 5px; background: var(--fuellung); overflow: hidden; }
+.wissen-fortschritt span { display: block; height: 100%; background: var(--akzent-flaeche); transition: width .3s var(--weich); }
+.serie.statisch { position: static; }
+.wissen-karte { padding: clamp(18px, 4vw, 32px); display: grid; gap: 18px; }
+.wissen-karte.impuls-richtig { animation: wissen-treffer .5s var(--weich); }
+.wissen-karte.impuls-falsch { animation: kapsel-wackeln .4s ease; }
+@keyframes wissen-treffer { 35% { transform: scale(1.01); box-shadow: 0 0 0 8px rgba(63, 164, 91, .25); } }
+.wissen-kategorie { margin: 0; color: var(--akzent); font-weight: 600; font-size: .9rem; }
+.wissen-frage { margin: 0; font-size: clamp(1.15rem, 3vw, 1.6rem); line-height: 1.35; letter-spacing: 0; text-wrap: balance; }
+html[data-stil="comic"] .wissen-frage { font-family: var(--schrift); font-size: clamp(1.25rem, 3.2vw, 1.75rem); }
+.wissen-antworten { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.wissen-antwort {
+  display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 10px 14px; text-align: left;
+  border-radius: 12px; border: 1px solid var(--linie); background: var(--karte-solid); color: var(--text);
+  font: 600 1.05rem var(--schrift); cursor: pointer; transition: transform .12s ease, background-color .15s ease;
+}
+.wissen-antwort:hover:not(:disabled) { background: var(--akzent-zart); }
+.wissen-antwort:active:not(:disabled) { transform: translateY(2px); }
+.wissen-antwort:disabled { cursor: default; }
+.wissen-antwort .buchstabe { flex: none; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 8px; background: var(--fuellung); font: 400 .8rem var(--schrift-titel); }
+.wissen-antwort.richtig { background: var(--land-gruen); color: #fff; border-color: transparent; }
+.wissen-antwort.richtig .buchstabe { background: rgba(255, 255, 255, .25); }
+.wissen-antwort.falsch { background: var(--land-rot); color: #fff; border-color: transparent; animation: kapsel-wackeln .4s ease; }
+.wissen-antwort.falsch .buchstabe { background: rgba(255, 255, 255, .25); }
+.wissen-antwort.aus { opacity: .55; }
+.wissen-unten { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; }
+.rueckmeldung.richtig { background: var(--gruen-bg); color: var(--gruen); }
+.wissen-ergebnis { justify-items: center; text-align: center; }
+.wissen-oben { margin: 0; color: var(--text-leise); font-weight: 600; }
+.wissen-knoepfe { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+html[data-stil="comic"] .wissen-antwort { border: var(--kontur); box-shadow: 0 4px 0 var(--glas-rand); }
+html[data-stil="comic"] .wissen-antwort:active:not(:disabled) { transform: translateY(4px); box-shadow: none; }
+html[data-stil="comic"] .wissen-antwort .buchstabe { border: 2px solid var(--glas-rand); }
+@media (max-width: 560px) { .wissen-antworten { grid-template-columns: 1fr; } .wissen-antwort { min-height: 56px; } }
+@media (prefers-reduced-motion: reduce) { .wissen-karte, .wissen-antwort { animation: none !important; } }
+
+/* Startseite: Kachel „Wissensquiz“ – vier Antwortkästchen als Bild */
+.kachel-wissen .kachel-bild { background: var(--stat-0); }
+.wissen-bild { position: absolute; inset: 0; display: grid; place-items: center; }
+.wissen-bild svg { width: min(78%, 300px); height: auto; }
+.wissen-bild .wb-frage, .wissen-bild .wb-b { fill: var(--karte-solid); stroke: var(--glas-rand); stroke-width: 2.5; }
+.wissen-bild .wb-a { fill: var(--land-gruen); stroke: var(--glas-rand); stroke-width: 2.5; }
+.wissen-bild .wb-buchstabe { fill: var(--fuellung); stroke: var(--glas-rand); stroke-width: 1.5; }
+.wissen-bild .wb-zeile { fill: var(--text-leise); opacity: .5; }
+.wissen-bild .wb-zeichen { fill: none; stroke: var(--akzent); stroke-width: 3; stroke-linecap: round; }

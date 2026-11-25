@@ -167,6 +167,52 @@ const Flagge = ({ land }) =>
     <img className="mini-flagge" src={`/flaggen/${land.toLowerCase()}.svg`} alt="" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = 'hidden')} />
   ) : null;
 
+/**
+ * Wer ist angemeldet? Je Zeile ein Balken (100 %) aus „mit Konto“ (Akzentfarbe) und „als Gast“
+ * (zurückhaltend), Prozente als Text daneben – die Farbe trägt nie allein die Bedeutung.
+ */
+function KontoAnteil({ zeilen }) {
+  const t = useT();
+  const fehlt = zeilen.every((z) => z.konto == null);
+  return (
+    <section className="konto-anteil karte">
+      <h2>{t('Mit Konto oder als Gast')}</h2>
+      {fehlt ? (
+        <p className="hinweis">{t('Dafür bitte supabase/schema.sql noch einmal ausführen.')}</p>
+      ) : (
+        <>
+          <div className="ka-legende" aria-hidden="true">
+            <span>
+              <i className="ka-konto" />
+              {t('mit Konto')}
+            </span>
+            <span>
+              <i className="ka-gast" />
+              {t('als Gast')}
+            </span>
+          </div>
+          {zeilen.map((z) => {
+            const anteil = z.gesamt ? Math.round((100 * z.konto) / z.gesamt) : 0;
+            return (
+              <div key={z.titel} className="ka-zeile">
+                <div className="ka-kopf">
+                  <span>{z.titel}</span>
+                  <strong>{z.gesamt ? `${anteil} %` : '–'}</strong>
+                </div>
+                <div className="ka-balken" role="img" aria-label={t('{p} % mit Konto, {q} % als Gast', { p: anteil, q: 100 - anteil })}>
+                  {z.gesamt > 0 && anteil > 0 && <span className="ka-konto" style={{ flexGrow: anteil }} />}
+                  {z.gesamt > 0 && anteil < 100 && <span className="ka-gast" style={{ flexGrow: 100 - anteil }} />}
+                </div>
+                <small>{t('{n} von {m} mit Konto', { n: t.zahl(z.konto), m: t.zahl(z.gesamt) })}</small>
+              </div>
+            );
+          })}
+        </>
+      )}
+    </section>
+  );
+}
+
 // ---------------------------------------------------------------------------------------
 // Weltkarte
 // ---------------------------------------------------------------------------------------
@@ -529,6 +575,11 @@ export default function StatistikSeite({ karte }) {
             <Kennzahl titel={t('Ø Ergebnis')} wert={kz.quote == null ? '–' : `${kz.quote} %`} zusatz={kz.quote_vorher == null ? null : t('davor {p} %', { p: kz.quote_vorher })} />
             <Kennzahl titel={t('Konten')} wert={k.gesamt} zusatz={t('{n} neu im Zeitraum', { n: k.neu })} />
             <Kennzahl titel={t('Angemeldet aktiv')} wert={k.aktiv} zusatz={t('{n} Anmeldungen', { n: kz.anmeldungen })} vorher={undefined} />
+            <Kennzahl
+              titel={t('Mit Konto gespielt')}
+              wert={kz.quiz_konto == null ? '–' : kz.quiz_start ? `${Math.round((100 * kz.quiz_konto) / kz.quiz_start)} %` : '–'}
+              zusatz={kz.spieler_konto == null ? null : t('{n} Spieler mit Konto', { n: kz.spieler_konto })}
+            />
             <Kennzahl titel={t('Party-Spiele')} wert={kz.party} vorher={kz.party_vorher} tage={daten.tage} zusatz={t('{n} Lobbys erstellt', { n: kz.lobbys })} />
           </div>
 
@@ -536,6 +587,13 @@ export default function StatistikSeite({ karte }) {
             <Verlauf titel={t('Besuche je Tag')} punkte={daten.verlauf} feld="besuche" einheit={t('Besuche')} />
             <Verlauf titel={t('Gespielte Quizze je Tag')} punkte={daten.verlauf} feld="quizze" einheit={t('Quizze')} />
           </div>
+
+          <KontoAnteil
+            zeilen={[
+              { titel: t('Besuche'), konto: kz.besuche_konto, gesamt: kz.besuche },
+              { titel: t('Gespielte Quizze'), konto: kz.quiz_konto, gesamt: kz.quiz_start },
+            ]}
+          />
 
           <div className="karten-reihe">
             <Weltkarte karte={karte} werte={kartenWerte} modus={kartenModus} onModus={setKartenModus} />
