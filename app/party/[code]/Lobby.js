@@ -5,7 +5,9 @@
  * Oben die Lobby-Leiste: Code, Link kopieren, Spieler mit ihrer Comic-Figur und – beim
  * Gastgeber – das Zahnrad mit den Spielregeln. Mit Teams erscheinen Team-Felder; der Gastgeber
  * schiebt Spieler per Ziehen (oder Antippen, dann Feld antippen) von einem Team ins andere.
- * Darunter dieselbe Karte wie beim Solo-Spiel (Erkundung) im Party-Modus:
+ * Darunter die Spielwahl (Gastgeber): Weltkarte, Wissensquiz oder Schätzen (Regel `modus`).
+ * Wissensquiz und Schätzen laufen in FragenParty.js. Die Weltkarte ist dieselbe Karte wie beim
+ * Solo-Spiel (Erkundung) im Party-Modus:
  *  - Der Gastgeber (wer die Lobby erstellt hat) fliegt durch die Karte und wählt das Quiz,
  *    alle anderen fliegen mit.
  *  - Startet er ein Quiz, bekommen alle dieselben Fragen in derselben Reihenfolge
@@ -23,13 +25,14 @@ import Erkundung from '@/app/karte/Erkundung';
 import Avatar, { avatarAus } from '@/components/Avatar';
 import { kanalOeffnen } from '@/lib/party/kanal';
 import { AnsichtKontext } from '@/lib/party/ansicht';
-import { EMOTES, MAX_SPIELER, STANDARD_REGELN, TEAMS } from '@/lib/party/regeln';
+import { EMOTES, MAX_SPIELER, MODI, STANDARD_REGELN, TEAMS } from '@/lib/party/regeln';
 import { useEinstellung } from '@/lib/einstellungen';
 import { useT } from '@/lib/sprache';
 import { klang } from '@/lib/ton';
 import { Kette } from '@/components/Symbole';
 import { GASTGEBER } from '../PartyStart';
 import FreundeEinladen from '@/components/FreundeEinladen';
+import FragenParty from './FragenParty';
 
 const NAME_SPEICHER = 'geo-quiz-name';
 const SPIELER_SPEICHER = 'geo-quiz-spieler';
@@ -72,6 +75,7 @@ export default function Lobby({ code }) {
   const [zahnrad, setZahnrad] = useState(false);
   const [gewaehlt, setGewaehlt] = useState(null); // Antippen statt Ziehen
   const [emotes, setEmotes] = useState([]); // [{ schluessel, von, art }]
+  const [imSpiel, setImSpiel] = useState(false); // läuft gerade eine Runde? Dann keine Spielwahl
   const kanal = useRef(null);
   const abonnenten = useRef(new Set());
 
@@ -325,6 +329,24 @@ export default function Lobby({ code }) {
 
       {host && zahnrad && <Spielregeln regeln={regeln} onSetzen={regelSetzen} />}
 
+      {!imSpiel && !voll && (
+        <div className="spielwahl segment-schalter" role="radiogroup" aria-label={t('Spiel')}>
+          {MODI.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              role="radio"
+              aria-checked={regeln.modus === m.id}
+              className={regeln.modus === m.id ? 'gewaehlt' : undefined}
+              onClick={() => host && regelSetzen('modus', m.id)}
+              disabled={!host && regeln.modus !== m.id}
+            >
+              {t.ortsname(m)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {Boolean(regeln.teams) && (
         <div className="team-felder" style={{ '--spalten': regeln.teams }}>
           {Array.from({ length: regeln.teams }, (_, i) => (
@@ -345,9 +367,11 @@ export default function Lobby({ code }) {
 
       {voll ? (
         <p className="hinweis">{t('Diese Lobby ist schon voll.')}</p>
+      ) : regeln.modus !== 'karte' && party ? (
+        <FragenParty modus={regeln.modus} party={party} regeln={regeln} onSpielt={setImSpiel} />
       ) : welt ? (
         <AnsichtKontext.Provider value={regeln.ansicht}>
-          <Erkundung start={welt} party={party} />
+          <Erkundung start={welt} party={party} onImQuiz={setImSpiel} />
         </AnsichtKontext.Provider>
       ) : (
         <div className="buehne-platzhalter" />
@@ -358,8 +382,10 @@ export default function Lobby({ code }) {
 
 /** Kurzfassung der Regeln für die Mitspieler */
 function regelnKurz(t, r) {
-  const teile = [r.teams ? t('{n} Teams', { n: r.teams }) : t('Jeder für sich'), t('{n} Fragen', { n: r.fragen }), t('{n} Joker', { n: r.joker })];
-  if (r.ansicht !== 'frei') teile.push(r.ansicht === 'satellit' ? t('nur Satellit') : t('nur Karte'));
+  const karte = (r.modus ?? 'karte') === 'karte';
+  const teile = [r.teams ? t('{n} Teams', { n: r.teams }) : t('Jeder für sich'), t('{n} Fragen', { n: r.fragen })];
+  if (karte) teile.push(t('{n} Joker', { n: r.joker }));
+  if (karte && r.ansicht !== 'frei') teile.push(r.ansicht === 'satellit' ? t('nur Satellit') : t('nur Karte'));
   return teile.join(' · ');
 }
 
@@ -372,7 +398,7 @@ function Spielregeln({ regeln, onSetzen }) {
     ['joker', t('Joker je Spieler'), [[0, '0'], [1, '1'], [3, '3'], [5, '5']]],
     ['zeit', t('Bedenkzeit danach'), [[5, '5 s'], [10, '10 s'], [20, '20 s'], [30, '30 s']]],
     ['ansicht', t('Ansicht'), [['frei', t('Frei')], ['karte', t('Karte')], ['satellit', t('Satellit')]]],
-  ];
+  ].filter(([name]) => (regeln.modus ?? 'karte') === 'karte' || !['joker', 'ansicht'].includes(name));
   return (
     <div className="spielregeln karte">
       {reihen.map(([name, titel, optionen]) => (

@@ -9,7 +9,7 @@ Die vollständigen Regeln stehen in `CLAUDE.md`. Kurz:
 - Party bis 8 Spieler mit Teams: `app/party/`, `lib/party/` (Supabase Realtime, lokal BroadcastChannel, Regeln in `regeln.js`), Partie in `app/karte/DuellAnsicht.js`; Avatar in `components/Avatar.js`.
 - Drei Gestaltungen (`app/stile.css`, Einstellung `stil`): Comic Pixel (Standard), Atlas, Seekarte. Farben nur als CSS-Variablen, keine Bedienhinweise oder Emojis in der Oberfläche.
 - Oberfläche zweisprachig: Texte über `t('…')` bzw. `<T>…</T>`, Englisch in `lib/sprache/en.js`; danach `npm run texte`.
-- Weitere Modi: Wissensquiz `app/wissen/` (Kategorien und Fragen `lib/wissensfragen.js`), Freunde und Party-Einladungen `app/freunde/`, `lib/freunde.js`, `components/Einladungen.js`, `components/FreundeEinladen.js` (Tabellen `freunde`, `einladungen` in `supabase/schema.sql`). Russland ist am Ural geteilt (`lib/gebiete/ural.js`).
+- Weitere Modi: Wissensquiz `app/wissen/` (Kategorien und Fragen `lib/wissensfragen.js`), Schätzen `app/schaetzen/` (`lib/schaetzfragen.js`, `components/SchaetzKarte.js`), beide auch in der Party (`app/party/[code]/FragenParty.js`, Lobby-Regel `modus`), Freunde und Party-Einladungen `app/freunde/`, `lib/freunde.js`, `components/Einladungen.js`, `components/FreundeEinladen.js` (Tabellen `freunde`, `einladungen` in `supabase/schema.sql`). Russland ist am Ural geteilt (`lib/gebiete/ural.js`).
 - Konto: E-Mail + Passwort über Supabase Auth (`lib/konto.js`, `app/konto/`, Tabellen in `supabase/schema.sql`).
 - Vor jedem Push `npm run build` ausführen.
 - Zugangsdaten nur in `.env.local` bzw. bei Vercel, nie im Repository.

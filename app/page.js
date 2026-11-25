@@ -2,7 +2,8 @@
  * app/page.js – Startseite: erst die Wahl, was man spielen will (Wunsch von Jonas)
  *
  * Kacheln wie Spielmodi: „Weltkarte“ führt in die Karten-Erkundung (/karte), „Wissensquiz“ zu
- * allgemeinen Wissensfragen mit vier Antworten (/wissen), die übrigen sind Baustellen
+ * allgemeinen Wissensfragen mit vier Antworten (/wissen), „Schätzen“ zu Fragen mit einer Zahl als
+ * Antwort (/schaetzen), die übrigen sind Baustellen
  * („Kommt bald“) mit Comic-Figuren, die daran arbeiten (components/Baustelle.js).
  * Keine Begrüßung, keine Bedienhinweise – nur Fakten; erklärt wird hinter dem „?“.
  */
@@ -10,6 +11,7 @@ import Link from 'next/link';
 import { alleKnoten, baum, weltSkizze } from '@/lib/gebiete';
 import Baustelle from '@/components/Baustelle';
 import { WISSENSFRAGEN } from '@/lib/wissensfragen';
+import { SCHAETZFRAGEN } from '@/lib/schaetzfragen';
 import { PRODUKTNAME } from '@/components/Logo';
 import { T } from '@/lib/sprache';
 import { Chevron } from '@/components/Symbole';
@@ -79,7 +81,35 @@ export default function Startseite() {
             <Chevron />
           </Link>
         </li>
-        {[0, 1].map((art) => (
+        <li>
+          <Link href="/schaetzen" className="kachel kachel-schaetzen">
+            <span className="kachel-bild">
+              <span className="wissen-bild schaetz-bild" aria-hidden="true">
+                <svg viewBox="0 0 220 130">
+                  <path d="M20 92h180" className="sb-strahl" />
+                  {[20, 56, 92, 128, 164, 200].map((x) => (
+                    <path key={x} d={`M${x} 84v16`} className="sb-strich" />
+                  ))}
+                  <path d="M82 70q30-40 60 0" className="sb-bogen" />
+                  <path d="M82 76l-12-22h24z" className="sb-tipp" />
+                  <path d="M142 76l-12-22h24z" className="sb-ziel" />
+                  <rect x="64" y="22" width="36" height="24" rx="6" className="sb-tipp" />
+                  <rect x="124" y="22" width="36" height="24" rx="6" className="sb-ziel" />
+                </svg>
+              </span>
+            </span>
+            <span className="kachel-text">
+              <strong>
+                <T>Schätzen</T>
+              </strong>
+              <small>
+                <T text="{n} Fragen · je näher, desto mehr Punkte" werte={{ n: SCHAETZFRAGEN.length }} />
+              </small>
+            </span>
+            <Chevron />
+          </Link>
+        </li>
+        {[0].map((art) => (
           <li key={art}>
             <div className="kachel kachel-bald">
               <span className="kachel-bild">

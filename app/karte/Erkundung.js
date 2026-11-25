@@ -104,8 +104,9 @@ const adresseVon = (daten) => `/karte${daten.ahnen.slice(1).map((a) => `/${a.slu
  * party (nur in einer Lobby, siehe app/party/[code]/Lobby.js):
  *   { rolle: 'host' | 'gast', ich, spieler, gastgeber, teams, regeln, senden(typ, daten), abonnieren(fn), emote(art) }
  * Der Gastgeber steuert (Gebiet, Quiz), der Gast fliegt mit; die Adresse bleibt die der Lobby.
+ * onImQuiz(bool): meldet der Lobby, ob gerade ein Quiz läuft (dann keine Spielwahl).
  */
-export default function Erkundung({ start, party = null }) {
+export default function Erkundung({ start, party = null, onImQuiz = null }) {
   const partyRef = useRef(party);
   partyRef.current = party;
   const gast = party?.rolle === 'gast';
@@ -116,6 +117,11 @@ export default function Erkundung({ start, party = null }) {
   const [gebiet, setGebiet] = useState(start);
   const [uebergang, setUebergang] = useState(null); // { von: Gebietsdaten, richtung: 'rein' | 'raus' | 'blende' }
   const [quiz, setQuiz] = useState(null); // { satz, daten, nr }
+  const imQuiz = Boolean(quiz);
+  useEffect(() => {
+    onImQuiz?.(imQuiz);
+  }, [imQuiz, onImQuiz]);
+  useEffect(() => () => onImQuiz?.(false), [onImQuiz]);
   const [laedt, setLaedt] = useState(null);
   const [hervor, setHervor] = useState(null);
   const [bestwerte, setBestwerte] = useState({});
