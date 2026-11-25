@@ -318,3 +318,131 @@ end;
 $$;
 revoke execute on function public.konto_quizze(uuid) from public, anon;
 grant execute on function public.konto_quizze(uuid) to authenticated;
+
+-- =====================================================================
+-- Freunde und Party-Einladungen (Seite /freunde, Lobby, lib/freunde.js)
+--
+-- freunde: je Freundschaft zwei Zeilen (A→B und B→A). Angelegt nur über freund_hinzufuegen –
+--   wer den Einladungslink eines anderen öffnet und annimmt, ist danach mit ihm befreundet.
+-- einladungen: „komm in meine Party“ – nur an Freunde. Der Eingeladene sieht sie sofort
+--   (Realtime) und kann beitreten. Nach drei Stunden werden sie nicht mehr angezeigt.
+-- =====================================================================
+
+create table if not exists freunde (
+  nutzer uuid not null references auth.users (id) on delete cascade,
+  freund uuid not null references auth.users (id) on delete cascade,
+  seit   timestamptz not null default now(),
+  primary key (nutzer, freund),
+  check (nutzer <> freund)
+);
+alter table freunde enable row level security;
+drop policy if exists "Eigene Freunde lesen" on freunde;
+create policy "Eigene Freunde lesen" on freunde
+  for select to authenticated using ((select auth.uid()) = nutzer);
+
+-- Name und Figur eines Kontos (für den Einladungslink und die Einladungen)
+create or replace function public.profil_oeffentlich(konto uuid)
+returns jsonb
+language sql stable
+security definer set search_path = ''
+as $$
+  select jsonb_build_object('id', p.id, 'name', p.name, 'avatar', p.avatar)
+  from public.profile p where p.id = konto;
+$$;
+revoke execute on function public.profil_oeffentlich(uuid) from public;
+grant execute on function public.profil_oeffentlich(uuid) to anon, authenticated;
+
+create or replace function public.freund_hinzufuegen(konto uuid)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Nicht angemeldet' using errcode = '42501';
+  end if;
+  if konto is null or konto = auth.uid() then
+    return;
+  end if;
+  if not exists (select 1 from auth.users u where u.id = konto) then
+    raise exception 'Unbekanntes Konto' using errcode = 'P0002';
+  end if;
+  insert into public.freunde (nutzer, freund) values (auth.uid(), konto), (konto, auth.uid())
+  on conflict do nothing;
+end;
+$$;
+revoke execute on function public.freund_hinzufuegen(uuid) from public, anon;
+grant execute on function public.freund_hinzufuegen(uuid) to authenticated;
+
+create or replace function public.freund_entfernen(konto uuid)
+returns void
+language sql
+security definer set search_path = ''
+as $$
+  delete from public.freunde
+  where (nutzer = auth.uid() and freund = konto) or (nutzer = konto and freund = auth.uid());
+$$;
+revoke execute on function public.freund_entfernen(uuid) from public, anon;
+grant execute on function public.freund_entfernen(uuid) to authenticated;
+
+create or replace function public.meine_freunde()
+returns jsonb
+language sql stable
+security definer set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', f.freund, 'name', p.name, 'avatar', p.avatar, 'seit', f.seit)
+           order by lower(coalesce(p.name, ''))), '[]'::jsonb)
+  from public.freunde f left join public.profile p on p.id = f.freund
+  where f.nutzer = auth.uid();
+$$;
+revoke execute on function public.meine_freunde() from public, anon;
+grant execute on function public.meine_freunde() to authenticated;
+
+create table if not exists einladungen (
+  id          bigint generated always as identity primary key,
+  von         uuid not null default auth.uid() references auth.users (id) on delete cascade,
+  an          uuid not null references auth.users (id) on delete cascade,
+  party       text not null check (party ~ '^[a-z0-9-]{3,60}$'),
+  gesehen     boolean not null default false,
+  erstellt_am timestamptz not null default now()
+);
+create index if not exists einladungen_an on einladungen (an, erstellt_am);
+alter table einladungen enable row level security;
+
+drop policy if exists "Freunde einladen" on einladungen;
+create policy "Freunde einladen" on einladungen
+  for insert to authenticated
+  with check (
+    von = (select auth.uid())
+    and exists (select 1 from public.freunde f where f.nutzer = (select auth.uid()) and f.freund = an)
+  );
+drop policy if exists "Eigene Einladungen lesen" on einladungen;
+create policy "Eigene Einladungen lesen" on einladungen
+  for select to authenticated using (an = (select auth.uid()) or von = (select auth.uid()));
+drop policy if exists "Einladung als gesehen markieren" on einladungen;
+create policy "Einladung als gesehen markieren" on einladungen
+  for update to authenticated using (an = (select auth.uid())) with check (an = (select auth.uid()));
+
+-- Offene Einladungen an mich (der letzten drei Stunden) mit Name und Figur des Absenders
+create or replace function public.meine_einladungen()
+returns jsonb
+language sql stable
+security definer set search_path = ''
+as $$
+  select coalesce(jsonb_agg(jsonb_build_object('id', e.id, 'von', e.von, 'party', e.party, 'erstellt_am', e.erstellt_am,
+           'name', p.name, 'avatar', p.avatar) order by e.erstellt_am desc), '[]'::jsonb)
+  from public.einladungen e left join public.profile p on p.id = e.von
+  where e.an = auth.uid() and not e.gesehen and e.erstellt_am > now() - interval '3 hours';
+$$;
+revoke execute on function public.meine_einladungen() from public, anon;
+grant execute on function public.meine_einladungen() to authenticated;
+
+-- Einladungen sofort zustellen (Supabase Realtime) – nur, wenn es die Veröffentlichung gibt
+do $$
+begin
+  if exists (select 1 from pg_publication where pubname = 'supabase_realtime')
+     and not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'einladungen') then
+    alter publication supabase_realtime add table public.einladungen;
+  end if;
+end;
+$$;

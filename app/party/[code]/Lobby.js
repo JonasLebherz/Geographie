@@ -29,6 +29,7 @@ import { useT } from '@/lib/sprache';
 import { klang } from '@/lib/ton';
 import { Kette } from '@/components/Symbole';
 import { GASTGEBER } from '../PartyStart';
+import FreundeEinladen from '@/components/FreundeEinladen';
 
 const NAME_SPEICHER = 'geo-quiz-name';
 const SPIELER_SPEICHER = 'geo-quiz-spieler';
@@ -273,6 +274,7 @@ export default function Lobby({ code }) {
           <Kette />
           {kopiert ? t('Kopiert') : t('Link kopieren')}
         </button>
+        <FreundeEinladen code={code} imSpiel={spieler.map((s) => s.name)} />
         {!regeln.teams && (
           <ul className="lobby-spieler" aria-label={t('Spieler')}>
             {spieler.map(spielerChip)}
