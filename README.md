@@ -1,6 +1,6 @@
 # Quizzle
 
-Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will: **Weltkarte** oder **Wissensquiz** (allgemeine Wissensfragen mit vier Antworten), weitere Modi sind in Arbeit. In der Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
+Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will: **Weltkarte** oder **Wissensquiz** (200 leichte Fragen mit vier Antworten in sechs Kategorien: Geografie, Sport, Wissenschaft, Geschichte, Tiere & Natur, Essen & Trinken), weitere Modi sind in Arbeit. In der Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
 
 - **Quizze:** Länder, Hauptstädte, Kontinente, größte Städte (Top 10/50/100), Bundesstaaten/Regionen, Landkreise
 - **Weitere Quizze:** Flüsse, Sehenswürdigkeiten, Autobahnen, Inseln, Flaggen, Fußballstadien, Autokennzeichen (Deutschland)
@@ -10,7 +10,7 @@ Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will:
 
 **Party:** bis zu 8 Spieler mit Lobby-Link (z. B. `/party/flinker-pinguin`), auf Wunsch in Teams – gleiche Fragen für alle, Spielregeln beim Gastgeber (Fragen, Joker, Bedenkzeit, feste Ansicht), Jubel mit der eigenen Comic-Figur.
 
-**Freunde:** Vorschau mit Freundesliste, Chat und Einladen (noch ohne Datenbank).
+**Freunde** (mit Konto): eigenen Einladungslink teilen – wer ihn öffnet, kann einen als Freund hinzufügen. Freunde direkt zur Party einladen (aus der Freundesliste oder in der Lobby mit „Freunde einladen“); die Einladung erscheint beim Freund sofort unten rechts mit „Beitreten“.
 
 **Profil:** eigene Comic-Figur (Avatar), Stil, Hell/Dunkel, Töne, Sprache. Optional ein **Konto mit E-Mail und Passwort** – dann sind Name, Figur und Bestwerte auf jedem Gerät da.
 
@@ -30,7 +30,7 @@ Die Quizze laufen auch ohne Supabase. Für Bestenliste und Party über verschied
 ### 1. Supabase
 
 1. Auf [supabase.com](https://supabase.com) ein neues Projekt anlegen, Region **Central EU (Frankfurt)**.
-2. Links **SQL Editor** → **New query** → den Inhalt von [`supabase/schema.sql`](supabase/schema.sql) einfügen → **Run**.
+2. Links **SQL Editor** → **New query** → den Inhalt von [`supabase/schema.sql`](supabase/schema.sql) einfügen → **Run**. Das Skript kann man jederzeit erneut ausführen (nach Änderungen, z. B. für Freunde und Party-Einladungen) – es legt nur an, was fehlt. Einladungen kommen über **Realtime** sofort an (das Skript trägt die Tabelle `einladungen` in die Veröffentlichung `supabase_realtime` ein); sonst schaut die Seite alle 30 Sekunden nach.
 3. **Project Settings → API** (oder oben **Connect**) öffnen und zwei Werte kopieren:
    - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
    - **anon public** bzw. **publishable** Key → `NEXT_PUBLIC_SUPABASE_ANON_KEY` (oder `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)

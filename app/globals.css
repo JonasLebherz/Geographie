@@ -2095,3 +2095,55 @@ html[data-stil="comic"] .leiste { padding-right: 8px; }  /* Abstand zwischen Kä
 .freundesliste.leer .hinweis { margin: 0; }
 .chat-leer-gross { margin: auto; display: grid; justify-items: center; gap: 12px; color: var(--text-leise); text-align: center; padding: 24px; }
 .chat-leer-gross svg { width: 44px; height: 44px; }
+
+/* Freunde mit Konto: Anfrage über Einladungslink, Liste mit Einladen, Lobby-Einladen, Einladungs-Karten */
+.anfrage { display: flex; align-items: center; gap: 14px; padding: 14px 18px; flex-wrap: wrap; }
+.anfrage div { flex: 1; min-width: 160px; display: grid; }
+.anfrage span { color: var(--text-leise); }
+.freundesliste { padding: 14px 16px; display: grid; gap: 10px; align-content: start; }
+.freundesliste-kopf { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.freundesliste-kopf h2 { margin: 0; font: 800 1rem var(--schrift-titel); }
+.freundesliste ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.freundesliste .freund { display: flex; align-items: center; gap: 12px; padding: 6px 4px; border-bottom: 1px solid var(--linie); min-height: 56px; cursor: default; }
+.freundesliste .freund:last-child { border-bottom: 0; }
+.freund-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.freund-knoepfe { display: flex; gap: 6px; flex: none; }
+.freund-weg { min-width: 44px; padding: 0 12px; font-size: 1.2rem; line-height: 1; }
+.statistik-laedt.klein { height: 120px; }
+.freunde-einladen { position: relative; }
+.freunde-einladen > .knopf { display: inline-flex; align-items: center; gap: 6px; }
+.freunde-einladen > .knopf svg { width: 18px; height: 18px; }
+.freunde-einladen-liste { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; width: min(320px, calc(100vw - 32px)); padding: 10px; }
+.freunde-einladen-liste ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 320px; overflow-y: auto; }
+.freunde-einladen-liste li { display: flex; align-items: center; gap: 10px; }
+.freunde-einladen-liste li span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.freunde-einladen-liste .hinweis { margin: 4px; }
+.einladungen { position: fixed; right: 16px; bottom: 16px; z-index: 80; display: grid; gap: 10px; width: min(380px, calc(100vw - 32px)); }
+.einladung { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 12px; align-items: center; padding: 12px 14px; animation: emote-auf .35s var(--weich) backwards; }
+.einladung-text { display: grid; }
+.einladung-text span { color: var(--text-leise); }
+.einladung-knoepfe { grid-column: 1 / -1; display: flex; gap: 8px; }
+.einladung-knoepfe .knopf { flex: 1; justify-content: center; }
+html[data-stil="comic"] .einladung { box-shadow: var(--schatten); }
+@media (prefers-reduced-motion: reduce) { .einladung { animation: none; } }
+
+/* Wissensquiz: Wahl der Kategorie */
+.wissen-kopf { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.wissen-kopf h1 { margin: 0; font-size: clamp(1.4rem, 6vw, 2.4rem); overflow-wrap: anywhere; }
+.wissen-kategorien { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 14px; }
+@media (min-width: 700px) { .wissen-kategorien { grid-template-columns: repeat(3, 1fr); } }
+.wissen-kat {
+  display: grid; gap: 6px; align-content: start; text-align: left; padding: 16px; min-height: 104px; min-width: 0;
+  font: inherit; color: var(--text); cursor: pointer; transition: transform .15s var(--weich);
+}
+.wissen-kat strong { font-size: 1.15rem; }
+.wissen-kat.alle { grid-column: 1 / -1; min-height: 0; }
+.wissen-kat:hover { transform: translateY(-2px); }
+.wissen-kat:active { transform: translateY(2px); }
+.wissen-kat-best { display: flex; align-items: center; gap: 8px; min-height: 22px; font-weight: 600; }
+.wissen-kat-best .mini-sterne { display: inline-flex; gap: 2px; }
+.wissen-kat-best .mini-sterne svg { width: 18px; height: 18px; }
+.wissen-zurueck { min-width: 44px; padding-inline: 10px; }
+html[data-stil="comic"] .wissen-kat strong { font-family: var(--schrift-titel); font-size: .8rem; line-height: 1.6; overflow-wrap: anywhere; }
+@media (prefers-reduced-motion: reduce) { .wissen-kat { transition: none; } .wissen-kat:hover, .wissen-kat:active { transform: none; } }
+@media (max-width: 440px) { html[data-stil="comic"] .wissen-kat strong { font-family: var(--schrift); font-size: 1.25rem; line-height: 1.2; } }
