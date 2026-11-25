@@ -303,6 +303,22 @@ export default function Lobby({ code }) {
         ) : (
           <span className="regeln-kurz">{regelnKurz(t, regeln)}</span>
         )}
+        {/* Jubel der anderen: kurz in der Lobby-Leiste, nicht über der Karte */}
+        <div className="emote-schicht" aria-live="polite">
+          {emotes.map((e) => {
+            const s = spieler.find((x) => x.id === e.von);
+            const em = EMOTES.find((x) => x.art === e.art) ?? EMOTES[0];
+            return (
+              <div key={e.schluessel} className="emote-blase">
+                <Avatar wert={s?.avatar ?? avatarAus(e.von)} groesse={44} pose={e.art} />
+                <span>
+                  <strong>{s?.name ?? '…'}</strong>
+                  {t.ortsname({ name: em.text, en: em.en })}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
 
       {host && zahnrad && <Spielregeln regeln={regeln} onSetzen={regelSetzen} />}
@@ -324,22 +340,6 @@ export default function Lobby({ code }) {
           ))}
         </div>
       )}
-
-      <div className="emote-schicht" aria-live="polite">
-        {emotes.map((e) => {
-          const s = spieler.find((x) => x.id === e.von);
-          const em = EMOTES.find((x) => x.art === e.art) ?? EMOTES[0];
-          return (
-            <div key={e.schluessel} className="emote-blase">
-              <Avatar wert={s?.avatar ?? avatarAus(e.von)} groesse={64} pose={e.art} />
-              <span>
-                <strong>{s?.name ?? '…'}</strong>
-                {t.ortsname({ name: em.text, en: em.en })}
-              </span>
-            </div>
-          );
-        })}
-      </div>
 
       {voll ? (
         <p className="hinweis">{t('Diese Lobby ist schon voll.')}</p>

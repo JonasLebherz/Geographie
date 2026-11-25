@@ -329,3 +329,13 @@ html[data-stil="seekarte"] .leiste::after {
   background: url("/stile/seekarte-schiff.svg") center / contain no-repeat;
   opacity: .8;
 }
+/* Schmale Handys: Kopfleiste passt in 360 px (kleinere Abstände, nur Symbol + kurzes Wort) */
+@media (max-width: 480px) {
+  html[data-stil="comic"] .hauptnav { gap: 8px; }
+  html[data-stil="comic"] .hauptnav a { padding: 6px 10px; gap: 6px; }
+  .kopf-rechts { gap: 6px; }
+  .kopf-innen { gap: 8px; }
+}
+@media (max-width: 380px) {
+  .hauptnav a svg { display: none; }
+}

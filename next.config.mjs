@@ -14,7 +14,8 @@ const nextConfig = {
       { source: '/kontinente/:kontinent', destination: '/karte/:kontinent?quiz=laender', permanent: true },
       // Das Umriss-Quiz gibt es nicht mehr
       { source: '/quiz/:pfad*', destination: '/', permanent: true },
-      { source: '/karte', destination: '/', permanent: false },
+      // Früher war die Weltkarte die Startseite: alte Links mit ?quiz=… führen in die Karte
+      { source: '/', has: [{ type: 'query', key: 'quiz' }], destination: '/karte', permanent: false },
     ];
   },
 

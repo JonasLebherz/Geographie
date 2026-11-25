@@ -1,6 +1,6 @@
 'use client';
 /**
- * components/karte/Frage.js – Inhalt der Frage-Kapsel über der Karte
+ * components/karte/Frage.js – Inhalt der Frage-Leiste über der Karte
  *
  * Meist ein Name („Bayern“, „Zugspitze“), darunter ggf. eine Zeile Fakten (Einwohner einer
  * Stadt, Höhe eines Gipfels, Beruf einer Person). Besondere Fragen:
@@ -9,6 +9,8 @@
  * Bilder (Wikimedia Commons, mit Urheber und Lizenz): bei satz.bilder === 'frage' immer
  * (Sehenswürdigkeiten, Stadien, Gipfel, Essen, Personen), sonst nur nach einem Joker.
  */
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useT } from '@/lib/sprache';
 
 /** Einwohnerzahl kurz: 1,5 Mio. bzw. 512.000 */
@@ -17,35 +19,75 @@ export function einwohner(t, ew) {
   return t('{n} Einwohner', { n: t.zahl(Math.round(ew / 1000) * 1000) });
 }
 
-/** Bild von Wikimedia Commons in passender Breite, mit Urheber und Lizenz darunter */
-export function Foto({ bild, breite = 500 }) {
+/** Adresse eines Bilds auf Wikimedia Commons in einer der festen Breiten (250, 500, 960 …) */
+const commons = (datei, breite) => `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(datei)}?width=${breite}`;
+
+/**
+ * Bild von Wikimedia Commons als kleines Vorschaubild in der Frage-Leiste (nie über der Karte),
+ * mit Urheber und Lizenz darunter. Antippen zeigt es groß, ein weiterer Klick oder Esc schließt.
+ */
+export function Foto({ bild }) {
   const t = useT();
-  const quelle = `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(bild.d)}?width=${breite}`;
+  const [gross, setGross] = useState(false);
+  useEffect(() => {
+    if (!gross) return undefined;
+    const taste = (e) => {
+      if (e.key === 'Escape') setGross(false);
+    };
+    window.addEventListener('keydown', taste);
+    return () => window.removeEventListener('keydown', taste);
+  }, [gross]);
+  const seite = `https://commons.wikimedia.org/wiki/File:${encodeURIComponent(bild.d)}`;
+  const urheber = `${t('Foto')}: ${bild.a} · ${bild.l}`;
   return (
-    <figure className="frage-foto" key={bild.d}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={quelle} alt="" loading="eager" referrerPolicy="no-referrer" />
-      <figcaption>
-        <a href={`https://commons.wikimedia.org/wiki/File:${encodeURIComponent(bild.d)}`} target="_blank" rel="noopener noreferrer">
-          {t('Foto')}: {bild.a} · {bild.l}
+    <figure className="frage-foto">
+      <button type="button" className="foto-vorschau" onClick={() => setGross(true)} aria-label={t('Bild vergrößern')}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={commons(bild.d, 500)} alt="" loading="eager" referrerPolicy="no-referrer" />
+      </button>
+      <figcaption title={urheber}>
+        <a href={seite} target="_blank" rel="noopener noreferrer">
+          {urheber}
         </a>
       </figcaption>
+      {gross &&
+        createPortal(
+          <div className="foto-gross" role="dialog" aria-modal="true" aria-label={t('Bild')} onClick={() => setGross(false)}>
+            <figure onClick={(e) => e.target.tagName !== 'A' && setGross(false)}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={commons(bild.d, 960)} alt="" referrerPolicy="no-referrer" />
+              <figcaption>
+                <a href={seite} target="_blank" rel="noopener noreferrer">
+                  {urheber}
+                </a>
+              </figcaption>
+            </figure>
+          </div>,
+          document.body,
+        )}
     </figure>
   );
 }
 
 export default function Frage({ satz, einheit, joker = false }) {
   const t = useT();
-  if (!einheit) return <p className="frage-name">{'\u00a0'}</p>;
+  if (!einheit)
+    return (
+      <div className="frage-text">
+        <p className="frage-name">{'\u00a0'}</p>
+      </div>
+    );
   const foto = einheit.bild && (satz.bilder === 'frage' || joker) ? <Foto bild={einheit.bild} /> : null;
   if (satz.frage === 'flagge') {
     return (
       <>
       {foto}
-      <p className="frage-name frage-bild" key={einheit.id}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className="frage-flagge" src={`/flaggen/${einheit.id.toLowerCase()}.svg`} alt={t('Flagge')} />
-      </p>
+      <div className="frage-text">
+        <p className="frage-name frage-bild" key={einheit.id}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="frage-flagge" src={`/flaggen/${einheit.id.toLowerCase()}.svg`} alt={t('Flagge')} />
+        </p>
+      </div>
       </>
     );
   }
@@ -53,14 +95,16 @@ export default function Frage({ satz, einheit, joker = false }) {
     return (
       <>
       {foto}
-      <p className="frage-name frage-bild" key={einheit.id}>
-        <span className="kennzeichen" aria-label={t('Kennzeichen {kz}', { kz: einheit.kz })}>
-          <span className="kz-eu" aria-hidden="true">
-            D
+      <div className="frage-text">
+        <p className="frage-name frage-bild" key={einheit.id}>
+          <span className="kennzeichen" aria-label={t('Kennzeichen {kz}', { kz: einheit.kz })}>
+            <span className="kz-eu" aria-hidden="true">
+              D
+            </span>
+            <span className="kz-text">{einheit.kz}</span>
           </span>
-          <span className="kz-text">{einheit.kz}</span>
-        </span>
-      </p>
+        </p>
+      </div>
       </>
     );
   }
@@ -68,10 +112,12 @@ export default function Frage({ satz, einheit, joker = false }) {
   return (
     <>
       {foto}
-      <p className={`frage-name${t.ortsname(einheit).length > 30 ? ' lang' : ''}`} key={einheit.id}>
-        {t.ortsname(einheit)}
-      </p>
-      {unter && <p className="frage-info">{unter}</p>}
+      <div className="frage-text">
+        <p className={`frage-name${t.ortsname(einheit).length > 30 ? ' lang' : ''}`} key={einheit.id}>
+          {t.ortsname(einheit)}
+        </p>
+        {unter && <p className="frage-info">{unter}</p>}
+      </div>
     </>
   );
 }

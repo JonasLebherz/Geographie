@@ -1,6 +1,6 @@
 # Geo-Quiz
 
-Geografie-Spiel im Browser. Die Startseite ist eine Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
+Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will (bisher: **Weltkarte**, weitere Modi sind in Arbeit). In der Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
 
 - **Quizze:** Länder, Hauptstädte, Kontinente, größte Städte (Top 10/50/100), Bundesstaaten/Regionen, Landkreise
 - **Weitere Quizze:** Flüsse, Sehenswürdigkeiten, Autobahnen, Inseln, Flaggen, Fußballstadien, Autokennzeichen (Deutschland)
@@ -10,9 +10,9 @@ Geografie-Spiel im Browser. Die Startseite ist eine Weltkarte: Gebiet anklicken 
 
 **Party:** bis zu 8 Spieler mit Lobby-Link (z. B. `/party/flinker-pinguin`), auf Wunsch in Teams – gleiche Fragen für alle, Spielregeln beim Gastgeber (Fragen, Joker, Bedenkzeit, feste Ansicht), Jubel mit der eigenen Comic-Figur.
 
-**Profil:** eigene Comic-Figur (Avatar), Stil, Hell/Dunkel, Töne, Sprache.
+**Profil:** eigene Comic-Figur (Avatar), Stil, Hell/Dunkel, Töne, Sprache. Optional ein **Konto mit E-Mail und Passwort** – dann sind Name, Figur und Bestwerte auf jedem Gerät da.
 
-**Technik:** Next.js 15 (React 19, JavaScript), Hosting auf **Vercel**, Datenbank **Supabase** (nur für die Bestenliste).
+**Technik:** Next.js 15 (React 19, JavaScript), Hosting auf **Vercel**, Datenbank **Supabase** (Bestenliste, Konten, Party).
 
 ## Starten (lokal)
 
@@ -33,6 +33,12 @@ Die Quizze laufen auch ohne Supabase. Für Bestenliste und Party über verschied
    - **Project URL** → `NEXT_PUBLIC_SUPABASE_URL`
    - **anon public** bzw. **publishable** Key → `NEXT_PUBLIC_SUPABASE_ANON_KEY` (oder `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
    Den **service_role**/**secret** Key nie verwenden.
+4. **Anmelden mit E-Mail** (Authentication):
+   - **Sign In / Providers → Email** eingeschaltet lassen („Confirm email“ an = Bestätigungs-Mail vor dem ersten Anmelden).
+   - **URL Configuration:** *Site URL* = die Adresse der Seite (z. B. `https://geo-quiz.vercel.app`), unter *Redirect URLs* `https://<deine-adresse>/**` und für lokal `http://localhost:3000/**` eintragen – dorthin führen die Links aus Bestätigungs- und Passwort-Mails.
+   - Der eingebaute Mailversand von Supabase schickt nur sehr wenige Mails pro Stunde und ist für Tests gedacht. Für echte Nutzer unter **Authentication → Emails → SMTP Settings** einen eigenen Mailserver eintragen (z. B. Resend, Brevo oder das Postfach des eigenen Anbieters).
+   - Die Texte der Mails (deutsch) unter **Authentication → Emails → Templates** anpassen.
+5. Vor dem Veröffentlichen Name, Anschrift und E-Mail in [`lib/rechtliches.js`](lib/rechtliches.js) eintragen (Impressum und Datenschutzerklärung).
 
 ### 2. Vercel
 

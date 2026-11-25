@@ -8,6 +8,7 @@
  */
 import { useEffect } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
+import Buehne from '@/components/karte/Buehne';
 import Frage, { WeissNicht } from '@/components/karte/Frage';
 import { HOECHST, useDistanzRunde } from '@/components/karte/useDistanzRunde';
 import { sterneFuer } from '@/components/karte/useQuizRunde';
@@ -40,7 +41,7 @@ export default function DistanzAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
   const loesung = (e) => t.ortsname({ name: e.loesung, en: e.loesungEn });
 
   useEffect(() => {
-    const taste = (e) => e.key === 'Escape' && !document.querySelector('.profil-menue') && onEnde();
+    const taste = (e) => e.key === 'Escape' && !document.querySelector('.profil-menue, .foto-gross') && onEnde();
     window.addEventListener('keydown', taste);
     return () => window.removeEventListener('keydown', taste);
   }, [onEnde]);
@@ -55,28 +56,30 @@ export default function DistanzAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
 
   return (
     <>
-      <div className="buehne">
+      <Buehne
+        frage={
+          !fertig && (
+            <div className={`frage-kapsel${letzte ? ` impuls-${letzte.farbe === 'rot' ? 'falsch' : 'richtig'}` : ''}`} aria-live="polite">
+              <Frage satz={satz} einheit={ziel} />
+              <div className="frage-unter">
+                {letzte ? (
+                  <span className={`rueckmeldung distanz ${letzte.farbe}`}>
+                    {km(t, letzte.km)} · {t('{n} Punkte', { n: letzte.punkte })}
+                  </span>
+                ) : (
+                  <span className="frage-hinweis">{satz.id === 'rekorde' ? t.ortsname(gebiet.knoten) : ' '}</span>
+                )}
+              </div>
+            </div>
+          )
+        }
+      >
         <div className="ebene-huelle huelle-neu">
           <div className="ebene">
             <KarteEbene daten={gebiet} quiz={daten} offen={Boolean(spiel) && !fertig} onPunkt={runde.klick} marken={marken} />
           </div>
         </div>
-
-        {!fertig && (
-          <div className={`frage-kapsel${letzte ? ` impuls-${letzte.farbe === 'rot' ? 'falsch' : 'richtig'}` : ''}`} aria-live="polite">
-            <Frage satz={satz} einheit={ziel} />
-            <div className="frage-unter">
-              {letzte ? (
-                <span className={`rueckmeldung distanz ${letzte.farbe}`}>
-                  {km(t, letzte.km)} · {t('{n} Punkte', { n: letzte.punkte })}
-                </span>
-              ) : (
-                <span className="frage-hinweis">{satz.id === 'rekorde' ? t.ortsname(gebiet.knoten) : ' '}</span>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      </Buehne>
 
       <aside className="leiste" aria-label={titel}>
         <nav className="pfad">

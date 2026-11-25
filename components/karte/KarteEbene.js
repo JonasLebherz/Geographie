@@ -20,6 +20,8 @@
  * damit im breiteren Fenster nichts hart abbricht.
  */
 import { memo, useCallback, useContext, useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { SteuerungsKontext } from './Buehne';
 import { AnsichtKontext } from '@/lib/party/ansicht';
 import { useKartenZoom } from './useKartenZoom';
 import Satellit from './Satellit';
@@ -184,6 +186,8 @@ export default function KarteEbene({
   const [ansichtGewaehlt, setAnsichtArt] = useEinstellung('ansicht');
   // Party: Der Gastgeber kann die Ansicht festlegen – dann gibt es keinen Schalter
   const ansichtFest = useContext(AnsichtKontext);
+  // Knöpfe (Ansicht, Zoom) sitzen in der Kopfleiste über der Bühne, nicht auf der Karte
+  const steuerungsZiel = useContext(SteuerungsKontext);
   const ansichtArt = ansichtFest === 'karte' || ansichtFest === 'satellit' ? ansichtFest : ansichtGewaehlt;
   const satellit = ansichtArt === 'satellit';
   const [sichtbar, setSichtbar] = useState(null); // { ansicht, s } – für die Satellitenkacheln
@@ -293,41 +297,44 @@ export default function KarteEbene({
 
       <div className="kartentipp" ref={tippRef} aria-hidden="true" />
 
-      {aktiv && (
-        <>
-          {ansichtFest === 'frei' && (
-          <div className="ansicht-schalter" role="radiogroup" aria-label={t('Ansicht')}>
-            {[
-              ['karte', t('Karte')],
-              ['satellit', t('Satellit')],
-            ].map(([wert, text]) => (
-              <button
-                key={wert}
-                type="button"
-                role="radio"
-                aria-checked={ansichtArt === wert}
-                className={ansichtArt === wert ? 'gewaehlt' : undefined}
-                onClick={() => setAnsichtArt(wert)}
-              >
-                {text}
+      {aktiv && steuerungsZiel &&
+        createPortal(
+          <>
+            {ansichtFest === 'frei' && (
+              <div className="ansicht-schalter" role="radiogroup" aria-label={t('Ansicht')}>
+                {[
+                  ['karte', t('Karte')],
+                  ['satellit', t('Satellit')],
+                ].map(([wert, text]) => (
+                  <button
+                    key={wert}
+                    type="button"
+                    role="radio"
+                    aria-checked={ansichtArt === wert}
+                    className={ansichtArt === wert ? 'gewaehlt' : undefined}
+                    onClick={() => setAnsichtArt(wert)}
+                  >
+                    {text}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="zoom">
+              <button type="button" onClick={zoom.zoomRein} disabled={zoom.maximal} aria-label={t('Hineinzoomen')} title={t('Hineinzoomen')}>
+                <Plus />
               </button>
-            ))}
-          </div>
-          )}
-          <div className="zoom">
-            <button type="button" onClick={zoom.zoomRein} disabled={zoom.maximal} aria-label={t('Hineinzoomen')} title={t('Hineinzoomen')}>
-              <Plus />
-            </button>
-            <button type="button" onClick={zoom.zoomRaus} disabled={!zoom.gezoomt} aria-label={t('Herauszoomen')} title={t('Herauszoomen')}>
-              <Minus />
-            </button>
-            <button type="button" onClick={zoom.ganzeKarte} disabled={!zoom.gezoomt} aria-label={t('Ganze Karte')} title={t('Ganze Karte')}>
-              <Einpassen />
-            </button>
-          </div>
-          {satellit && <p className="quelle-satellit">Sentinel-2 cloudless 2016 · s2maps.eu by EOX (CC BY 4.0)</p>}
-        </>
-      )}
+              <button type="button" onClick={zoom.zoomRaus} disabled={!zoom.gezoomt} aria-label={t('Herauszoomen')} title={t('Herauszoomen')}>
+                <Minus />
+              </button>
+              <button type="button" onClick={zoom.ganzeKarte} disabled={!zoom.gezoomt} aria-label={t('Ganze Karte')} title={t('Ganze Karte')}>
+                <Einpassen />
+              </button>
+            </div>
+          </>,
+          steuerungsZiel,
+        )}
+      {/* Quellenangabe des Satellitenbilds: winzig in der Ecke, Klicks gehen hindurch */}
+      {aktiv && satellit && <p className="quelle-satellit">Sentinel-2 cloudless 2016 · s2maps.eu by EOX (CC BY 4.0)</p>}
     </div>
   );
 }

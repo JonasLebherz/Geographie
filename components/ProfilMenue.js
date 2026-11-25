@@ -2,8 +2,9 @@
 /**
  * components/ProfilMenue.js – Profil-Knopf oben rechts mit Einstellungen
  *
- * Oben das Profil mit der eigenen Comic-Figur (Avatar, components/AvatarEditor.js). Anmelden gibt
- * es noch nicht (Knopf gesperrt, kurzer Vermerk).
+ * Oben das Profil mit der eigenen Comic-Figur (Avatar, components/AvatarEditor.js) und dem Konto:
+ * Anmelden mit E-Mail und Passwort (components/Anmeldung.js, lib/konto.js), angemeldet Name,
+ * E-Mail, „Konto“ (Seite /konto) und „Abmelden“. Ohne eingerichtetes Supabase bleibt der Knopf gesperrt.
  * Darunter die Einstellungen – sie gelten sofort und bleiben in diesem Browser gespeichert
  * (lib/einstellungen.js):
  *   Stil (Comic, Atlas, Seekarte), Darstellung (Hell, Dunkel, Automatisch – die Seekarte gibt es
@@ -13,12 +14,15 @@
  * Beim Loslassen des Lautstärke-Reglers erklingt ein Probeton.
  */
 import { useEffect, useId, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useEinstellung } from '@/lib/einstellungen';
+import { abmelden, useKonto } from '@/lib/konto';
 import { useT } from '@/lib/sprache';
 import { klang } from '@/lib/ton';
 import { Person } from './Symbole';
 import Avatar from './Avatar';
 import AvatarEditor from './AvatarEditor';
+import Anmeldung from './Anmeldung';
 
 /** Segment-Schalter (wie bei Apple): eine Auswahl aus wenigen Möglichkeiten */
 function Segmente({ titel, wert, optionen, onWahl }) {
@@ -50,6 +54,8 @@ export default function ProfilMenue() {
   const [stil, setStil] = useEinstellung('stil');
   const [avatar] = useEinstellung('avatar');
   const [editor, setEditor] = useState(false);
+  const [anmeldung, setAnmeldung] = useState(false);
+  const konto = useKonto();
   const huelle = useRef(null);
   const knopf = useRef(null);
   const menueId = useId();
@@ -92,6 +98,7 @@ export default function ProfilMenue() {
         {avatar ? <Avatar wert={avatar} groesse={34} /> : <Person />}
       </button>
       {editor && <AvatarEditor onSchliessen={() => setEditor(false)} />}
+      {anmeldung && <Anmeldung onSchliessen={() => setAnmeldung(false)} />}
 
       {offen && (
         <div className="profil-menue" id={menueId} role="dialog" aria-label={t('Profil und Einstellungen')}>
@@ -109,8 +116,8 @@ export default function ProfilMenue() {
               {avatar ? <Avatar wert={avatar} groesse={44} /> : <Person />}
             </button>
             <div>
-              <strong>{t('Gast')}</strong>
-              <small>{t('Nicht angemeldet')}</small>
+              <strong>{konto.nutzer ? konto.profil?.name || t('Angemeldet') : t('Gast')}</strong>
+              <small>{konto.nutzer ? konto.nutzer.email : t('Nicht angemeldet')}</small>
               <button
                 type="button"
                 className="profil-link"
@@ -123,10 +130,33 @@ export default function ProfilMenue() {
               </button>
             </div>
           </div>
-          <button type="button" className="knopf knopf-zweit knopf-breit" disabled>
-            {t('Anmelden')}
-          </button>
-          <p className="profil-vermerk">{t('Anmelden ist noch nicht verfügbar.')}</p>
+          {konto.nutzer ? (
+            <div className="konto-knoepfe">
+              <Link href="/konto" className="knopf knopf-zweit" onClick={() => setOffen(false)}>
+                {t('Konto')}
+              </Link>
+              <button type="button" className="knopf knopf-zweit" onClick={() => abmelden()}>
+                {t('Abmelden')}
+              </button>
+            </div>
+          ) : (
+            <>
+              <button
+                type="button"
+                className="knopf knopf-zweit knopf-breit"
+                disabled={!konto.verfuegbar}
+                onClick={() => {
+                  setAnmeldung(true);
+                  setOffen(false);
+                }}
+              >
+                {t('Anmelden')}
+              </button>
+              <p className="profil-vermerk">
+                {konto.verfuegbar ? t('Mit Konto sind Figur und Bestwerte auf jedem Gerät da.') : t('Anmelden ist noch nicht eingerichtet.')}
+              </p>
+            </>
+          )}
 
           <div className="einstellungen">
             <div className="einstellung">

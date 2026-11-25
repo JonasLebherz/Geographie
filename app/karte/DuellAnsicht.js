@@ -17,6 +17,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
+import Buehne from '@/components/karte/Buehne';
 import Frage, { JokerKnopf, WeissNicht } from '@/components/karte/Frage';
 import { useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
 import Avatar from '@/components/Avatar';
@@ -165,7 +166,46 @@ export default function DuellAnsicht({ gebiet, quiz, party, onLobby, onRevanche 
 
   return (
     <>
-      <div className="buehne">
+      <Buehne
+        frage={
+          !fertig && (
+            <div className={`frage-kapsel${runde.impuls ? ` impuls-${runde.impuls.art}` : ''}`} key={runde.impuls?.n ?? 0} aria-live="polite">
+              {runde.serie >= 2 && (
+                <span className="serie">
+                  <Flamme />
+                  {runde.serie}
+                </span>
+              )}
+              <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} joker={runde.jokerAktiv} />
+              <div className="frage-unter">
+                <span className="versuche">
+                  {Array.from({ length: VERSUCHE }, (_, i) => (
+                    <i key={i} className={i < (spiel?.fehl ?? 0) ? 'verbraucht' : undefined} />
+                  ))}
+                </span>
+                {rest !== null && <span className="rueckmeldung frist">{t('noch {s} s', { s: rest })}</span>}
+                {ichFertig && !alleFertig ? (
+                  <span className="rueckmeldung info">{t('Warte auf die anderen …')}</span>
+                ) : runde.rueckmeldung ? (
+                  <span key={runde.rueckmeldung.schluessel} className={`rueckmeldung ${runde.rueckmeldung.art}`}>
+                    {runde.rueckmeldung.text}
+                  </span>
+                ) : (
+                  !ichFertig && (
+                    <>
+                      {zielHatBild && !runde.jokerAktiv && satz.bilder !== 'frage' && runde.jokerRest > 0 && (
+                        <JokerKnopf rest={runde.jokerRest} onKlick={runde.jokerZiehen} gesperrt={Boolean(spiel?.sperre)} />
+                      )}
+                      <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
+                    </>
+                  )
+                )}
+              </div>
+              {rest !== null && <span className="frist-balken" style={{ '--dauer': `${bedenkzeit}ms` }} key={`frist-${nummer}`} />}
+            </div>
+          )
+        }
+      >
         <div className="ebene-huelle huelle-neu">
           <div className="ebene">
             <KarteEbene
@@ -179,44 +219,7 @@ export default function DuellAnsicht({ gebiet, quiz, party, onLobby, onRevanche 
             />
           </div>
         </div>
-
-        {!fertig && (
-          <div className={`frage-kapsel${runde.impuls ? ` impuls-${runde.impuls.art}` : ''}`} key={runde.impuls?.n ?? 0} aria-live="polite">
-            {runde.serie >= 2 && (
-              <span className="serie">
-                <Flamme />
-                {runde.serie}
-              </span>
-            )}
-            <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} joker={runde.jokerAktiv} />
-            <div className="frage-unter">
-              <span className="versuche">
-                {Array.from({ length: VERSUCHE }, (_, i) => (
-                  <i key={i} className={i < (spiel?.fehl ?? 0) ? 'verbraucht' : undefined} />
-                ))}
-              </span>
-              {rest !== null && <span className="rueckmeldung frist">{t('noch {s} s', { s: rest })}</span>}
-              {ichFertig && !alleFertig ? (
-                <span className="rueckmeldung info">{t('Warte auf die anderen …')}</span>
-              ) : runde.rueckmeldung ? (
-                <span key={runde.rueckmeldung.schluessel} className={`rueckmeldung ${runde.rueckmeldung.art}`}>
-                  {runde.rueckmeldung.text}
-                </span>
-              ) : (
-                !ichFertig && (
-                  <>
-                    {zielHatBild && !runde.jokerAktiv && satz.bilder !== 'frage' && runde.jokerRest > 0 && (
-                      <JokerKnopf rest={runde.jokerRest} onKlick={runde.jokerZiehen} gesperrt={Boolean(spiel?.sperre)} />
-                    )}
-                    <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
-                  </>
-                )
-              )}
-            </div>
-            {rest !== null && <span className="frist-balken" style={{ '--dauer': `${bedenkzeit}ms` }} key={`frist-${nummer}`} />}
-          </div>
-        )}
-      </div>
+      </Buehne>
 
       <aside className="leiste" aria-label={titel}>
         <nav className="pfad">

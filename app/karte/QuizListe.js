@@ -3,10 +3,12 @@
  * app/karte/QuizListe.js – alle Quizze aller Gebiete, links neben der Karte
  *
  * Eingeklappt ein schmaler Streifen mit Symbol; aufgeklappt (wie die Seitenleiste auf dem iPad)
- * eine Liste in Kartenreihenfolge (Welt, Kontinent, seine Länder …). Jedes Gebiet ist eine kurze
- * Zeile mit Zeichen (Globus, Umriss des Kontinents bzw. Bundeslands, Flagge des Landes); ein Klick
- * klappt seine Quizze als kompakte Knöpfe auf. Offen ist anfangs nur das aktuelle Gebiet, bei
- * einer Suche jedes Gebiet mit Treffern.
+ * ein Baum: Welt, dann alle Kontinente, dann die Länder (nach Kontinent); Länder mit eigenen
+ * Gebieten (Deutschland) klappen ihre Bundesländer mit auf, die wiederum einzeln aufklappen.
+ * Jedes Gebiet ist eine kurze Zeile mit Zeichen (Globus, EU-Flagge für Europa, Umriss des
+ * Kontinents bzw. Bundeslands, Flagge des Landes); ein Klick klappt seine Quizze als kompakte
+ * Knöpfe auf. Anfangs ist alles zu (nur der Weg zum aktuellen Gebiet ist offen), bei einer Suche
+ * zeigt die Liste flach jedes Gebiet mit Treffern.
  * Filter: Art (Quizze, Weitere, Am nächsten dran) und Land (ein Land mit seinen Bundesländern).
  * Suche: Gebiet und Quiz, beide Sprachen, ohne Akzente.
  * Ein Klick auf ein Quiz fliegt ins Gebiet und startet es (onWahl in Erkundung.js).
@@ -31,6 +33,10 @@ let speicher = null; // einmal geladen, für alle Ansichten
 
 /** Zeichen eines Gebiets: Globus (Welt), Flagge (Land), Umriss (Kontinent, Bundesland) */
 function Zeichen({ gebiet }) {
+  if (gebiet.id === 'europa') {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img className="ql-zeichen flagge" src="/flaggen/eu.svg" alt="" loading="lazy" />;
+  }
   if (gebiet.ebene === 'land') {
     // eslint-disable-next-line @next/next/no-img-element
     return <img className="ql-zeichen flagge" src={`/flaggen/${gebiet.id.toLowerCase()}.svg`} alt="" loading="lazy" />;
@@ -56,7 +62,7 @@ export default function QuizListe({ offen, onOffen, aktuell, bestwerte, mitDista
   const [suche, setSuche] = useState('');
   const [filter, setFilter] = useState('alle');
   const [land, setLand] = useState('');
-  const [auf, setAuf] = useState(() => new Set([aktuell]));
+  const [auf, setAuf] = useState(() => new Set());
   const verzoegert = useDeferredValue(suche);
   const listeRef = useRef(null);
   const sucheRef = useRef(null);
@@ -76,24 +82,36 @@ export default function QuizListe({ offen, onOffen, aktuell, bestwerte, mitDista
     };
   }, [offen, daten]);
 
-  // Beim Aufklappen: aktuelles Gebiet offen und im Blick, Suchfeld bereit
-  useEffect(() => {
-    if (!offen) return;
-    setAuf((alt) => new Set([...alt, aktuell]));
-  }, [offen, aktuell]);
+  // Beim Aufklappen: der Weg zum aktuellen Gebiet ist offen (etwa Deutschland für ein Bundesland),
+  // das Gebiet selbst bleibt zu und ist im Blick; Suchfeld bereit
   useEffect(() => {
     if (!offen || !daten) return;
-    const abschnitt = listeRef.current?.querySelector(`[data-gebiet="${aktuell}"]`);
-    if (abschnitt && !suche) listeRef.current.scrollTop = abschnitt.offsetTop - 8;
+    const nachId = new Map(daten.map((g) => [g.id, g]));
+    const weg = [];
+    for (let g = nachId.get(nachId.get(aktuell)?.eltern); g && g.ebene !== 'welt' && g.ebene !== 'kontinent'; g = nachId.get(g.eltern)) weg.push(g.id);
+    if (weg.length) setAuf((alt) => new Set([...alt, ...weg]));
+  }, [offen, aktuell, daten]);
+  const gescrollt = useRef(false);
+  useEffect(() => {
+    if (!offen) {
+      gescrollt.current = false;
+      return;
+    }
+    if (!daten || gescrollt.current) return;
+    const liste = listeRef.current;
+    const abschnitt = liste?.querySelector(`[data-gebiet="${aktuell}"]`);
+    if (!abschnitt) return; // erst, wenn der Weg dorthin aufgeklappt ist
+    gescrollt.current = true;
+    if (!suche) liste.scrollTop = abschnitt.getBoundingClientRect().top - liste.getBoundingClientRect().top - 56;
     sucheRef.current?.focus({ preventScroll: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [offen, daten]);
+  }, [offen, daten, auf]);
 
   // Esc klappt die Liste zu
   useEffect(() => {
     if (!offen) return undefined;
     const taste = (e) => {
-      if (e.key === 'Escape' && !document.querySelector('.profil-menue')) {
+      if (e.key === 'Escape' && !document.querySelector('.profil-menue, .foto-gross')) {
         e.stopImmediatePropagation();
         onOffen(false);
       }
@@ -133,6 +151,83 @@ export default function QuizListe({ offen, onOffen, aktuell, bestwerte, mitDista
       else neu.add(id);
       return neu;
     });
+
+  // Baum ohne Suche: Welt, Kontinente, Länder je Kontinent, Bundesländer unter ihrem Land.
+  // Ein Land bleibt drin, wenn es selbst oder eines seiner Gebiete zum Filter passt.
+  const baumDaten = useMemo(() => {
+    if (!daten) return null;
+    const passend = new Map(gruppen.map((g) => [g.id, g]));
+    const unter = (id) => daten.filter((g) => g.eltern === id && g.ebene === 'region').map((g) => passend.get(g.id)).filter(Boolean);
+    const knotenVon = (g) => {
+      const kinder = unter(g.id);
+      const eigen = passend.get(g.id);
+      if (!eigen && !kinder.length) return null;
+      return { ...(eigen ?? { ...g, saetze: [] }), kinder };
+    };
+    const kontinente = daten.filter((g) => g.ebene === 'kontinent');
+    return {
+      welt: daten.filter((g) => g.ebene === 'welt').map(knotenVon).filter(Boolean),
+      kontinente: kontinente.map(knotenVon).filter(Boolean),
+      laender: kontinente
+        .map((k) => ({
+          kontinent: k,
+          laender: daten
+            .filter((g) => g.ebene === 'land' && g.eltern === k.id)
+            .map(knotenVon)
+            .filter(Boolean)
+            .sort((a, b) => t.ortsname(a).localeCompare(t.ortsname(b), t.sprache)),
+        }))
+        .filter((x) => x.laender.length),
+    };
+  }, [daten, gruppen, t]);
+
+  /** Eine Zeile mit ihren Quizzen und (bei Ländern mit eigenen Gebieten) den Untergebieten */
+  const zeile = (g, flach = false) => {
+    const istAuf = suchtGerade || auf.has(g.id);
+    const kinder = flach ? [] : (g.kinder ?? []);
+    return (
+      <section key={g.id} data-gebiet={g.id} className={`ql-gebiet ebene-${g.ebene}${g.id === aktuell ? ' aktuell' : ''}${istAuf ? ' auf' : ''}${flach ? ' flach' : ''}`}>
+        <button type="button" className="ql-gebiet-kopf" aria-expanded={istAuf} onClick={() => umschalten(g.id)}>
+          <Zeichen gebiet={g} />
+          <span className="ql-name">
+            {t.ortsname(g)}
+            {flach && g.ober && <small>{t.ortsname(g.ober)}</small>}
+            {kinder.length > 0 && <small>{t('{n} Bundesländer', { n: kinder.length })}</small>}
+          </span>
+          <span className="ql-zahl">{g.saetze.length || ''}</span>
+          <Chevron />
+        </button>
+        {istAuf && g.saetze.length > 0 && (
+          <div className="ql-quizze">
+            {g.saetze.map((s) =>
+              s.stufen ? (
+                <span key={s.id} className="ql-quiz stufig" role="group" aria-label={t.ortsname({ name: s.titel, en: s.titelEn })}>
+                  <span className="ql-quiz-titel">{t.ortsname({ name: s.titel, en: s.titelEn })}</span>
+                  {s.stufen.map((n) => (
+                    <button key={n} type="button" onClick={() => onWahl(g.id, s, n)} aria-label={t('Die {n} größten Städte', { n })}>
+                      {n}
+                    </button>
+                  ))}
+                </span>
+              ) : (
+                <button
+                  key={s.id}
+                  type="button"
+                  className={`ql-quiz gruppe-${s.gruppe}`}
+                  onClick={() => onWahl(g.id, s)}
+                  title={bestwerte[s.bestenliste] ? t('Bestwert {q} %', { q: bestwerte[s.bestenliste].quote }) : undefined}
+                >
+                  {t.ortsname({ name: s.titel, en: s.titelEn })}
+                  {bestwerte[s.bestenliste] && <i className="ql-bestwert" aria-hidden="true" />}
+                </button>
+              ),
+            )}
+          </div>
+        )}
+        {istAuf && kinder.length > 0 && <div className="ql-unter">{kinder.map((k) => zeile(k))}</div>}
+      </section>
+    );
+  };
 
   if (!offen) {
     return (
@@ -180,49 +275,22 @@ export default function QuizListe({ offen, onOffen, aktuell, bestwerte, mitDista
       <div className="ql-liste" ref={listeRef}>
         {!daten && <div className="ql-laedt" aria-hidden="true" />}
         {daten && !gruppen.length && <p className="ql-leer">{t('Nichts gefunden')}</p>}
-        {gruppen.map((g) => {
-          const istAuf = suchtGerade || auf.has(g.id);
-          return (
-            <section key={g.id} data-gebiet={g.id} className={`ql-gebiet ebene-${g.ebene}${g.id === aktuell ? ' aktuell' : ''}${istAuf ? ' auf' : ''}`}>
-              <button type="button" className="ql-gebiet-kopf" aria-expanded={istAuf} onClick={() => umschalten(g.id)}>
-                <Zeichen gebiet={g} />
-                <span className="ql-name">
-                  {t.ortsname(g)}
-                  {g.ober && <small>{t.ortsname(g.ober)}</small>}
-                </span>
-                <span className="ql-zahl">{g.saetze.length}</span>
-                <Chevron />
-              </button>
-              {istAuf && (
-                <div className="ql-quizze">
-                  {g.saetze.map((s) =>
-                    s.stufen ? (
-                      <span key={s.id} className="ql-quiz stufig" role="group" aria-label={t.ortsname({ name: s.titel, en: s.titelEn })}>
-                        <span className="ql-quiz-titel">{t.ortsname({ name: s.titel, en: s.titelEn })}</span>
-                        {s.stufen.map((n) => (
-                          <button key={n} type="button" onClick={() => onWahl(g.id, s, n)} aria-label={t('Die {n} größten Städte', { n })}>
-                            {n}
-                          </button>
-                        ))}
-                      </span>
-                    ) : (
-                      <button
-                        key={s.id}
-                        type="button"
-                        className={`ql-quiz gruppe-${s.gruppe}`}
-                        onClick={() => onWahl(g.id, s)}
-                        title={bestwerte[s.bestenliste] ? t('Bestwert {q} %', { q: bestwerte[s.bestenliste].quote }) : undefined}
-                      >
-                        {t.ortsname({ name: s.titel, en: s.titelEn })}
-                        {bestwerte[s.bestenliste] && <i className="ql-bestwert" aria-hidden="true" />}
-                      </button>
-                    ),
-                  )}
-                </div>
-              )}
-            </section>
-          );
-        })}
+        {suchtGerade
+          ? gruppen.map((g) => zeile(g, true))
+          : baumDaten && (
+              <>
+                {baumDaten.welt.map((g) => zeile(g))}
+                {baumDaten.kontinente.length > 0 && <h3 className="ql-abschnitt">{t('Kontinente')}</h3>}
+                {baumDaten.kontinente.map((g) => zeile(g))}
+                {baumDaten.laender.length > 0 && <h3 className="ql-abschnitt">{t('Länder')}</h3>}
+                {baumDaten.laender.map(({ kontinent, laender: liste }) => (
+                  <div key={kontinent.id} className="ql-kontinent-gruppe">
+                    <h4 className="ql-unterabschnitt">{t.ortsname(kontinent)}</h4>
+                    {liste.map((g) => zeile(g))}
+                  </div>
+                ))}
+              </>
+            )}
       </div>
     </aside>
   );
