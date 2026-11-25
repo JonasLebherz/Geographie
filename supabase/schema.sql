@@ -193,6 +193,8 @@ begin
     raise exception 'Kein Zugriff' using errcode = '42501';
   end if;
 
+  -- Als Zuweisung geschrieben (nicht „with … select … into“): das lehnte der SQL-Editor von Supabase ab
+  ergebnis := (
   with e as (
     select * from public.ereignisse where erstellt_am >= vorher
   ), jetzt as (
@@ -263,7 +265,8 @@ begin
     'seiten', (select coalesce(jsonb_agg(jsonb_build_object('name', pfad, 'anzahl', anzahl) order by anzahl desc), '[]'::jsonb) from (
         select pfad, count(*) as anzahl from jetzt where art in ('besuch', 'seite') and pfad is not null
         group by pfad order by 2 desc limit 15) x)
-  ) into ergebnis;
+  )
+  );
   return ergebnis;
 end;
 $$;
