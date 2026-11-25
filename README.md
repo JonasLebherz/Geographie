@@ -8,7 +8,9 @@ Geografie-Spiel im Browser. Die Startseite ist eine Weltkarte: Gebiet anklicken 
 - **Bilder** von Wikimedia Commons in der Frage (Sehenswürdigkeiten, Stadien, Gipfel, Essen, Personen) und als **Joker** in den anderen Quizzen
 - **Alle Quizze** als aufklappbare Liste links (Suche, Filter); ein Klick fliegt hin und startet.
 
-**Party:** 1 gegen 1 mit Lobby-Link (z. B. `/party/flinker-pinguin`) – gleiche Fragen, wer zuerst fertig ist, lässt dem anderen noch 10 Sekunden.
+**Party:** bis zu 8 Spieler mit Lobby-Link (z. B. `/party/flinker-pinguin`), auf Wunsch in Teams – gleiche Fragen für alle, Spielregeln beim Gastgeber (Fragen, Joker, Bedenkzeit, feste Ansicht), Jubel mit der eigenen Comic-Figur.
+
+**Profil:** eigene Comic-Figur (Avatar), Stil, Hell/Dunkel, Töne, Sprache.
 
 **Technik:** Next.js 15 (React 19, JavaScript), Hosting auf **Vercel**, Datenbank **Supabase** (nur für die Bestenliste).
 

@@ -39,8 +39,8 @@ export default function PartyStart() {
     <div className="party-start">
       <header className="seitenkopf erscheinen">
         <p className="eyebrow">{t('Party')}</p>
-        <h1>{t('1 gegen 1')}</h1>
-        <p className="fakten">{t('Gleiche Fragen, gleiche Karte – wer findet es zuerst?')}</p>
+        <h1>{t('Bis zu 8 Spieler')}</h1>
+        <p className="fakten">{t('Gleiche Fragen, gleiche Karte – allein oder in Teams.')}</p>
       </header>
 
       <div className="party-wahl">

@@ -1,27 +1,37 @@
 'use client';
 /**
- * app/party/[code]/Lobby.js – eine Party-Lobby (1 gegen 1)
+ * app/party/[code]/Lobby.js – eine Party-Lobby für bis zu 8 Spieler
  *
- * Oben die Lobby-Leiste: Code, Link kopieren, wer da ist. Darunter dieselbe Karte wie beim
- * Solo-Spiel (Erkundung) – im Party-Modus:
- *  - Gastgeber (wer die Lobby erstellt hat) fliegt durch die Karte und wählt das Quiz.
- *    Der Gast fliegt automatisch mit.
- *  - Startet der Gastgeber ein Quiz, bekommen beide dieselben Fragen in derselben Reihenfolge.
- *    Wer eine Frage erledigt hat, wartet; der andere hat dann noch 10 Sekunden (DuellAnsicht).
+ * Oben die Lobby-Leiste: Code, Link kopieren, Spieler mit ihrer Comic-Figur und – beim
+ * Gastgeber – das Zahnrad mit den Spielregeln. Mit Teams erscheinen Team-Felder; der Gastgeber
+ * schiebt Spieler per Ziehen (oder Antippen, dann Feld antippen) von einem Team ins andere.
+ * Darunter dieselbe Karte wie beim Solo-Spiel (Erkundung) im Party-Modus:
+ *  - Der Gastgeber (wer die Lobby erstellt hat) fliegt durch die Karte und wählt das Quiz,
+ *    alle anderen fliegen mit.
+ *  - Startet er ein Quiz, bekommen alle dieselben Fragen in derselben Reihenfolge
+ *    (Partie in app/karte/DuellAnsicht.js).
+ * Spielregeln (Gastgeber): Teams aus/2/3/4, Fragen je Runde, Joker je Spieler, feste Ansicht
+ * (Karte oder Satellit), Bedenkzeit für die anderen, sobald einer geantwortet hat.
+ * Jubel: Emotes (Jubel, Daumen hoch, Oh nein) sehen alle als Sprechblase mit der Figur.
  *
- * Verbindung: lib/party/kanal.js (Supabase Realtime, lokal BroadcastChannel). Gespeichert
- * wird nichts – schließen beide den Tab, ist die Lobby weg.
+ * Verbindung: lib/party/kanal.js (Supabase Realtime, lokal BroadcastChannel). Gespeichert wird
+ * nichts – schließen alle den Tab, ist die Lobby weg. Nachrichten des Gastgebers:
+ * `einstellungen` (Regeln + Teams), dazu wie bisher `gebiet`, `start`, `lobby`, `bonus`.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Erkundung from '@/app/karte/Erkundung';
+import Avatar, { avatarAus } from '@/components/Avatar';
 import { kanalOeffnen } from '@/lib/party/kanal';
+import { AnsichtKontext } from '@/lib/party/ansicht';
+import { EMOTES, MAX_SPIELER, STANDARD_REGELN, TEAMS } from '@/lib/party/regeln';
+import { useEinstellung } from '@/lib/einstellungen';
 import { useT } from '@/lib/sprache';
+import { klang } from '@/lib/ton';
 import { Kette } from '@/components/Symbole';
 import { GASTGEBER } from '../PartyStart';
 
 const NAME_SPEICHER = 'geo-quiz-name';
 const SPIELER_SPEICHER = 'geo-quiz-spieler';
-
 function spielerId() {
   try {
     let id = sessionStorage.getItem(SPIELER_SPEICHER);
@@ -35,13 +45,32 @@ function spielerId() {
   }
 }
 
+/** Spieler ohne Team ins kleinste Team, Abwesende entfernen */
+function teamsVerteilen(zuordnung, spieler, anzahl) {
+  if (!anzahl) return {};
+  const neu = {};
+  for (const s of spieler) if (zuordnung[s.id] !== undefined && zuordnung[s.id] < anzahl) neu[s.id] = zuordnung[s.id];
+  for (const s of spieler) {
+    if (neu[s.id] !== undefined) continue;
+    const groesse = Array.from({ length: anzahl }, (_, i) => Object.values(neu).filter((t) => t === i).length);
+    neu[s.id] = groesse.indexOf(Math.min(...groesse));
+  }
+  return neu;
+}
+
 export default function Lobby({ code }) {
   const t = useT();
-  const [ich, setIch] = useState(null); // { id, name, host }
+  const [avatarEigen] = useEinstellung('avatar');
+  const [ich, setIch] = useState(null); // { id, name, host, avatar }
   const [nameEingabe, setNameEingabe] = useState('');
   const [anwesend, setAnwesend] = useState([]);
   const [welt, setWelt] = useState(null);
   const [kopiert, setKopiert] = useState(false);
+  const [regeln, setRegeln] = useState(STANDARD_REGELN);
+  const [zuordnung, setZuordnung] = useState({}); // Spieler → Team
+  const [zahnrad, setZahnrad] = useState(false);
+  const [gewaehlt, setGewaehlt] = useState(null); // Antippen statt Ziehen
+  const [emotes, setEmotes] = useState([]); // [{ schluessel, von, art }]
   const kanal = useRef(null);
   const abonnenten = useRef(new Set());
 
@@ -55,30 +84,54 @@ export default function Lobby({ code }) {
     } catch {
       /* privat */
     }
+    const id = spielerId();
     setNameEingabe(name);
-    setIch({ id: spielerId(), name, host });
+    setIch({ id, name, host, avatar: '' });
   }, [code]);
+
+  // Eigene Figur (oder eine aus der Kennung gewürfelte)
+  const meineFigur = avatarEigen || (ich ? avatarAus(ich.id) : '');
+  useEffect(() => {
+    if (!ich || ich.avatar === meineFigur) return;
+    setIch((alt) => ({ ...alt, avatar: meineFigur }));
+    kanal.current?.aktualisieren({ avatar: meineFigur });
+  }, [meineFigur, ich]);
 
   // Weltkarte für die Erkundung laden
   useEffect(() => {
     fetch('/karte-daten/welt/gebiet.json').then((a) => a.json()).then(setWelt).catch(() => {});
   }, []);
 
+  const emoteZeigen = useCallback((von, art) => {
+    const schluessel = `${von}-${Date.now()}`;
+    setEmotes((alt) => [...alt.slice(-4), { schluessel, von, art }]);
+    setTimeout(() => setEmotes((alt) => alt.filter((e) => e.schluessel !== schluessel)), 2800);
+  }, []);
+
   // Verbindung, sobald ein Name da ist
-  const bereit = Boolean(ich?.name);
+  const bereit = Boolean(ich?.name && ich?.avatar);
   useEffect(() => {
     if (!bereit) return undefined;
     const k = kanalOeffnen(code, {
       ich,
       onAnwesend: setAnwesend,
-      onNachricht: (nachricht) => abonnenten.current.forEach((fn) => fn(nachricht)),
+      onNachricht: (nachricht) => {
+        if (nachricht.typ === 'einstellungen') {
+          setRegeln({ ...STANDARD_REGELN, ...nachricht.regeln });
+          setZuordnung(nachricht.teams ?? {});
+        } else if (nachricht.typ === 'emote') {
+          emoteZeigen(nachricht.von, nachricht.art);
+          klang('richtig');
+        }
+        abonnenten.current.forEach((fn) => fn(nachricht));
+      },
     });
     kanal.current = k;
     return () => {
       k.schliessen();
       kanal.current = null;
     };
-    // Bewusst nur beim Betreten (Namenswechsel geht über aktualisieren)
+    // Bewusst nur beim Betreten (Namens- und Figurwechsel gehen über aktualisieren)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bereit, code]);
 
@@ -105,23 +158,72 @@ export default function Lobby({ code }) {
     }
   }
 
-  // Gegner: der erste andere Anwesende; Gastgeber ist, wer die Lobby erstellt hat
-  const gegner = useMemo(() => anwesend.find((a) => a.id !== ich?.id) ?? null, [anwesend, ich]);
-  const voll = anwesend.filter((a) => a.id !== ich?.id).length > 1 && !ich?.host;
+  // Spieler: Gastgeber zuerst, dann nach Ankunft; höchstens MAX_SPIELER dürfen mitspielen
+  const alle = useMemo(
+    () => [...anwesend].sort((a, b) => Number(b.host) - Number(a.host) || (a.seit ?? 0) - (b.seit ?? 0) || a.id.localeCompare(b.id)),
+    [anwesend],
+  );
+  const spieler = useMemo(() => {
+    const liste = alle.slice(0, MAX_SPIELER);
+    if (ich && !liste.some((s) => s.id === ich.id) && alle.length < MAX_SPIELER) liste.push(ich);
+    return liste.map((s) => ({ ...s, avatar: s.avatar || avatarAus(s.id) }));
+  }, [alle, ich]);
+  const voll = Boolean(ich) && alle.length > MAX_SPIELER && !spieler.some((s) => s.id === ich.id);
+  const host = Boolean(ich?.host);
+  const spielerKette = spieler.map((s) => s.id).join(',');
+
+  // Gastgeber: Teams verteilen und Regeln an alle schicken (auch an Neuankömmlinge)
+  useEffect(() => {
+    if (!host) return;
+    const neu = teamsVerteilen(zuordnung, spieler, regeln.teams);
+    if (JSON.stringify(neu) !== JSON.stringify(zuordnung)) setZuordnung(neu);
+    kanal.current?.senden('einstellungen', { regeln, teams: neu });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [host, regeln, spielerKette, JSON.stringify(zuordnung)]);
+
+  const regelSetzen = (name, wert) => setRegeln((r) => ({ ...r, [name]: wert }));
+  const insTeam = (spielerId, team) => {
+    if (!host) return;
+    setZuordnung((z) => ({ ...z, [spielerId]: team }));
+    setGewaehlt(null);
+  };
 
   const senden = useCallback((typ, daten) => kanal.current?.senden(typ, daten), []);
   const abonnieren = useCallback((fn) => {
     abonnenten.current.add(fn);
     return () => abonnenten.current.delete(fn);
   }, []);
+  const emote = useCallback(
+    (art) => {
+      if (!ich) return;
+      kanal.current?.senden('emote', { art });
+      emoteZeigen(ich.id, art);
+    },
+    [ich, emoteZeigen],
+  );
+  const gegner = spieler.find((s) => s.id !== ich?.id) ?? null;
   const party = useMemo(
-    () => (ich?.name ? { rolle: ich.host ? 'host' : 'gast', ich, gegner, senden, abonnieren } : null),
-    [ich, gegner, senden, abonnieren],
+    () =>
+      ich?.name
+        ? {
+            rolle: ich.host ? 'host' : 'gast',
+            ich: { ...ich, avatar: meineFigur },
+            spieler,
+            gegner,
+            gastgeber: spieler.find((s) => s.host) ?? null,
+            teams: regeln.teams ? zuordnung : null,
+            regeln,
+            senden,
+            abonnieren,
+            emote,
+          }
+        : null,
+    [ich, meineFigur, spieler, gegner, regeln, zuordnung, senden, abonnieren, emote],
   );
 
   if (!ich) return null;
 
-  // Erst der Name – damit der andere weiß, gegen wen er spielt
+  // Erst der Name – damit die anderen wissen, gegen wen sie spielen
   if (!ich.name) {
     return (
       <div className="party-start">
@@ -146,6 +248,20 @@ export default function Lobby({ code }) {
     );
   }
 
+  const spielerChip = (s) => (
+    <li
+      key={s.id}
+      className={`lobby-chip${s.id === ich.id ? ' ich' : ''}${gewaehlt === s.id ? ' gewaehlt' : ''}`}
+      draggable={host && Boolean(regeln.teams)}
+      onDragStart={(e) => e.dataTransfer.setData('text/plain', s.id)}
+      onClick={() => host && regeln.teams && setGewaehlt((g) => (g === s.id ? null : s.id))}
+    >
+      <Avatar wert={s.avatar} groesse={34} />
+      <span className="lobby-chip-name">{s.name}</span>
+      {s.host && <small>{t('Gastgeber')}</small>}
+    </li>
+  );
+
   return (
     <div className="lobby">
       <div className="lobby-leiste karte">
@@ -157,31 +273,125 @@ export default function Lobby({ code }) {
           <Kette />
           {kopiert ? t('Kopiert') : t('Link kopieren')}
         </button>
-        <ul className="lobby-spieler" aria-label={t('Spieler')}>
-          {[ich, gegner].map((s, i) =>
-            s ? (
-              <li key={s.id} className={s.id === ich.id ? 'ich' : undefined}>
-                <span className="anwesend" />
-                {s.name}
-                {s.host && <small>{t('Gastgeber')}</small>}
-              </li>
-            ) : (
-              <li key={`frei-${i}`} className="frei">
+        {!regeln.teams && (
+          <ul className="lobby-spieler" aria-label={t('Spieler')}>
+            {spieler.map(spielerChip)}
+            {spieler.length < 2 && (
+              <li className="frei">
                 <span className="warten" />
                 {t('Warte auf Mitspieler …')}
               </li>
-            ),
-          )}
-        </ul>
+            )}
+          </ul>
+        )}
+        <span className="lobby-zahl">{t('{n} von {m}', { n: spieler.length, m: MAX_SPIELER })}</span>
+        {host ? (
+          <button
+            type="button"
+            className={`zahnrad${zahnrad ? ' offen' : ''}`}
+            onClick={() => setZahnrad((z) => !z)}
+            aria-expanded={zahnrad}
+            aria-label={t('Spielregeln')}
+            title={t('Spielregeln')}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1" />
+              <circle cx="12" cy="12" r="6.5" />
+            </svg>
+          </button>
+        ) : (
+          <span className="regeln-kurz">{regelnKurz(t, regeln)}</span>
+        )}
+      </div>
+
+      {host && zahnrad && <Spielregeln regeln={regeln} onSetzen={regelSetzen} />}
+
+      {Boolean(regeln.teams) && (
+        <div className="team-felder" style={{ '--spalten': regeln.teams }}>
+          {Array.from({ length: regeln.teams }, (_, i) => (
+            <section
+              key={i}
+              className={`team-feld${gewaehlt ? ' ziel' : ''}`}
+              style={{ '--team': TEAMS[i].farbe }}
+              onDragOver={(e) => host && e.preventDefault()}
+              onDrop={(e) => insTeam(e.dataTransfer.getData('text/plain'), i)}
+              onClick={() => gewaehlt && insTeam(gewaehlt, i)}
+            >
+              <h3>{t.ortsname(TEAMS[i])}</h3>
+              <ul>{spieler.filter((s) => zuordnung[s.id] === i).map(spielerChip)}</ul>
+            </section>
+          ))}
+        </div>
+      )}
+
+      <div className="emote-schicht" aria-live="polite">
+        {emotes.map((e) => {
+          const s = spieler.find((x) => x.id === e.von);
+          const em = EMOTES.find((x) => x.art === e.art) ?? EMOTES[0];
+          return (
+            <div key={e.schluessel} className="emote-blase">
+              <Avatar wert={s?.avatar ?? avatarAus(e.von)} groesse={64} pose={e.art} />
+              <span>
+                <strong>{s?.name ?? '…'}</strong>
+                {t.ortsname({ name: em.text, en: em.en })}
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {voll ? (
         <p className="hinweis">{t('Diese Lobby ist schon voll.')}</p>
       ) : welt ? (
-        <Erkundung start={welt} party={party} />
+        <AnsichtKontext.Provider value={regeln.ansicht}>
+          <Erkundung start={welt} party={party} />
+        </AnsichtKontext.Provider>
       ) : (
         <div className="buehne-platzhalter" />
       )}
+    </div>
+  );
+}
+
+/** Kurzfassung der Regeln für die Mitspieler */
+function regelnKurz(t, r) {
+  const teile = [r.teams ? t('{n} Teams', { n: r.teams }) : t('Jeder für sich'), t('{n} Fragen', { n: r.fragen }), t('{n} Joker', { n: r.joker })];
+  if (r.ansicht !== 'frei') teile.push(r.ansicht === 'satellit' ? t('nur Satellit') : t('nur Karte'));
+  return teile.join(' · ');
+}
+
+/** Zahnrad-Feld des Gastgebers: Spielregeln als Segment-Schalter */
+function Spielregeln({ regeln, onSetzen }) {
+  const t = useT();
+  const reihen = [
+    ['teams', t('Teams'), [[0, t('Aus')], [2, '2'], [3, '3'], [4, '4']]],
+    ['fragen', t('Fragen je Runde'), [[5, '5'], [10, '10'], [15, '15'], [20, '20']]],
+    ['joker', t('Joker je Spieler'), [[0, '0'], [1, '1'], [3, '3'], [5, '5']]],
+    ['zeit', t('Bedenkzeit danach'), [[5, '5 s'], [10, '10 s'], [20, '20 s'], [30, '30 s']]],
+    ['ansicht', t('Ansicht'), [['frei', t('Frei')], ['karte', t('Karte')], ['satellit', t('Satellit')]]],
+  ];
+  return (
+    <div className="spielregeln karte">
+      {reihen.map(([name, titel, optionen]) => (
+        <div key={name} className="einstellung">
+          <span className="einstellung-titel">{titel}</span>
+          <div className="segment-schalter" role="radiogroup" aria-label={titel}>
+            {optionen.map(([wert, text]) => (
+              <button
+                key={wert}
+                type="button"
+                role="radio"
+                aria-checked={regeln[name] === wert}
+                className={regeln[name] === wert ? 'gewaehlt' : undefined}
+                onClick={() => onSetzen(name, wert)}
+              >
+                {text}
+              </button>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

@@ -1577,3 +1577,103 @@ html[data-stil="comic"] .joker-knopf:active { transform: translateY(2px); box-sh
 /* Lange Titel in der Leiste umbrechen statt abschneiden */
 .leiste-titel { overflow-wrap: anywhere; hyphens: auto; }
 html[data-stil="comic"] .leiste-titel { font-size: clamp(1.15rem, 2.2vw, 1.75rem); }
+
+/* =====================================================================
+ * 5g. Avatar (components/Avatar.js, AvatarEditor.js)
+ * ================================================================== */
+.avatar-bild { display: block; flex: none; }
+.profil-knopf .avatar-bild { margin-top: 2px; }
+.avatar-knopf { border: 0; padding: 0; cursor: pointer; display: grid; place-items: center; overflow: hidden; }
+.profil-link { display: block; margin-top: 2px; padding: 0; border: 0; background: none; color: var(--akzent); font: 500 .875rem var(--schrift); cursor: pointer; text-align: left; }
+.profil-link:hover { text-decoration: underline; }
+.avatar-editor {
+  width: min(560px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; overflow: auto;
+  color: var(--text); background: var(--karte-solid);
+}
+.avatar-editor::backdrop { background: rgba(20, 16, 40, .45); }
+.avatar-editor-innen { padding: 22px; display: grid; gap: 16px; }
+.avatar-editor h2 { margin: 0; font: 800 1.3rem var(--schrift-titel); }
+.avatar-vorschau { display: flex; align-items: flex-end; justify-content: center; gap: 20px; padding: 12px; border-radius: 14px; background: var(--wasser); }
+.jubel-vorschau { animation: jubeln 1.2s ease-in-out infinite; transform-origin: 50% 100%; }
+@keyframes jubeln { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(-8px) rotate(-4deg); } 60% { transform: translateY(-8px) rotate(4deg); } }
+.avatar-teile { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px 18px; }
+.avatar-teil { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 44px; }
+.avatar-teil-titel { font-weight: 600; }
+.blaettern { display: flex; align-items: center; gap: 4px; }
+.blaettern button { width: 40px; height: 40px; display: grid; place-items: center; border: 1px solid var(--linie); border-radius: 10px; background: var(--fuellung); color: var(--text); cursor: pointer; }
+.blaettern button:hover { background: var(--akzent-zart); }
+.blaettern .chevron { width: 16px; height: 16px; }
+.blaettern-zahl { min-width: 44px; text-align: center; font-variant-numeric: tabular-nums; color: var(--text-leise); font-size: .875rem; }
+.farbfelder { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; max-width: 170px; }
+.farbfelder button { width: 26px; height: 26px; border-radius: 50%; border: 2px solid rgba(0, 0, 0, .25); background: var(--farbe); cursor: pointer; position: relative; }
+.farbfelder button::after { content: ""; position: absolute; inset: -5px; }
+.farbfelder button.gewaehlt { outline: 3px solid var(--akzent); outline-offset: 2px; }
+html[data-stil="comic"] .avatar-editor { border: var(--kontur); box-shadow: var(--schatten); }
+html[data-stil="comic"] .blaettern button { border: 2px solid var(--glas-rand); box-shadow: 0 2px 0 var(--glas-rand); }
+@media (prefers-reduced-motion: reduce) { .jubel-vorschau { animation: none; } }
+
+/* =====================================================================
+ * 5h. Party bis 8 Spieler: Spieler-Chips, Teams, Spielregeln, Jubel
+ * ================================================================== */
+.lobby-chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 3px 14px 3px 4px; border-radius: 999px;
+  background: var(--fuellung); font-weight: 600; list-style: none; user-select: none;
+}
+.lobby-chip.ich { background: var(--akzent-zart); }
+.lobby-chip small { font-weight: 500; color: var(--text-leise); }
+.lobby-chip[draggable="true"] { cursor: grab; }
+.lobby-chip.gewaehlt { outline: 3px solid var(--akzent); outline-offset: 2px; }
+.lobby-chip-name { max-width: 12ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lobby-zahl { color: var(--text-leise); font-size: .875rem; font-variant-numeric: tabular-nums; }
+.regeln-kurz { color: var(--text-leise); font-size: .875rem; }
+.zahnrad {
+  width: 44px; height: 44px; display: grid; place-items: center; border-radius: 12px;
+  border: 1px solid var(--linie); background: var(--fuellung); color: var(--text); cursor: pointer;
+  transition: transform .3s var(--weich), background var(--uebergang);
+}
+.zahnrad svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.zahnrad:hover, .zahnrad.offen { background: var(--akzent-zart); color: var(--akzent); }
+.zahnrad.offen { transform: rotate(45deg); }
+.spielregeln { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px 24px; padding: 16px 18px; margin-top: -4px; animation: erscheinen .25s var(--weich) backwards; }
+.team-felder { display: grid; grid-template-columns: repeat(var(--spalten), minmax(0, 1fr)); gap: 12px; }
+.team-feld {
+  min-height: 92px; padding: 10px 12px 12px; border-radius: 14px;
+  background: color-mix(in srgb, var(--team) 10%, var(--karte-solid)); border: 2px dashed color-mix(in srgb, var(--team) 55%, transparent);
+  transition: background var(--uebergang);
+}
+.team-feld.ziel { cursor: pointer; background: color-mix(in srgb, var(--team) 20%, var(--karte-solid)); }
+.team-feld h3 { margin: 0 0 8px; font: 700 .95rem var(--schrift-titel); color: var(--team); }
+.team-feld ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; }
+@media (max-width: 700px) { .team-felder { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.duell-stand li { padding: 8px 14px 8px 8px; gap: 10px; border-left: 5px solid var(--team, transparent); }
+.duell-punkte { font-size: 1.6rem; }
+.team-stand { list-style: none; margin: 4px 0 10px; padding: 0; display: grid; gap: 6px; }
+.team-stand li { display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; border-radius: 12px; background: color-mix(in srgb, var(--team) 14%, var(--karte-solid)); color: var(--text); }
+.team-stand li.ich { outline: 2px solid var(--team); }
+.team-name { font-weight: 700; }
+.jubel-leiste { display: flex; gap: 6px; margin: 8px 0 4px; }
+.jubel-leiste button {
+  flex: 1; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 4px 6px;
+  border: 1px solid var(--linie); border-radius: 12px; background: var(--fuellung); color: var(--text);
+  font: 600 .8125rem var(--schrift); cursor: pointer; transition: transform .12s ease;
+}
+.jubel-leiste button:hover { background: var(--akzent-zart); }
+.jubel-leiste button:active { transform: scale(.95); }
+/* Jubel der anderen: Sprechblase mit Figur, unten links über der Karte */
+.emote-schicht { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: 24px; z-index: 40; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.emote-blase {
+  display: flex; align-items: center; gap: 10px; padding: 6px 16px 6px 6px; border-radius: 18px;
+  background: var(--karte-solid); border: 1px solid var(--linie); box-shadow: var(--schatten-menue);
+  animation: emote-auf .4s var(--weich) backwards, emote-weg .4s ease 2.4s forwards;
+}
+.emote-blase .avatar-bild { animation: jubeln .9s ease-in-out infinite; transform-origin: 50% 100%; }
+.emote-blase span { display: flex; flex-direction: column; font: 700 1.05rem var(--schrift-titel); }
+.emote-blase strong { font: 600 .8125rem var(--schrift); color: var(--text-leise); }
+@keyframes emote-auf { from { opacity: 0; transform: translateY(16px) scale(.9); } }
+@keyframes emote-weg { to { opacity: 0; transform: translateY(-10px); } }
+html[data-stil="comic"] :is(.lobby-chip, .team-feld, .jubel-leiste button, .zahnrad, .emote-blase) { border: 2px solid var(--glas-rand); }
+html[data-stil="comic"] :is(.jubel-leiste button, .zahnrad) { box-shadow: 0 3px 0 var(--glas-rand); }
+html[data-stil="comic"] .team-feld { border-style: dashed; }
+html[data-stil="comic"] .emote-blase { box-shadow: var(--schatten); }
+@media (prefers-reduced-motion: reduce) { .emote-blase .avatar-bild { animation: none; } }
