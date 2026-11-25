@@ -3,8 +3,9 @@
  * app/karte/QuizListe.js – alle Quizze aller Gebiete, links neben der Karte
  *
  * Eingeklappt ein schmaler Streifen mit Symbol; aufgeklappt (wie die Seitenleiste auf dem iPad)
- * ein Baum: Welt, dann alle Kontinente, dann die Länder (nach Kontinent); Länder mit eigenen
- * Gebieten (Deutschland) klappen ihre Bundesländer mit auf, die wiederum einzeln aufklappen.
+ * ein Baum: oben die Welt, darunter die Kontinente. Ein Kontinent klappt seine Quizze und seine
+ * Länder auf; Länder mit eigenen Gebieten (Deutschland) klappen ihre Bundesländer mit auf, die
+ * wiederum einzeln aufklappen.
  * Jedes Gebiet ist eine kurze Zeile mit Zeichen (Globus, EU-Flagge für Europa, Umriss des
  * Kontinents bzw. Bundeslands, Flagge des Landes); ein Klick klappt seine Quizze als kompakte
  * Knöpfe auf. Anfangs ist alles zu (nur der Weg zum aktuellen Gebiet ist offen), bei einer Suche
@@ -88,7 +89,7 @@ export default function QuizListe({ offen, onOffen, aktuell, bestwerte, mitDista
     if (!offen || !daten) return;
     const nachId = new Map(daten.map((g) => [g.id, g]));
     const weg = [];
-    for (let g = nachId.get(nachId.get(aktuell)?.eltern); g && g.ebene !== 'welt' && g.ebene !== 'kontinent'; g = nachId.get(g.eltern)) weg.push(g.id);
+    for (let g = nachId.get(nachId.get(aktuell)?.eltern); g && g.ebene !== 'welt'; g = nachId.get(g.eltern)) weg.push(g.id);
     if (weg.length) setAuf((alt) => new Set([...alt, ...weg]));
   }, [offen, aktuell, daten]);
   const gescrollt = useRef(false);
@@ -152,32 +153,24 @@ export default function QuizListe({ offen, onOffen, aktuell, bestwerte, mitDista
       return neu;
     });
 
-  // Baum ohne Suche: Welt, Kontinente, Länder je Kontinent, Bundesländer unter ihrem Land.
-  // Ein Land bleibt drin, wenn es selbst oder eines seiner Gebiete zum Filter passt.
+  // Baum ohne Suche: Welt, Kontinente – darin ihre Länder (alphabetisch), darin die Bundesländer.
+  // Ein Gebiet bleibt drin, wenn es selbst oder eines seiner Untergebiete zum Filter passt.
   const baumDaten = useMemo(() => {
     if (!daten) return null;
     const passend = new Map(gruppen.map((g) => [g.id, g]));
-    const unter = (id) => daten.filter((g) => g.eltern === id && g.ebene === 'region').map((g) => passend.get(g.id)).filter(Boolean);
     const knotenVon = (g) => {
-      const kinder = unter(g.id);
+      const kinder = daten
+        .filter((k) => k.eltern === g.id && k.ebene !== 'welt' && k.ebene !== 'kontinent')
+        .map(knotenVon)
+        .filter(Boolean)
+        .sort((a, b) => t.ortsname(a).localeCompare(t.ortsname(b), t.sprache));
       const eigen = passend.get(g.id);
       if (!eigen && !kinder.length) return null;
       return { ...(eigen ?? { ...g, saetze: [] }), kinder };
     };
-    const kontinente = daten.filter((g) => g.ebene === 'kontinent');
     return {
       welt: daten.filter((g) => g.ebene === 'welt').map(knotenVon).filter(Boolean),
-      kontinente: kontinente.map(knotenVon).filter(Boolean),
-      laender: kontinente
-        .map((k) => ({
-          kontinent: k,
-          laender: daten
-            .filter((g) => g.ebene === 'land' && g.eltern === k.id)
-            .map(knotenVon)
-            .filter(Boolean)
-            .sort((a, b) => t.ortsname(a).localeCompare(t.ortsname(b), t.sprache)),
-        }))
-        .filter((x) => x.laender.length),
+      kontinente: daten.filter((g) => g.ebene === 'kontinent').map(knotenVon).filter(Boolean),
     };
   }, [daten, gruppen, t]);
 
@@ -192,7 +185,7 @@ export default function QuizListe({ offen, onOffen, aktuell, bestwerte, mitDista
           <span className="ql-name">
             {t.ortsname(g)}
             {flach && g.ober && <small>{t.ortsname(g.ober)}</small>}
-            {kinder.length > 0 && <small>{t('{n} Bundesländer', { n: kinder.length })}</small>}
+            {kinder.length > 0 && <small>{g.ebene === 'kontinent' ? t('{n} Länder', { n: kinder.length }) : t('{n} Bundesländer', { n: kinder.length })}</small>}
           </span>
           <span className="ql-zahl">{g.saetze.length || ''}</span>
           <Chevron />
@@ -224,7 +217,12 @@ export default function QuizListe({ offen, onOffen, aktuell, bestwerte, mitDista
             )}
           </div>
         )}
-        {istAuf && kinder.length > 0 && <div className="ql-unter">{kinder.map((k) => zeile(k))}</div>}
+        {istAuf && kinder.length > 0 && (
+          <div className={`ql-unter unter-${g.ebene}`}>
+            <h4 className="ql-unterabschnitt">{g.ebene === 'kontinent' ? t('Länder') : t('Bundesländer')}</h4>
+            {kinder.map((k) => zeile(k))}
+          </div>
+        )}
       </section>
     );
   };
@@ -282,13 +280,6 @@ export default function QuizListe({ offen, onOffen, aktuell, bestwerte, mitDista
                 {baumDaten.welt.map((g) => zeile(g))}
                 {baumDaten.kontinente.length > 0 && <h3 className="ql-abschnitt">{t('Kontinente')}</h3>}
                 {baumDaten.kontinente.map((g) => zeile(g))}
-                {baumDaten.laender.length > 0 && <h3 className="ql-abschnitt">{t('Länder')}</h3>}
-                {baumDaten.laender.map(({ kontinent, laender: liste }) => (
-                  <div key={kontinent.id} className="ql-kontinent-gruppe">
-                    <h4 className="ql-unterabschnitt">{t.ortsname(kontinent)}</h4>
-                    {liste.map((g) => zeile(g))}
-                  </div>
-                ))}
               </>
             )}
       </div>

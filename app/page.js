@@ -1,13 +1,15 @@
 /**
  * app/page.js – Startseite: erst die Wahl, was man spielen will (Wunsch von Jonas)
  *
- * Kacheln wie Spielmodi: „Weltkarte“ führt in die Karten-Erkundung (/karte), die übrigen sind
- * Baustellen („Kommt bald“) mit Comic-Figuren, die daran arbeiten (components/Baustelle.js).
+ * Kacheln wie Spielmodi: „Weltkarte“ führt in die Karten-Erkundung (/karte), „Wissensquiz“ zu
+ * allgemeinen Wissensfragen mit vier Antworten (/wissen), die übrigen sind Baustellen
+ * („Kommt bald“) mit Comic-Figuren, die daran arbeiten (components/Baustelle.js).
  * Keine Begrüßung, keine Bedienhinweise – nur Fakten; erklärt wird hinter dem „?“.
  */
 import Link from 'next/link';
 import { alleKnoten, baum, weltSkizze } from '@/lib/gebiete';
 import Baustelle from '@/components/Baustelle';
+import { WISSENSFRAGEN } from '@/lib/wissensfragen';
 import { PRODUKTNAME } from '@/components/Logo';
 import { T } from '@/lib/sprache';
 import { Chevron } from '@/components/Symbole';
@@ -44,7 +46,40 @@ export default function Startseite() {
             <Chevron />
           </Link>
         </li>
-        {[0, 1, 2].map((art) => (
+        <li>
+          <Link href="/wissen" className="kachel kachel-wissen">
+            <span className="kachel-bild">
+              <span className="wissen-bild" aria-hidden="true">
+                <svg viewBox="0 0 220 130">
+                  <rect x="20" y="8" width="180" height="34" rx="8" className="wb-frage" />
+                  <path d="M104 18a8 8 0 1 1 12 7c-2 1.5-2 3-2 5M114 35v.5" className="wb-zeichen" />
+                  {[
+                    [20, 54, 'wb-a'],
+                    [114, 54, 'wb-b'],
+                    [20, 92, 'wb-b'],
+                    [114, 92, 'wb-b'],
+                  ].map(([x, y, k], i) => (
+                    <g key={i}>
+                      <rect x={x} y={y} width="86" height="30" rx="8" className={k} />
+                      <rect x={x + 7} y={y + 7} width="16" height="16" rx="4" className="wb-buchstabe" />
+                      <rect x={x + 30} y={y + 13} width={36 - i * 4} height="4" rx="2" className="wb-zeile" />
+                    </g>
+                  ))}
+                </svg>
+              </span>
+            </span>
+            <span className="kachel-text">
+              <strong>
+                <T>Wissensquiz</T>
+              </strong>
+              <small>
+                <T text="{n} Fragen · 4 Antworten" werte={{ n: WISSENSFRAGEN.length }} />
+              </small>
+            </span>
+            <Chevron />
+          </Link>
+        </li>
+        {[0, 1].map((art) => (
           <li key={art}>
             <div className="kachel kachel-bald">
               <span className="kachel-bild">

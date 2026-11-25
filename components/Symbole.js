@@ -95,6 +95,26 @@ export function Gruppe() {
   );
 }
 
+/** Person mit Sprechblase (Freunde) */
+export function Freunde() {
+  return (
+    <svg {...basis}>
+      <circle cx="9" cy="9" r="3" />
+      <path d="M3.5 19c.9-3 3-4.6 5.5-4.6s4.6 1.6 5.5 4.6" />
+      <path d="M14.5 4.5h6a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H18l-2 2v-2h-1.5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z" />
+    </svg>
+  );
+}
+
+/** Sprechblase (Chat) */
+export function Sprechblase() {
+  return (
+    <svg {...basis}>
+      <path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-7l-4.5 3.5V17H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" />
+    </svg>
+  );
+}
+
 /** Stern (Ergebnis); voll = ausgefüllt */
 export function Stern({ voll }) {
   return (

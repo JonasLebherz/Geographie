@@ -1,21 +1,23 @@
 'use client';
 /**
- * components/Hauptnavigation.js – „Spielen“ und „Party“ in der Kopfleiste
- * „Spielen“ führt zur Startseite mit den Kacheln (Weltkarte …). Der aktive Eintrag ist
- * hervorgehoben (heller Knopf wie ein Segment-Schalter).
+ * components/Hauptnavigation.js – „Spielen“, „Party“ und „Freunde“ in der Kopfleiste
+ * „Spielen“ führt zur Startseite mit den Kacheln (Weltkarte …), „Freunde“ zur Vorschau des
+ * Freunde-Bereichs (app/freunde). Der aktive Eintrag ist hervorgehoben.
  */
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useT } from '@/lib/sprache';
-import { Gruppe, Spielen } from './Symbole';
+import { Freunde, Gruppe, Spielen } from './Symbole';
 
 export default function Hauptnavigation() {
   const t = useT();
   const pfad = usePathname();
   const party = pfad.startsWith('/party');
+  const freunde = pfad.startsWith('/freunde');
   const eintraege = [
-    { href: '/', text: t('Spielen'), Symbol: Spielen, aktiv: !party },
+    { href: '/', text: t('Spielen'), Symbol: Spielen, aktiv: !party && !freunde },
     { href: '/party', text: t('Party'), Symbol: Gruppe, aktiv: party },
+    { href: '/freunde', text: t('Freunde'), Symbol: Freunde, aktiv: freunde },
   ];
   return (
     <nav className="hauptnav" aria-label={t('Hauptmenü')}>

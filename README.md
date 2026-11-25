@@ -1,6 +1,6 @@
 # Quizzle
 
-Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will (bisher: **Weltkarte**, weitere Modi sind in Arbeit). In der Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
+Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will: **Weltkarte** oder **Wissensquiz** (allgemeine Wissensfragen mit vier Antworten), weitere Modi sind in Arbeit. In der Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
 
 - **Quizze:** Länder, Hauptstädte, Kontinente, größte Städte (Top 10/50/100), Bundesstaaten/Regionen, Landkreise
 - **Weitere Quizze:** Flüsse, Sehenswürdigkeiten, Autobahnen, Inseln, Flaggen, Fußballstadien, Autokennzeichen (Deutschland)
@@ -9,6 +9,8 @@ Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will 
 - **Alle Quizze** als aufklappbare Liste links (Suche, Filter); ein Klick fliegt hin und startet.
 
 **Party:** bis zu 8 Spieler mit Lobby-Link (z. B. `/party/flinker-pinguin`), auf Wunsch in Teams – gleiche Fragen für alle, Spielregeln beim Gastgeber (Fragen, Joker, Bedenkzeit, feste Ansicht), Jubel mit der eigenen Comic-Figur.
+
+**Freunde:** Vorschau mit Freundesliste, Chat und Einladen (noch ohne Datenbank).
 
 **Profil:** eigene Comic-Figur (Avatar), Stil, Hell/Dunkel, Töne, Sprache. Optional ein **Konto mit E-Mail und Passwort** – dann sind Name, Figur und Bestwerte auf jedem Gerät da.
 
@@ -63,7 +65,8 @@ Werden die Variablen später geändert: **Deployments → … → Redeploy**, we
 - Städte: [GeoNames](https://www.geonames.org/) cities15000 (CC BY 4.0), deutsche Namen über Wikidata
 - Sehenswürdigkeiten, Stadien, Inseln, höchste/tiefste Punkte, Einwohner, Geburtsorte, Kfz-Kennzeichen, Flussnamen: [Wikidata](https://www.wikidata.org/) (CC0)
 - Flaggen: [flag-icons](https://github.com/lipis/flag-icons) (MIT)
-- Schriften (SIL OFL, über @fontsource): IBM Plex Sans, Bricolage Grotesque, Pixelify Sans, Press Start 2P, VT323, IM Fell English
+- Teilung Russlands am Ural: [polygon-clipping](https://github.com/mfogel/polygon-clipping) (MIT)
+- Schriften (SIL OFL, über @fontsource): IBM Plex Sans, Bricolage Grotesque, Pixelify Sans, Jersey 15, Press Start 2P, VT323, IM Fell English
 - Essen, Rekorde der Kontinente, fehlende Inseln: handverlesen (`lib/gebiete/kuratiert.js`); Allgemeinwissen: `lib/gebiete/allgemeinwissen.js`
 - Bilder: [Wikimedia Commons](https://commons.wikimedia.org/) (über Wikidata P18; Urheber und Lizenz stehen unter jedem Bild)
 - Satellitenbild: [Sentinel-2 cloudless 2016](https://s2maps.eu) von EOX IT Services GmbH (CC BY 4.0, enthält veränderte Copernicus-Sentinel-Daten 2016)
