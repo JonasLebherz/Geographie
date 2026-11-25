@@ -2,7 +2,7 @@
 
 ## Projekt
 
-Geo-Quiz: Geografie-Spiel im Browser – Länder, Regionen und Städte auf der Karte finden, allein oder mit bis zu 8 Freunden. Jonas schreibt Deutsch; Code, Kommentare und Texte auf Deutsch.
+Quizzle (früher „Geo-Quiz“): Geografie-Spiel im Browser – Länder, Regionen und Städte auf der Karte finden, allein oder mit bis zu 8 Freunden. Jonas schreibt Deutsch; Code, Kommentare und Texte auf Deutsch.
 **Technik** wie im Schwesterprojekt Instandhaltung (PitStop 01): Next.js 15 (App Router, React 19, **JavaScript**, kein TypeScript), Hosting **Vercel** (`fra1`), Datenbank **Supabase**.
 
 ## Befehle
@@ -78,4 +78,5 @@ Für alle drei gilt:
 - Gemeinden innerhalb eines Kreises gibt es noch nicht (Eurostat LAU ist von hier nicht erreichbar); Städte stammen aus Natural Earth (in Deutschland nur 58).
 - Effekte in Kurzform (`useEffect(() => ausdruck)`) vermeiden: `element.scrollTo()` liefert im neuen Chromium ein Promise, React hält das für eine Aufräumfunktion und stürzt ab.
 - Bestenliste ist nicht fälschungssicher (Punkte kommen vom Browser). Für ernsthafte Wertung später serverseitig prüfen.
+- Name des Spiels: **Quizzle** (`PRODUKTNAME` in `components/Logo.js`, daraus Seitentitel und Kopfleiste). Die Speicher-Schlüssel im Browser heißen weiter `geo-quiz-*` – nicht umbenennen, sonst wären Einstellungen, Figur und Bestwerte weg.
 - `AGENTS.md` (für Codex) verweist auf diese Datei. Bei neuen Konventionen beide aktualisieren.

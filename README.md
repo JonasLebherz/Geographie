@@ -1,4 +1,4 @@
-# Geo-Quiz
+# Quizzle
 
 Geografie-Spiel im Browser. Auf der Startseite wählt man, was man spielen will (bisher: **Weltkarte**, weitere Modi sind in Arbeit). In der Weltkarte: Gebiet anklicken (die Kamera fliegt hinein – Welt → Kontinent → Land → Bundesland), rechts ein Quiz wählen und das Gesuchte auf der Karte finden: grün beim ersten Versuch, gelb beim zweiten oder dritten, rot aufgedeckt nach drei Fehlversuchen. Karte oder Satellitenbild. Drei Gestaltungen im Profil: Comic Pixel (Standard), Atlas, alte Seekarte. Wer etwas nicht weiß, drückt „Weiß ich nicht“.
 

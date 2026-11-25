@@ -1,5 +1,5 @@
 -- =====================================================================
--- supabase/schema.sql – Datenbank für das Geo-Quiz
+-- supabase/schema.sql – Datenbank für Quizzle
 --
 -- Einmal in Supabase ausführen: SQL Editor → New query → alles einfügen → Run.
 -- Die Quizze selbst brauchen keine Datenbank, nur die Bestenliste.

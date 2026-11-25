@@ -1,4 +1,4 @@
-# AGENTS.md
+# AGENTS.md (Quizzle)
 
 Die vollständigen Regeln stehen in `CLAUDE.md`. Kurz:
 
