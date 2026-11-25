@@ -53,6 +53,15 @@ export default function Layout({ children }) {
           <T>Kreisgrenzen</T>: © <a href="https://ec.europa.eu/eurostat/web/gisco">EuroGeographics</a> ·{' '}
           <T>Städte</T>: <a href="https://www.geonames.org/">GeoNames</a> (CC BY 4.0) ·{' '}
           <T>Wissen</T>: <a href="https://www.wikidata.org/">Wikidata</a> (CC0)
+          <span className="fuss-recht">
+            <Link href="/impressum">
+              <T>Impressum</T>
+            </Link>{' '}
+            ·{' '}
+            <Link href="/datenschutz">
+              <T>Datenschutz</T>
+            </Link>
+          </span>
         </footer>
       </body>
     </html>

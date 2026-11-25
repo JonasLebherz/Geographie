@@ -21,7 +21,7 @@ export const AVATAR_TEILE = [
   { name: 'mund', titel: 'Mund', anzahl: 5 },
   { name: 'kleidung', titel: 'Kleidung', anzahl: 4 },
   { name: 'kleidfarbe', titel: 'Farbe', anzahl: KLEIDFARBE.length, farbe: KLEIDFARBE },
-  { name: 'extra', titel: 'Extra', anzahl: 6 },
+  { name: 'extra', titel: 'Extra', anzahl: 7 },
 ];
 
 /** Text → { haut, frisur, … } (fehlende oder kaputte Werte: Standard) */
@@ -212,6 +212,15 @@ function Extra({ art, haarfarbe }) {
           <path d="M14 32c0-14 8-21 18-21s18 7 18 21" fill="none" {...strich} strokeWidth="3" />
           <rect x="10" y="27" width="7" height="11" rx="3" fill={haarfarbe === '#1b1b1b' ? '#e9505a' : '#1b1b1b'} {...strich} strokeWidth="2" />
           <rect x="47" y="27" width="7" height="11" rx="3" fill={haarfarbe === '#1b1b1b' ? '#e9505a' : '#1b1b1b'} {...strich} strokeWidth="2" />
+        </g>
+      );
+    case 6: // Bauhelm (auch für die Baustellen der Startseite)
+      return (
+        <g>
+          <path d="M14 25c0-10 8-17 18-17s18 7 18 17z" fill="#f2b632" {...strich} />
+          <path d="M28 9h8v16h-8z" fill="#f7c95a" {...strich} strokeWidth="2" />
+          <path d="M11 25h42" fill="none" {...strich} strokeWidth="4.5" />
+          <path d="M11 25h42" fill="none" stroke="#f2b632" strokeWidth="2" strokeLinecap="round" />
         </g>
       );
     default:

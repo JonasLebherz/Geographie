@@ -18,6 +18,7 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import KarteEbene from '@/components/karte/KarteEbene';
+import Buehne from '@/components/karte/Buehne';
 import { mischen, sterneFuer, useQuizRunde, VERSUCHE } from '@/components/karte/useQuizRunde';
 import Frage, { JokerKnopf, WeissNicht } from '@/components/karte/Frage';
 import SatzZeile from '@/components/karte/SatzZeile';
@@ -95,11 +96,8 @@ function kartenLage(eltern, kind, buehne) {
   return { x: ox + se * x0 + w / 2, y: oy + se * y0 + h / 2, w, h };
 }
 
-/** Adresse eines Gebiets: /karte/europa/deutschland – die Welt ist die Startseite (/) */
-const adresseVon = (daten) => {
-  const teile = daten.ahnen.slice(1).map((a) => `/${a.slug}`).join('');
-  return teile ? `/karte${teile}` : '/';
-};
+/** Adresse eines Gebiets: /karte/europa/deutschland – die Welt ist /karte (/ ist die Startseite mit den Kacheln) */
+const adresseVon = (daten) => `/karte${daten.ahnen.slice(1).map((a) => `/${a.slug}`).join('')}`;
 
 /**
  * party (nur in einer Lobby, siehe app/party/[code]/Lobby.js):
@@ -195,6 +193,7 @@ export default function Erkundung({ start, party = null }) {
   useEffect(() => {
     if (partyRef.current) return undefined; // in der Lobby bleibt die Adresse
     async function zurueck() {
+      if (!window.location.pathname.startsWith('/karte')) return; // zurück zur Startseite: das macht Next
       const teile = window.location.pathname.replace(/^\/karte\/?/, '').split('/').filter(Boolean);
       let id = 'welt';
       for (const teil of teile) {
@@ -390,9 +389,12 @@ export default function Erkundung({ start, party = null }) {
     : [{ daten: gebiet, rolle: 'neu' }];
 
   // Die Quiz-Liste links bleibt in allen Ansichten dieselbe (in der Party nur beim Gastgeber)
-  const mitListe = (inhalt, imQuiz) => (
-    <div className={`erkundung${imQuiz ? ' im-quiz' : ''}${party?.rolle === 'gast' ? '' : ' mit-liste'}${listeOffen ? ' liste-offen' : ''}`}>
-      {(!party || party.rolle === 'host') && (
+  // Während eines Quizzes ist sie weg (Wunsch: beim Spielen nichts Überflüssiges)
+  const mitListe = (inhalt, imQuiz) => {
+    const liste = !imQuiz && (!party || party.rolle === 'host');
+    return (
+    <div className={`erkundung${imQuiz ? ' im-quiz' : ''}${liste ? ' mit-liste' : ''}${liste && listeOffen ? ' liste-offen' : ''}`}>
+      {liste && (
         <QuizListe
           offen={listeOffen}
           onOffen={setListeOffen}
@@ -408,7 +410,8 @@ export default function Erkundung({ start, party = null }) {
       )}
       {inhalt}
     </div>
-  );
+    );
+  };
 
   if (quiz && !uebergang && party) {
     return mitListe(
@@ -455,7 +458,7 @@ export default function Erkundung({ start, party = null }) {
 
   return mitListe(
     <>
-      <div className="buehne" ref={buehneRef}>
+      <Buehne buehneRef={buehneRef}>
         {ebenen.map(({ daten, rolle }) => (
           <div key={daten.knoten.id} className={`ebene-huelle huelle-${rolle}`}>
             <div className="ebene" ref={rolle === 'alt' ? altRef : neuRef}>
@@ -470,7 +473,7 @@ export default function Erkundung({ start, party = null }) {
           </div>
         ))}
         {laedt && <div className="buehne-laedt" aria-hidden="true" />}
-      </div>
+      </Buehne>
 
       <Leiste
         gebiet={gebiet}
@@ -622,14 +625,51 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
 
   // Esc beendet das Quiz (zurück zur Karte)
   useEffect(() => {
-    const taste = (e) => e.key === 'Escape' && !document.querySelector('.profil-menue') && onEnde();
+    const taste = (e) => e.key === 'Escape' && !document.querySelector('.profil-menue, .foto-gross') && onEnde();
     window.addEventListener('keydown', taste);
     return () => window.removeEventListener('keydown', taste);
   }, [onEnde]);
 
   return (
     <>
-      <div className="buehne">
+      <Buehne
+        frage={
+          !fertig && (
+            <div
+              className={`frage-kapsel${runde.impuls ? ` impuls-${runde.impuls.art}` : ''}`}
+              key={runde.impuls?.n ?? 0}
+              aria-live="polite"
+            >
+              {runde.serie >= 2 && (
+                <span className="serie" title={t('Serie')}>
+                  <Flamme />
+                  {runde.serie}
+                </span>
+              )}
+              <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} joker={runde.jokerAktiv} />
+              <div className="frage-unter">
+                <span className="versuche" aria-label={t('{n} von {m} Versuchen übrig', { n: VERSUCHE - (spiel?.fehl ?? 0), m: VERSUCHE })}>
+                  {Array.from({ length: VERSUCHE }, (_, i) => (
+                    <i key={i} className={i < (spiel?.fehl ?? 0) ? 'verbraucht' : undefined} />
+                  ))}
+                </span>
+                {runde.rueckmeldung ? (
+                  <span key={runde.rueckmeldung.schluessel} className={`rueckmeldung ${runde.rueckmeldung.art}`}>
+                    {runde.rueckmeldung.text}
+                  </span>
+                ) : (
+                  <>
+                    {zielHatBild && !runde.jokerAktiv && satz.bilder !== 'frage' && (
+                      <JokerKnopf rest={runde.jokerRest} onKlick={runde.jokerZiehen} gesperrt={Boolean(spiel?.sperre)} />
+                    )}
+                    <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        }
+      >
         <div className="ebene-huelle huelle-neu">
           <div className="ebene">
             <KarteEbene
@@ -643,42 +683,7 @@ function QuizAnsicht({ gebiet, quiz, onEnde, onNochmal }) {
             />
           </div>
         </div>
-
-        {!fertig && (
-          <div
-            className={`frage-kapsel${runde.impuls ? ` impuls-${runde.impuls.art}` : ''}`}
-            key={runde.impuls?.n ?? 0}
-            aria-live="polite"
-          >
-            {runde.serie >= 2 && (
-              <span className="serie" title={t('Serie')}>
-                <Flamme />
-                {runde.serie}
-              </span>
-            )}
-            <Frage satz={satz} einheit={runde.ziel ? einheiten.get(runde.ziel) : null} joker={runde.jokerAktiv} />
-            <div className="frage-unter">
-              <span className="versuche" aria-label={t('{n} von {m} Versuchen übrig', { n: VERSUCHE - (spiel?.fehl ?? 0), m: VERSUCHE })}>
-                {Array.from({ length: VERSUCHE }, (_, i) => (
-                  <i key={i} className={i < (spiel?.fehl ?? 0) ? 'verbraucht' : undefined} />
-                ))}
-              </span>
-              {runde.rueckmeldung ? (
-                <span key={runde.rueckmeldung.schluessel} className={`rueckmeldung ${runde.rueckmeldung.art}`}>
-                  {runde.rueckmeldung.text}
-                </span>
-              ) : (
-                <>
-                  {zielHatBild && !runde.jokerAktiv && satz.bilder !== 'frage' && (
-                    <JokerKnopf rest={runde.jokerRest} onKlick={runde.jokerZiehen} gesperrt={Boolean(spiel?.sperre)} />
-                  )}
-                  <WeissNicht onKlick={runde.ueberspringen} gesperrt={Boolean(spiel?.sperre)} />
-                </>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+      </Buehne>
 
       <aside className="leiste" aria-label={titel}>
         <nav className="pfad">

@@ -445,12 +445,12 @@ async function flussnamen() {
   schreiben('flussnamen.json', ergebnis);
 }
 
-/** Flaggen aus „flag-icons“ nach public/flaggen/ (nur unsere Staaten) */
+/** Flaggen aus „flag-icons“ nach public/flaggen/ (nur unsere Staaten, dazu die EU-Flagge als Zeichen für Europa in der Quiz-Liste) */
 function flaggen() {
   const ordner = join('node_modules', 'flag-icons', 'flags', '4x3');
   mkdirSync(join('public', 'flaggen'), { recursive: true });
   let n = 0;
-  for (const code of STAATEN) {
+  for (const code of [...STAATEN, 'EU']) {
     const datei = join(ordner, `${code.toLowerCase()}.svg`);
     if (existsSync(datei)) {
       copyFileSync(datei, join('public', 'flaggen', `${code.toLowerCase()}.svg`));

@@ -1,7 +1,8 @@
 'use client';
 /**
  * components/Hauptnavigation.js – „Spielen“ und „Party“ in der Kopfleiste
- * Der aktive Eintrag ist hervorgehoben (heller Knopf wie ein Segment-Schalter).
+ * „Spielen“ führt zur Startseite mit den Kacheln (Weltkarte …). Der aktive Eintrag ist
+ * hervorgehoben (heller Knopf wie ein Segment-Schalter).
  */
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
