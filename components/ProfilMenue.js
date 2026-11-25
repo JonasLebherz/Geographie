@@ -139,7 +139,13 @@ export default function ProfilMenue() {
                 {t('Abmelden')}
               </button>
             </div>
-          ) : (
+          ) : null}
+          {konto.nutzer && konto.admin ? (
+            <Link href="/statistik" className="knopf knopf-haupt knopf-breit statistik-link" onClick={() => setOffen(false)}>
+              {t('Statistik')}
+            </Link>
+          ) : null}
+          {konto.nutzer ? null : (
             <>
               <button
                 type="button"

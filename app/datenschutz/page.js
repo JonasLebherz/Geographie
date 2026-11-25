@@ -1,8 +1,8 @@
 /**
  * app/datenschutz/page.js – Datenschutzerklärung (Art. 13 DSGVO)
  *
- * Beschreibt, was die Seite tatsächlich tut: Hosting bei Vercel, Supabase für Bestenliste, Konten
- * und Party, Speicherung im Browser, Bilder von Wikimedia Commons und Satellitenkacheln von EOX.
+ * Beschreibt, was die Seite tatsächlich tut: Hosting bei Vercel, Supabase für Bestenliste, Konten,
+ * Party und anonyme Nutzungsstatistik, Speicherung im Browser, Bilder von Wikimedia Commons und Satellitenkacheln von EOX.
  * Bei neuen Diensten oder Daten hier ergänzen. Angaben zum Verantwortlichen in lib/rechtliches.js.
  */
 import Link from 'next/link';
@@ -61,20 +61,31 @@ export default function Datenschutz() {
         den USA gelten Standardvertragsklauseln.
       </p>
 
-      <h2>6. Bilder und Satellitenkarte</h2>
+      <h2>6. Nutzungsstatistik</h2>
+      <p>
+        Um zu sehen, welche Quizze gespielt werden und was verbessert werden sollte, zählen wir ohne Cookies und ohne Kennung im Browser:
+        Besuche und Seitenwechsel, gestartete und beendete Quizze (mit Ergebnis und Dauer), erstellte Partys sowie Anmeldungen. Dazu
+        speichern wir Geräteart (Handy, Tablet, Computer), Sprache, die verweisende Seite (nur deren Name, z. B. „google.com“) und den
+        ungefähren Ort (Land, Region, Stadt). Den Ort ermittelt unser Hoster beim Aufruf aus der IP-Adresse; die IP-Adresse selbst wird
+        dabei nicht gespeichert. Bei angemeldeten Spielern werden diese Angaben dem Konto zugeordnet. Rechtsgrundlage ist unser
+        berechtigtes Interesse an der Verbesserung des Angebots (Art. 6 Abs. 1 lit. f DSGVO). Einsehen kann die Statistik nur der
+        Betreiber. Beim Löschen eines Kontos wird die Zuordnung entfernt; die Zahlen bleiben anonym erhalten.
+      </p>
+
+      <h2>7. Bilder und Satellitenkarte</h2>
       <p>
         Fotos in manchen Quizzen lädt der Browser direkt von Wikimedia Commons (Wikimedia Foundation, USA), das Satellitenbild direkt von
         EOX IT Services GmbH (Österreich). Dabei erhalten diese Anbieter die IP-Adresse und Browserdaten (Art. 6 Abs. 1 lit. f DSGVO,
         berechtigtes Interesse an der Darstellung der Inhalte). Schriften liegen auf unserem eigenen Server.
       </p>
 
-      <h2>7. Speicherdauer</h2>
+      <h2>8. Speicherdauer</h2>
       <p>
-        Kontodaten bis zur Löschung des Kontos, Einträge in der Bestenliste bis auf Widerruf, Server-Protokolle beim Hoster nur kurz
+        Kontodaten bis zur Löschung des Kontos, Einträge in der Bestenliste bis auf Widerruf, Nutzungsstatistik höchstens zwei Jahre, Server-Protokolle beim Hoster nur kurz
         (in der Regel wenige Tage).
       </p>
 
-      <h2>8. Deine Rechte</h2>
+      <h2>9. Deine Rechte</h2>
       <p>
         Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch
         (Art. 15–21 DSGVO) sowie auf Beschwerde bei einer Datenschutz-Aufsichtsbehörde. Eine Nachricht an die oben genannte Adresse genügt.

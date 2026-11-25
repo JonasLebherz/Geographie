@@ -1809,3 +1809,123 @@ html[data-stil="seekarte"] .kachel { border: 1.5px solid #4a2f17; border-radius:
 .rechtstext p { margin: 0 0 10px; }
 html[data-stil="comic"] :is(.anmeldung) { border: var(--kontur); box-shadow: var(--schatten); }
 html[data-stil="comic"] .feld input { border: 2px solid var(--glas-rand); }
+
+/* =====================================================================
+ * 5l. Statistik (/statistik, nur für Admins) – Kennzahlen, Verlauf, Weltkarte, Tabellen
+ *     Weltkarte: eine Farbe (Pflaume), hell → dunkel = wenig → viel; Blau bleibt Wasser
+ * ================================================================== */
+:root {
+  --stat-0: #e4ddf6; --stat-1: #c4b6ec; --stat-2: #9d89dc; --stat-3: #7660c6; --stat-4: #4e3a9c;
+  --stat-leer: #ece7dc;
+}
+:root[data-theme="dark"] {
+  --stat-0: #383156; --stat-1: #4f4480; --stat-2: #6a5aae; --stat-3: #9080d6; --stat-4: #c6bbf4;
+  --stat-leer: #2c2a26;
+}
+.statistik { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; }
+.statistik h1 { margin: 0; }
+.statistik h2 { margin: 0 0 12px; font: 800 1.05rem var(--schrift-titel); }
+.statistik h2 small { color: var(--text-leise); font: 600 .9rem var(--schrift); margin-left: 6px; }
+.statistik-kopf { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.statistik-kopf h1 { margin-right: auto; }
+.statistik-kopf .segment-schalter { max-width: 100%; }
+.statistik-laedt { height: 420px; border-radius: 14px; background: linear-gradient(90deg, var(--fuellung) 30%, var(--akzent-zart) 50%, var(--fuellung) 70%) 0 0 / 200% 100%; animation: laden 1.2s linear infinite; }
+
+.kennzahlen { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 160px), 1fr)); gap: 12px; }
+@media (max-width: 640px) { .kennzahlen { grid-template-columns: 1fr 1fr; } .kz-wert { font-size: 1.6rem; } }
+.kennzahl { padding: 14px 16px; display: grid; gap: 2px; align-content: start; }
+.kz-titel { font-size: .875rem; font-weight: 600; color: var(--text-leise); }
+.kz-wert { font: 700 2.2rem/1.1 var(--schrift); font-variant-numeric: tabular-nums; }
+.kz-zusatz { font-size: .8125rem; color: var(--text-leise); }
+.kz-veraenderung { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 5px; font-size: .8125rem; font-weight: 600; color: var(--text); }
+.kz-veraenderung svg { width: 10px; height: 10px; fill: currentColor; align-self: center; }
+.kz-veraenderung.runter svg { color: var(--text-leise); }
+.kz-veraenderung.hoch svg { color: var(--akzent); }
+.kz-veraenderung small { font-weight: 400; color: var(--text-leise); }
+
+.verlaeufe { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 14px; }
+.verlauf { margin: 0; padding: 14px 16px 10px; }
+.verlauf figcaption { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-weight: 600; }
+.verlauf figcaption strong { font: 700 1.4rem var(--schrift); }
+.verlauf-flaeche { position: relative; height: 170px; margin-left: 34px; }
+.verlauf-flaeche svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.v-gitter { stroke: var(--linie); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-dasharray: 2 4; }
+.v-basis { stroke: var(--text-leise); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.v-balken { fill: var(--akzent-flaeche); }
+.v-balken.aktiv { fill: var(--akzent); }
+.v-treffer { fill: transparent; cursor: crosshair; }
+.v-achse span { position: absolute; left: -34px; width: 28px; text-align: right; transform: translateY(50%); font-size: .6875rem; color: var(--text-leise); font-variant-numeric: tabular-nums; }
+.v-tipp {
+  position: absolute; top: 0; transform: translateX(-50%); pointer-events: none; z-index: 2;
+  display: grid; padding: 6px 10px; border-radius: 8px; white-space: nowrap; font-size: .8125rem;
+  background: var(--karte-solid); border: 1px solid var(--glas-rand); box-shadow: var(--schatten-menue);
+}
+.v-daten { display: flex; justify-content: space-between; margin: 4px 0 0 34px; font-size: .6875rem; color: var(--text-leise); }
+
+.karten-reihe { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 14px; align-items: start; }
+.karten-listen { display: grid; gap: 14px; }
+.statistik-karte { padding: 14px 16px; }
+.sk-kopf { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.sk-kopf h2 { margin: 0; }
+.sk-flaeche { position: relative; border-radius: 10px; overflow: hidden; }
+.sk-flaeche svg { display: block; width: 100%; height: auto; }
+.sk-wasser { fill: var(--wasser); }
+.sk-land { fill: var(--stat-leer); stroke: var(--land-grenze); stroke-width: .6; stroke-linejoin: round; vector-effect: non-scaling-stroke; transition: fill .2s ease; }
+.sk-land.aktiv { stroke: var(--text); stroke-width: 1.6; }
+.s-0 { fill: var(--stat-0); background: var(--stat-0); }
+.s-1 { fill: var(--stat-1); background: var(--stat-1); }
+.s-2 { fill: var(--stat-2); background: var(--stat-2); }
+.s-3 { fill: var(--stat-3); background: var(--stat-3); }
+.s-4 { fill: var(--stat-4); background: var(--stat-4); }
+.sk-tipp {
+  position: absolute; left: 10px; bottom: 10px; display: flex; align-items: center; gap: 8px; pointer-events: none;
+  padding: 6px 12px; border-radius: 10px; background: var(--karte-solid); border: 1px solid var(--glas-rand); box-shadow: var(--schatten-menue);
+}
+.sk-legende { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 10px; font-size: .8125rem; color: var(--text-leise); }
+.sk-stufe { display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+.sk-feld { display: inline-block; width: 18px; height: 12px; border-radius: 3px; border: 1px solid var(--land-grenze); }
+.sk-feld.leer { background: var(--stat-leer); margin-right: -8px; }
+.mini-flagge { width: 20px; height: 15px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, .15); flex: none; }
+
+.rangliste { padding: 14px 16px; }
+.rangliste ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.rangliste li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; }
+.rl-name { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rl-zahl { font-variant-numeric: tabular-nums; font-weight: 600; }
+.rl-balken { grid-column: 1 / -1; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--akzent-flaeche) var(--anteil), var(--fuellung) var(--anteil)); }
+.ranglisten { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr)); gap: 14px; }
+
+.quiz-statistik, .konten-statistik { padding: 16px; }
+.qs-hervor { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 10px; margin-bottom: 14px; }
+.qs-karte { display: grid; gap: 2px; padding: 10px 12px; border-radius: 10px; background: var(--fuellung); border-left: 4px solid var(--akzent-flaeche); }
+.qs-karte span { font-size: .8125rem; font-weight: 600; color: var(--text-leise); }
+.qs-karte small { color: var(--text-leise); }
+.qs-karte.abbruch, .qs-karte.schwer { border-left-color: var(--text-leise); }
+.tabelle-huelle { overflow-x: auto; margin: 0 -4px; }
+.stat-tabelle { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.stat-tabelle th { text-align: left; font-size: .8125rem; font-weight: 600; color: var(--text-leise); padding: 6px 8px; border-bottom: 2px solid var(--linie); white-space: nowrap; }
+.stat-tabelle td { padding: 8px; border-bottom: 1px solid var(--linie); vertical-align: middle; }
+.stat-tabelle td small { display: block; color: var(--text-leise); font-size: .8125rem; }
+.stat-tabelle .zahl { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stat-tabelle .mit-balken { position: relative; min-width: 110px; }
+.tb-balken { position: absolute; right: 44px; top: 50%; height: 8px; width: calc((100% - 56px) * var(--anteil)); transform: translateY(-50%); border-radius: 4px; background: var(--stat-1); }
+.konto-zeile { cursor: pointer; }
+.konto-zeile:hover td, .konto-zeile.auf td { background: var(--akzent-zart); }
+.kz-name { display: flex; align-items: center; gap: 8px; padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer; text-align: left; min-height: 36px; }
+.avatar-platz { width: 32px; height: 32px; border-radius: 50%; background: var(--fuellung); }
+.admin-marke { margin-left: 6px; padding: 1px 6px; border-radius: 6px; background: var(--akzent-flaeche); color: #fff; font-style: normal; font-size: .6875rem; }
+.stat-tabelle .email { word-break: break-all; }
+.konto-details td { background: var(--fuellung); }
+.konto-details ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.konto-details li { display: grid; grid-template-columns: 130px minmax(0, 1fr) minmax(0, 1fr) 56px 56px auto; gap: 10px; font-size: .875rem; }
+.konto-details em { font-style: normal; color: var(--akzent); font-weight: 600; }
+.ql-suche.klein { max-width: 260px; }
+.ql-suche.klein input { height: 36px; }
+@media (max-width: 900px) {
+  .karten-reihe { grid-template-columns: 1fr; }
+  .konto-details li { grid-template-columns: 1fr auto; }
+}
+html[data-stil="comic"] :is(.qs-karte) { border: 2px solid var(--glas-rand); border-left-width: 6px; }
+html[data-stil="comic"] .sk-flaeche { border: var(--kontur); border-radius: 8px; }
+html[data-stil="comic"] .kz-wert { font-size: 2rem; }
+.statistik-link { margin-top: 8px; justify-content: center; }

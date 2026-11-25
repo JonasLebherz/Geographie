@@ -18,6 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { mischen } from './useQuizRunde';
 import { klang } from '@/lib/ton';
 import { bestwertSpeichern } from '@/lib/bestwerte';
+import { melden } from '@/lib/statistik';
 
 const PAUSE = 2600;
 export const HOECHST = 1000;
@@ -82,7 +83,9 @@ export function useDistanzRunde({ einheiten, runde, skala, projektionen, bestenl
     const ende = Date.now();
     const summe = Object.values(s.antworten).reduce((n, a) => n + a.punkte, 0);
     const quote = Math.round((100 * summe) / (HOECHST * s.reihenfolge.length));
-    bestwertSpeichern(bestenliste, quote, Math.max(1, Math.round((ende - s.start) / 1000)));
+    const sekunden = Math.max(1, Math.round((ende - s.start) / 1000));
+    bestwertSpeichern(bestenliste, quote, sekunden);
+    melden('quiz_ende', { quiz: bestenliste, quote, sekunden });
     setTimeout(() => klang('fertig'), 250);
     setSpiel({ ...s, nummer, zeigt: false, ende });
   }, [bestenliste]);

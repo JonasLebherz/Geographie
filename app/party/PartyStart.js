@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useT } from '@/lib/sprache';
 import { codeAus, neuerCode } from '@/lib/party/codes';
 import { Gruppe, Kette } from '@/components/Symbole';
+import { melden } from '@/lib/statistik';
 
 export const GASTGEBER = (code) => `geo-quiz-gastgeber-${code}`;
 
@@ -25,6 +26,7 @@ export default function PartyStart() {
     } catch {
       /* ohne Speicher ist man eben Gast */
     }
+    melden('party_lobby');
     router.push(`/party/${code}`);
   }
 
